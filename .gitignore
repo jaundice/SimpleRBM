@@ -27,3 +27,17 @@ _ReSharper*/
 [Tt]est[Rr]esult*
 *.vssscc
 $tf*/
+Cuda/packages/CUDAfy.NET.1.27.5314.36419/content/Readme/CUDA.NET.Readme.txt
+Cuda/packages/CUDAfy.NET.1.27.5314.36419/content/Readme/CUDAfy-License.txt
+Cuda/packages/CUDAfy.NET.1.27.5314.36419/content/Readme/example_source_code.cs.txt
+Cuda/packages/CUDAfy.NET.1.27.5314.36419/content/Readme/ILSpy-license.txt
+Cuda/packages/CUDAfy.NET.1.27.5314.36419/content/Readme/README.txt
+Cuda/packages/CUDAfy.NET.1.27.5314.36419/content/Tools/place_these_executables_in_same_folder_as_Cudafy.NET.dll.txt
+Cuda/packages/CUDAfy.NET.1.27.5314.36419/CUDAfy.NET.1.27.5314.36419.nupkg
+Cuda/packages/CUDAfy.NET.1.27.5314.36419/lib/net40/Cudafy.NET.dll
+Cuda/packages/CUDAfy.NET.1.27.5314.36419/lib/net40/Cudafy.NET.xml
+Cuda/Readme/CUDA.NET.Readme.txt
+Cuda/Readme/CUDAfy-License.txt
+Cuda/Readme/example_source_code.cs.txt
+Cuda/Readme/ILSpy-license.txt
+Cuda/Readme/README.txt
