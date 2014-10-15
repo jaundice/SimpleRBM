@@ -23,10 +23,8 @@ namespace CudaRbm
                     output[n, i] = input[i, n];
 
                     n += thread.gridDim.y * thread.blockDim.y;
-                    //thread.SyncThreadsCount(true);
                 }
                 i += thread.gridDim.x * thread.blockDim.x;
-                //thread.SyncThreadsCount(true);
             }
             thread.SyncThreads();
         }
@@ -46,10 +44,8 @@ namespace CudaRbm
                     output[i, n] = input[i, n] * factor;
 
                     n += thread.gridDim.y * thread.blockDim.y;
-                    //thread.SyncThreadsCount(true);
                 }
                 i += thread.gridDim.x * thread.blockDim.x;
-                //thread.SyncThreadsCount(true);
             }
 
             thread.SyncThreads();
@@ -58,8 +54,6 @@ namespace CudaRbm
         [Cudafy]
         public static void Divide(GThread thread, float[,] input, float denominator, float[,] output)
         {
-            //MultiplyScalar(thread, input, 1/denominator, output);
-
             int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
             int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
             float factor = 1.0f / denominator;
@@ -72,10 +66,8 @@ namespace CudaRbm
                     output[i, n] = input[i, n] * factor;
 
                     n += thread.gridDim.y * thread.blockDim.y;
-                    //thread.SyncThreadsCount(true);
                 }
                 i += thread.gridDim.x * thread.blockDim.x;
-                //thread.SyncThreadsCount(true);
             }
             thread.SyncThreads();
         }
@@ -92,12 +84,9 @@ namespace CudaRbm
                 while (n < input2.GetLength(1))
                 {
                     output[i, n] = MultiplyElement(input1, input2, i, n);
-                    //output[i, j] = MultiplyElement(input1, input2, j, i);
                     n += thread.gridDim.y * thread.blockDim.y;
-                    //thread.SyncThreadsCount(true);
                 }
                 i += thread.gridDim.x * thread.blockDim.x;
-                //thread.SyncThreadsCount(true);
             }
             thread.SyncThreads();
         }
@@ -129,10 +118,8 @@ namespace CudaRbm
                     matrix[i, n] = value;
 
                     n += thread.gridDim.y * thread.blockDim.y;
-                    //thread.SyncThreadsCount(true);
                 }
                 i += thread.gridDim.x * thread.blockDim.x;
-                //thread.SyncThreadsCount(true);
             }
 
             thread.SyncThreads();
@@ -141,8 +128,6 @@ namespace CudaRbm
         [Cudafy]
         public static void Ones(GThread thread, float[,] matrix)
         {
-            //Fill(thread, matrix, 1.0);
-
             int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
             int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
 
@@ -154,10 +139,8 @@ namespace CudaRbm
                     matrix[i, n] = 1.0f;
 
                     n += thread.gridDim.y * thread.blockDim.y;
-                    //thread.SyncThreadsCount(true);
                 }
                 i += thread.gridDim.x * thread.blockDim.x;
-                //thread.SyncThreadsCount(true);
             }
             thread.SyncThreads();
         }
@@ -165,7 +148,6 @@ namespace CudaRbm
         [Cudafy]
         public static void Zeros(GThread thread, float[,] matrix)
         {
-            //Fill(thread, matrix, 0.0);
             int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
             int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
 
@@ -176,10 +158,8 @@ namespace CudaRbm
                 {
                     matrix[i, n] = 0.0f;
                     n += thread.gridDim.y * thread.blockDim.y;
-                    //thread.SyncThreadsCount(true);
                 }
                 i += thread.gridDim.x * thread.blockDim.x;
-                //thread.SyncThreadsCount(true);
             }
             thread.SyncThreads();
         }
@@ -202,10 +182,8 @@ namespace CudaRbm
                 {
                     target[i + mPos, n + nPos] = src[i, n];
                     n += thread.gridDim.y * thread.blockDim.y;
-                    //thread.SyncThreadsCount(true);
                 }
                 i += thread.gridDim.x * thread.blockDim.x;
-                //thread.SyncThreadsCount(true);
             }
             thread.SyncThreads();
         }
@@ -224,10 +202,8 @@ namespace CudaRbm
                     output[i, n] = matrix1[i, n] > matrix2[i, n] ? 1.0f : 0.0f;
 
                     n += thread.gridDim.y * thread.blockDim.y;
-                    //thread.SyncThreadsCount(true);
                 }
                 i += thread.gridDim.x * thread.blockDim.x;
-                //thread.SyncThreadsCount(true);
             }
 
             thread.SyncThreads();
@@ -236,8 +212,6 @@ namespace CudaRbm
         [Cudafy]
         public static void LessThan(GThread thread, float[,] matrix1, float[,] matrix2, float[,] output)
         {
-            //GreaterThan(thread, matrix2, matrix1, output);
-
             int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
             int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
 
@@ -248,10 +222,8 @@ namespace CudaRbm
                 {
                     output[i, n] = matrix1[i, n] < matrix2[i, n] ? 1.0f : 0.0f;
                     n += thread.gridDim.y * thread.blockDim.y;
-                    //thread.SyncThreadsCount(true);
                 }
                 i += thread.gridDim.x * thread.blockDim.x;
-                //thread.SyncThreadsCount(true);
             }
             thread.SyncThreads();
         }
@@ -273,10 +245,8 @@ namespace CudaRbm
                 {
                     target[i, n] = matrix[i + startRow, n + startCol];
                     n += thread.gridDim.y * thread.blockDim.y;
-                    //thread.SyncThreadsCount(true);
                 }
                 i += thread.gridDim.x * thread.blockDim.x;
-                //thread.SyncThreadsCount(true);
             }
             thread.SyncThreads();
         }
@@ -286,8 +256,6 @@ namespace CudaRbm
         {
             if (matrix.GetLength(1) == 1)
             {
-                //SubMatrix(thread, matrix, 0, 0, 0, 1, target);
-
                 int numRows = matrix.GetLength(0);
                 int numCols = 1;
 
@@ -302,16 +270,12 @@ namespace CudaRbm
                         target[i, n] = matrix[i, n];
 
                         n += thread.gridDim.y * thread.blockDim.y;
-                        //thread.SyncThreadsCount(true);
                     }
                     i += thread.gridDim.x * thread.blockDim.x;
-                    //thread.SyncThreadsCount(true);
                 }
             }
             if (matrix.GetLength(0) == 1)
             {
-                //SubMatrix(thread, matrix, 0, 0, 1, 0, target);
-
                 int numRows = 1;
                 int numCols = matrix.GetLength(1);
 
@@ -326,10 +290,8 @@ namespace CudaRbm
                         target[i, n] = matrix[i, n];
 
                         n += thread.gridDim.y * thread.blockDim.y;
-                        //thread.SyncThreadsCount(true);
                     }
                     i += thread.gridDim.x * thread.blockDim.x;
-                    //thread.SyncThreadsCount(true);
                 }
             }
             thread.SyncThreads();
@@ -382,10 +344,7 @@ namespace CudaRbm
                     {
                         matrix[index, i] = value;
 
-                        //j += thread.gridDim.y * thread.blockDim.y;
-
                         i += thread.gridDim.x * thread.blockDim.x;
-                        //thread.SyncThreadsCount(true);
                     }
                 }
             }
@@ -398,7 +357,6 @@ namespace CudaRbm
                         matrix[j, index] = value;
 
                         j += thread.gridDim.y * thread.blockDim.y;
-                        //thread.SyncThreadsCount(true);
                     }
                 }
             }
@@ -419,10 +377,8 @@ namespace CudaRbm
                     target[i, n] = matrix1[i, n] + matrix2[i, n];
 
                     n += thread.gridDim.y * thread.blockDim.y;
-                    //thread.SyncThreadsCount(true);
                 }
                 i += thread.gridDim.x * thread.blockDim.x;
-                //thread.SyncThreadsCount(true);
             }
             thread.SyncThreads();
         }
@@ -442,10 +398,8 @@ namespace CudaRbm
                     target[i, n] = matrix1[i, n] - matrix2[i, n];
 
                     n += thread.gridDim.y * thread.blockDim.y;
-                    //thread.SyncThreadsCount(true);
                 }
                 i += thread.gridDim.x * thread.blockDim.x;
-                //thread.SyncThreadsCount(true);
             }
             thread.SyncThreads();
         }
@@ -466,10 +420,8 @@ namespace CudaRbm
                         target[i, n] = matrix1[i, n] * matrix1[i, n];
 
                         n += thread.gridDim.y * thread.blockDim.y;
-                        //thread.SyncThreadsCount(true);
                     }
                     i += thread.gridDim.x * thread.blockDim.x;
-                    //thread.SyncThreadsCount(true);
                 }
                 thread.SyncThreads();
             }
@@ -483,10 +435,8 @@ namespace CudaRbm
                         target[i, n] = GMath.Pow(matrix1[i, n], power);
 
                         n += thread.gridDim.y * thread.blockDim.y;
-                        //thread.SyncThreadsCount(true);
                     }
                     i += thread.gridDim.x * thread.blockDim.x;
-                    //thread.SyncThreadsCount(true);
                 }
                 thread.SyncThreads();
             }
@@ -520,10 +470,8 @@ namespace CudaRbm
                     matrix[i, n] = matrix[i, n] < 0.5f ? 0f : 1f;
 
                     n += thread.gridDim.y * thread.blockDim.y;
-                    //thread.SyncThreadsCount(true);
                 }
                 i += thread.gridDim.x * thread.blockDim.x;
-                //thread.SyncThreadsCount(true);
             }
         }
     }

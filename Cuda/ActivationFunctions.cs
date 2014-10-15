@@ -28,10 +28,6 @@ namespace CudaRbm
                 {
                     output[i, n] = LogisticValue(input[i, n]);
 
-                    //output[i, n] = 1f;
-
-                    //output[i, n] = 1f / (1f + GMath.Exp(-1 * input[i, n]));
-
                     n += thread.gridDim.y * thread.blockDim.y;
                 }
                 i += thread.gridDim.x * thread.blockDim.x;

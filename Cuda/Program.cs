@@ -104,7 +104,6 @@ namespace CudaRbm
                 dev.UnloadModules();
                 dev.FreeAll();
             }
-            //}
         }
     }
 
@@ -145,14 +144,6 @@ namespace CudaRbm
             }
         }
 
-        //public static void PrintMap(this double[,] mat, int rows)
-        //{
-        //    mat.ToArray().Flatten().PrintMap(rows);
-        //}
 
-        //public static double[] Flatten(this double[][] arr)
-        //{
-        //    return arr.SelectMany(x => x).ToArray();
-        //}
     }
 }

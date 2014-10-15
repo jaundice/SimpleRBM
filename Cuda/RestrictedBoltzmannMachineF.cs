@@ -93,35 +93,6 @@ namespace CudaRbm
             get { return string.Format("Layer {0}x{1}", NumVisibleElements, NumHiddenElements); }
         }
 
-        //public unsafe static void GuassianDistribution(GPGPU gpu, GPGPURAND rand, ref double[,] array, int x, int y)
-        //{
-        //    //var temp = _gpu.Allocate<double>(y);
-
-        //    //for (var i = 0; i < x; i++)
-        //    //{
-        //    //    rand.GenerateNormal(temp, 0f, 1f, x);
-        //    //    _gpu.Launch(1, 1024, CopyToArrayAtN, array, temp, i);
-        //    //}
-        //    ////_gpu.Free(temp);
-        //    /// 
-        //    var local = new double[x, y];
-        //    Random rnd = new Random();
-
-        //    GCHandle handle = GCHandle.Alloc(local, GCHandleType.Pinned);
-        //    var arr = (double*)handle.AddrOfPinnedObject();
-        //    for (var i = 0; i < x; i++)
-        //    {
-        //        for (var j = 0; j < y; j++)
-        //        {
-        //            arr[i * y + j] = Math.Sqrt(-2.0 * Math.Log(rnd.NextDouble())) * Math.Sin(2.0 * Math.PI * rnd.NextDouble()); ;
-        //        }
-        //    }
-        //    handle.Free();
-
-        //    _gpu.CopyToDevice(local, array);
-        //}
-
-
         public float[,] GetHiddenLayer(float[,] srcData)
         {
             int numExamples = srcData.GetLength(0);
@@ -561,35 +532,7 @@ namespace CudaRbm
             gpu.Free(tempGaussian);
         }
 
-        //public unsafe static void UniformDistribution(GPGPU gpu, GPGPURAND rand, ref double[,] array, int x, int y)
-        //{
-
-        //    var local = new double[x, y];
-        //    Random rnd = new Random();
-
-        //    GCHandle handle = GCHandle.Alloc(local, GCHandleType.Pinned);
-        //    var arr = (double*)handle.AddrOfPinnedObject();
-        //    for (var i = 0; i < x; i++)
-        //    {
-        //        for (var j = 0; j < y; j++)
-        //        {
-        //            arr[i * y + j] = rnd.NextDouble();
-        //        }
-        //    }
-        //    handle.Free();
-
-        //    _gpu.CopyToDevice(local, array);
-
-        //    //var temp = _gpu.Allocate<double>(y);
-
-        //    //for (var i = 0; i < x; i++)
-        //    //{
-        //    //    rand.GenerateUniform(temp);
-        //    //    _gpu.Launch(1, y, CopyToArrayAtN, array, temp, i);
-        //    //}
-        //    ////_gpu.Free(temp);
-        //}
-
+        
         public static void UniformDistribution(GPGPU gpu, GPGPURAND rand, float[,] array, int x, int y)
         {
 
@@ -598,11 +541,6 @@ namespace CudaRbm
             for (int i = 0; i < x; i++)
             {
                 rand.GenerateUniform(tempUniform, y);
-
-#if DEBUGCUDA
-                var localUniform = new float[y];
-                gpu.CopyFromDevice(tempUniform, localUniform);
-#endif
 
                 gpu.Launch(new dim3(16), new dim3(1024), CopyToArrayAtN, array, tempUniform, i);
             }
@@ -624,24 +562,7 @@ namespace CudaRbm
             thread.SyncThreads();
         }
 
-        //[Cudafy]
-        //public static void InitializeRandoms(GThread thread, RandStateXORWOW[] array)
-        //{
-        //    int i = thread.blockIdx.x + thread.blockIdx.x * thread.blockDim.x;
-        //    int j = thread.blockIdx.y + thread.blockIdx.y * thread.blockDim.y;
-
-        //    while (i < array.GetLength(0))
-        //    {
-        //        while (j < 1)
-        //        {
-        //            thread.curand_init(1234, (ulong)i, (ulong)0, ref array[i]);
-
-        //            j += thread.blockIdx.y * thread.blockDim.y;
-        //        }
-        //        i += thread.blockIdx.x * thread.blockDim.x;
-        //    }
-        //}
-
+   
         private void RaiseTrainEnd(int epoch, float error)
         {
             if (TrainEnd != null)

@@ -65,12 +65,6 @@ namespace CudaRbm
 
         public float[,] DayDream(int numberOfDreams)
         {
-            //throw new NotImplementedException();
-
-
-
-            //double[,] dreamRawData = Distributions.UniformRandromMatrixBool(numberOfDreams,
-            //    Machines[0].NumVisibleElements);
 
             var elems = Machines[0].NumVisibleElements;
             var dreamRawData = _gpu.Allocate<float>(numberOfDreams, elems);
