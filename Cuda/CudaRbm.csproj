@@ -96,7 +96,6 @@
   <ItemGroup>
     <Compile Include="ActivationFunctions.cs" />
     <Compile Include="DeepBeliefNetworkF.cs" />
-    <Compile Include="Distributions.cs" />
     <Compile Include="IDeepBeliefNetwork.cs" />
     <Compile Include="IRestrictedBoltzmannMachine.cs" />
     <Compile Include="Matrix2D.cs" />

@@ -32,7 +32,7 @@ namespace CudaRbm
             var arch = dev.GetArchitecture();
             var plat = Environment.Is64BitProcess ? ePlatform.x64 : ePlatform.x86;
 
-            if(plat == ePlatform.x64)
+            if (plat == ePlatform.x64)
                 throw new Exception("CUDA Random will fail currently on x64");
 
             CudafyModule mod = CudafyTranslator.Cudafy(
@@ -56,7 +56,6 @@ namespace CudaRbm
                     rand.SetPseudoRandomGeneratorSeed((ulong)DateTime.Now.Ticks);
                     rand.GenerateSeeds();
                 }
-                dev.Synchronize();
 
 
                 //Although it is tempting to say that the final hidden layer has 10 features (10 numbers) but let's keep it real.
@@ -66,13 +65,14 @@ namespace CudaRbm
                     dev,
                     rand,
                     new dim3(8),
-                    new dim3(32, 32),
-                    new[] { 1024, 512, 256, 128, 64, 10 },
+                    new dim3(4, 256),
+                    new[] { 1024, 512, 256, 128, 64, 16 },
                     //new[] { 1024, 128, 64, 10 },
-                    0.1f);
+                     //new[] { 1024, 256, 64, 16 },
+                    0.3f);
 
                 Console.WriteLine("Training Network");
-                rbm.TrainAll(Matrix2D.JaggedToMultidimesional(trainingData.Take(5).ToArray()) /*, 1500, 5*/);
+                rbm.TrainAll(Matrix2D.JaggedToMultidimesional(trainingData.Take(200).ToArray()) /*, 1500, 5*/);
 
 
                 Console.WriteLine("++++++++++++++++++++++++++++++++++++++++++++");
@@ -80,7 +80,7 @@ namespace CudaRbm
                 Console.WriteLine();
                 //Take a sample of input arrays and try to reconstruct them.
                 float[,] reconstructedItems =
-                    rbm.Reconstruct(Matrix2D.JaggedToMultidimesional(trainingData.Skip(50).Take(200).ToArray()));
+                    rbm.Reconstruct(Matrix2D.JaggedToMultidimesional(trainingData.Skip(200).Take(200).ToArray()));
 
                 reconstructedItems.PrintMap();
 
