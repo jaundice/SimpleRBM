@@ -4,7 +4,7 @@ using Cudafy;
 
 namespace CudaRbm
 {
-    public static class ActivationFunctions
+    public static class ActivationFunctionsCuda
     {
         [Cudafy]
         public static float LogisticValue(float x)

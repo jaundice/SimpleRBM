@@ -17,7 +17,7 @@ namespace MultidimRBM
             double[][] trainingData = DataParser.Parse("optdigits-tra.txt").ToArray();
 
             //Although it is tempting to say that the final hidden layer has 10 features (10 numbers) but let's keep it real.
-            var rbm = new DeepBeliefNetworkD(new[] { 1024, 512, 256, 128, 64,  16, 10}, 0.3);
+            var rbm = new DeepBeliefNetworkD(new[] { 1024, 512, 10 }, 0.1);
             //var rbm = new DeepBeliefNetworkD(new[] { 1024, 128, 16 }, 0.3);
 
 

@@ -11,15 +11,13 @@ namespace CudaRbm
         private readonly RestrictedBoltzmannMachineF[] Machines;
         private GPGPU _gpu;
         private GPGPURAND _rand;
-        private dim3 _block;
-        private dim3 _grid;
 
-        public DeepBeliefNetworkF(GPGPU gpu, GPGPURAND rand, dim3 grid, dim3 block, int[] layerSizes, float learningRate)
+
+        public DeepBeliefNetworkF(GPGPU gpu, GPGPURAND rand, int[] layerSizes, float learningRate)
         {
             _gpu = gpu;
             _rand = rand;
-            _grid = grid;
-            _block = block;
+
 
             Machines = new RestrictedBoltzmannMachineF[layerSizes.Length - 1];
 
@@ -27,7 +25,7 @@ namespace CudaRbm
             {
                 Console.WriteLine("Building Layer {0}", i);
 
-                var rbm = new RestrictedBoltzmannMachineF(gpu, rand, grid, block, layerSizes[i], layerSizes[i + 1], learningRate);
+                var rbm = new RestrictedBoltzmannMachineF(gpu, rand, layerSizes[i], layerSizes[i + 1], learningRate);
                 rbm.EpochEnd += OnRbm_EpochEnd;
                 Machines[i] = rbm;
             }
@@ -67,20 +65,22 @@ namespace CudaRbm
         {
 
             var elems = Machines[0].NumVisibleElements;
-            var dreamRawData = _gpu.Allocate<float>(numberOfDreams, elems);
-            RestrictedBoltzmannMachineF.UniformDistribution(_gpu, _rand, dreamRawData, numberOfDreams, elems);
-            _gpu.Launch(_grid, _block, Matrix2D.ToBinary, dreamRawData);
+            using (var dreamRawData = RestrictedBoltzmannMachineF.UniformDistribution(_gpu, _rand, numberOfDreams, elems))
+            {
+                dim3 grid, block;
+                ThreadOptimiser.Instance.GetStrategy(numberOfDreams, elems, out grid, out block);
 
-            var localRaw = new float[numberOfDreams, elems];
-            _gpu.CopyFromDevice(dreamRawData, localRaw);
-            _gpu.Free(dreamRawData);
-            
-            
-            float[,] ret = Reconstruct(localRaw);
+                _gpu.Launch(grid, block, Matrix2DCuda.ToBinary, dreamRawData.Matrix);
+
+                var localRaw = new float[numberOfDreams, elems];
+                _gpu.CopyFromDevice(dreamRawData, localRaw);
+                float[,] ret = Reconstruct(localRaw);
+                return ret;
+            }
 
 
 
-            return ret;
+
         }
 
         public float[,] Train(float[,] data, int layerNumber, out float error)

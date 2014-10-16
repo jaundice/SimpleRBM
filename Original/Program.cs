@@ -15,10 +15,10 @@ namespace DeepLearn
         {
             //Our dataset cosists of images of handwritten digits (0-9)
             //Let's only take 100 of those for training
-            var trainingData =  DataParser.Parse("optdigits-tra.txt").Take(100).ToArray();
+            var trainingData =  DataParser.Parse("optdigits-tra.txt").Take(500).ToArray();
 
             //Although it is tempting to say that the final hidden layer has 10 features (10 numbers) but let's keep it real.
-            var rbm = new DeepBeliefNetwork(new[] {1024, 50,16}, 0.3);
+            var rbm = new DeepBeliefNetwork( new[] { 1024, 512, 64, 16 },0.1);
         
             rbm.TrainAll(trainingData, 150, 5);
      

@@ -38,10 +38,12 @@ namespace CudaRbm
             CudafyModule mod = CudafyTranslator.Cudafy(
                 plat,
                 arch,
-                typeof(ActivationFunctions),
-                typeof(Matrix2D),
+                typeof(ActivationFunctionsCuda),
+                typeof(Matrix2DCuda),
                 typeof(RestrictedBoltzmannMachineF)
                 );
+
+            ThreadOptimiser.Instance = new ThreadOptimiser(props.MultiProcessorCount, props.MaxThreadsPerBlock, props.MaxThreadsPerMultiProcessor, props.MaxGridSize, props.MaxThreadsSize);
 
             GPGPURAND rand = props.Name == "Emulated GPGPU Kernel" ? (GPGPURAND)null : GPGPURAND.Create(dev, curandRngType.CURAND_RNG_PSEUDO_DEFAULT);
             dev.Synchronize();
@@ -61,18 +63,19 @@ namespace CudaRbm
                 //Although it is tempting to say that the final hidden layer has 10 features (10 numbers) but let's keep it real.
                 Console.WriteLine("Building Deep Belief network");
 
+
+
+
                 var rbm = new DeepBeliefNetworkF(
                     dev,
                     rand,
-                    new dim3(8),
-                    new dim3(4, 256),
-                    new[] { 1024, 512, 256, 128, 64, 16 },
-                    //new[] { 1024, 128, 64, 10 },
-                     //new[] { 1024, 256, 64, 16 },
-                    0.3f);
+                    //new[] { 1024, 768, 512, 256, 64, 32, 10 },
+                    //new[] { 1024, 512, 256, 64, 16 },
+                     new[] { 1024, 512, 64, 16 },
+                    0.1f);
 
                 Console.WriteLine("Training Network");
-                rbm.TrainAll(Matrix2D.JaggedToMultidimesional(trainingData.Take(200).ToArray()) /*, 1500, 5*/);
+                rbm.TrainAll(Matrix2DCuda.JaggedToMultidimesional(trainingData.Take(500).ToArray()) /*, 1500, 5*/);
 
 
                 Console.WriteLine("++++++++++++++++++++++++++++++++++++++++++++");
@@ -80,7 +83,7 @@ namespace CudaRbm
                 Console.WriteLine();
                 //Take a sample of input arrays and try to reconstruct them.
                 float[,] reconstructedItems =
-                    rbm.Reconstruct(Matrix2D.JaggedToMultidimesional(trainingData.Skip(200).Take(200).ToArray()));
+                    rbm.Reconstruct(Matrix2DCuda.JaggedToMultidimesional(trainingData.Skip(500).Take(200).ToArray()));
 
                 reconstructedItems.PrintMap();
 

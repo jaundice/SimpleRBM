@@ -42,3 +42,5 @@ Cuda/Readme/example_source_code.cs.txt
 Cuda/Readme/ILSpy-license.txt
 Cuda/Readme/README.txt
 Cuda/Tools/place_these_executables_in_same_folder_as_Cudafy.NET.dll.txt
+*.cu
+*.ptx

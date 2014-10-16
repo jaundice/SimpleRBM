@@ -94,14 +94,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ActivationFunctions.cs" />
+    <Compile Include="ActivationFunctionsCuda.cs" />
     <Compile Include="DeepBeliefNetworkF.cs" />
+    <Compile Include="GPGPUEx.cs" />
     <Compile Include="IDeepBeliefNetwork.cs" />
     <Compile Include="IRestrictedBoltzmannMachine.cs" />
+    <Compile Include="Location.cs" />
+    <Compile Include="Matrix.cs" />
+    <Compile Include="Matrix1D.cs" />
     <Compile Include="Matrix2D.cs" />
+    <Compile Include="Matrix2DCuda.cs" />
+    <Compile Include="MatrixEx.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RestrictedBoltzmannMachineF.cs" />
+    <Compile Include="ThreadOptimiser.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
