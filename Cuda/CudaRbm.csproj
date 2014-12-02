@@ -34,7 +34,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
+    <Prefer32Bit>true</Prefer32Bit>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
@@ -86,7 +86,9 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -95,11 +97,24 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ActivationFunctionsCuda.cs" />
+    <Compile Include="Demo\CommandLine.cs" />
+    <Compile Include="Demo\Kaggle.cs" />
+    <Compile Include="Demo\MNist.cs" />
+    <Compile Include="Demo\HandwrittenNumbers.cs" />
+    <Compile Include="DataParser.cs" />
     <Compile Include="DeepBeliefNetworkF.cs" />
+    <Compile Include="EpochCountExitCondition.cs" />
+    <Compile Include="EpochCountExitConditionFactory.cs" />
+    <Compile Include="ExtensionClasses.cs" />
     <Compile Include="GPGPUEx.cs" />
     <Compile Include="IDeepBeliefNetwork.cs" />
+    <Compile Include="IExitConditionEvaluator.cs" />
+    <Compile Include="IExitConditionEvaluatorFactory.cs" />
+    <Compile Include="ImageUtils.cs" />
     <Compile Include="IRestrictedBoltzmannMachine.cs" />
     <Compile Include="Location.cs" />
+    <Compile Include="ManualKeyPressEvaluator.cs" />
+    <Compile Include="ManualKeyPressExitEvaluatorFactory.cs" />
     <Compile Include="Matrix.cs" />
     <Compile Include="Matrix1D.cs" />
     <Compile Include="Matrix2D.cs" />

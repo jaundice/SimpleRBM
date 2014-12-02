@@ -1,4 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Cudafy;
 using Cudafy.Host;
@@ -6,30 +10,86 @@ using Cudafy.Maths.RAND;
 
 namespace CudaRbm
 {
-    public class DeepBeliefNetworkF : IDeepBeliefNetwork<float>
+    public class DeepBeliefNetworkF : IDeepBeliefNetwork<float>, IDisposable
     {
         private readonly RestrictedBoltzmannMachineF[] Machines;
-        private GPGPU _gpu;
-        private GPGPURAND _rand;
+
+        public int NumMachines
+        {
+            get { return Machines.Length; }
+        }
+        private readonly GPGPU _gpu;
+        private readonly GPGPURAND _rand;
 
 
-        public DeepBeliefNetworkF(GPGPU gpu, GPGPURAND rand, int[] layerSizes, float learningRate)
+        public DeepBeliefNetworkF(GPGPU gpu, GPGPURAND rand, DirectoryInfo network, float learningRate,
+            IExitConditionEvaluatorFactory<float> exitConditionExitConditionEvaluatorFactory, int[] appendLayers = null)
         {
             _gpu = gpu;
             _rand = rand;
+            ExitConditionEvaluatorFactory = exitConditionExitConditionEvaluatorFactory;
+            List<LayerSaveInfoF> saveInfos =
+                network.GetFiles("*.bin")
+                    .OrderBy(a => int.Parse(Regex.Match(Path.GetFileNameWithoutExtension(a.Name), "[0-9]+").Value))
+                    .Select(a => new LayerSaveInfoF(a.FullName)).ToList();
+
+            appendLayers = appendLayers ?? new int[0];
+            Machines =
+                new RestrictedBoltzmannMachineF[saveInfos.Count() + (appendLayers.Length == 0 ? 0 : appendLayers.Length)
+                    ];
+
+
+            for (int i = 0; i < saveInfos.Count; i++)
+            {
+                Console.WriteLine("Building Layer {0}: {1}x{2}", i, saveInfos[i].NumVisible, saveInfos[i].NumHidden);
+
+                var rbm = new RestrictedBoltzmannMachineF(gpu, rand, saveInfos[i].NumVisible, saveInfos[i].NumHidden,
+                    saveInfos[i].Weights,
+                    ExitConditionEvaluatorFactory.Create(i, saveInfos[i].NumVisible, saveInfos[i].NumHidden),
+                    learningRate);
+                rbm.EpochEnd += OnRbm_EpochEnd;
+                Machines[i] = rbm;
+            }
+
+            if (appendLayers.Length > 0)
+            {
+                for (int j = -1; j < appendLayers.Length - 1; j++)
+                {
+                    Console.WriteLine("Appending Layer {0}: {1}x{2}", j + saveInfos.Count + 1,
+                        j == -1 ? saveInfos.Last().NumHidden : appendLayers[j], appendLayers[j + 1]);
+
+                    var rbm = new RestrictedBoltzmannMachineF(gpu, rand,
+                        j == -1 ? saveInfos.Last().NumHidden : appendLayers[j], appendLayers[j + 1],
+                        ExitConditionEvaluatorFactory.Create(saveInfos.Count + j,
+                            j == -1 ? saveInfos.Last().NumHidden : appendLayers[j], appendLayers[j + 1]), learningRate);
+                    rbm.EpochEnd += OnRbm_EpochEnd;
+                    Machines[saveInfos.Count + j + 1] = rbm;
+                }
+            }
+        }
+
+        public DeepBeliefNetworkF(GPGPU gpu, GPGPURAND rand, int[] layerSizes, float learningRate,
+            IExitConditionEvaluatorFactory<float> exitConditionExitConditionEvaluatorFactory)
+        {
+            _gpu = gpu;
+            _rand = rand;
+            ExitConditionEvaluatorFactory = exitConditionExitConditionEvaluatorFactory;
 
 
             Machines = new RestrictedBoltzmannMachineF[layerSizes.Length - 1];
 
             for (int i = 0; i < layerSizes.Length - 1; i++)
             {
-                Console.WriteLine("Building Layer {0}", i);
+                Console.WriteLine("Building Layer {0}: {1}x{2}", i, layerSizes[i], layerSizes[i + 1]);
 
-                var rbm = new RestrictedBoltzmannMachineF(gpu, rand, layerSizes[i], layerSizes[i + 1], learningRate);
+                var rbm = new RestrictedBoltzmannMachineF(gpu, rand, layerSizes[i], layerSizes[i + 1],
+                    ExitConditionEvaluatorFactory.Create(i, layerSizes[i], layerSizes[i + 1]), learningRate);
                 rbm.EpochEnd += OnRbm_EpochEnd;
                 Machines[i] = rbm;
             }
         }
+
+        public bool Disposed { get; protected set; }
 
         public float[,] Encode(float[,] data)
         {
@@ -63,9 +123,10 @@ namespace CudaRbm
 
         public float[,] DayDream(int numberOfDreams)
         {
-
-            var elems = Machines[0].NumVisibleElements;
-            using (var dreamRawData = RestrictedBoltzmannMachineF.UniformDistribution(_gpu, _rand, numberOfDreams, elems))
+            int elems = Machines[0].NumVisibleElements;
+            using (
+                Matrix2D<float> dreamRawData = RestrictedBoltzmannMachineF.UniformDistribution(_gpu, _rand,
+                    numberOfDreams, elems))
             {
                 dim3 grid, block;
                 ThreadOptimiser.Instance.GetStrategy(numberOfDreams, elems, out grid, out block);
@@ -77,10 +138,6 @@ namespace CudaRbm
                 float[,] ret = Reconstruct(localRaw);
                 return ret;
             }
-
-
-
-
         }
 
         public float[,] Train(float[,] data, int layerNumber, out float error)
@@ -118,6 +175,33 @@ namespace CudaRbm
         public event EventHandler<EpochEventArgs<float>> EpochEnd;
 
         public event EventHandler<EpochEventArgs<float>> TrainEnd;
+        public IExitConditionEvaluatorFactory<float> ExitConditionEvaluatorFactory { get; protected set; }
+
+        public IEnumerable<ILayerSaveInfo<float>> GetLayerSaveInfos()
+        {
+            return Machines.Select(restrictedBoltzmannMachineF => restrictedBoltzmannMachineF.GetSaveInfo());
+        }
+
+        public void Dispose()
+        {
+            if (!Disposed)
+            {
+                Disposed = true;
+                Dispose(true);
+                GC.SuppressFinalize(this);
+            }
+        }
+
+        public void TrainLayersFrom(float[,] visibleData, int startDepth)
+        {
+            float error;
+            for (int i = 0; i < Machines.Length; i++)
+            {
+                visibleData = i < startDepth
+                    ? Machines[i].GetHiddenLayer(visibleData)
+                    : Train(visibleData, i, out error);
+            }
+        }
 
         private void RaiseTrainEnd(float error)
         {
@@ -142,6 +226,22 @@ namespace CudaRbm
                     Epoch = epoch,
                     Error = error
                 });
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                foreach (RestrictedBoltzmannMachineF restrictedBoltzmannMachineF in Machines)
+                {
+                    restrictedBoltzmannMachineF.Dispose();
+                }
+            }
+        }
+
+        ~DeepBeliefNetworkF()
+        {
+            Dispose(false);
         }
     }
 }

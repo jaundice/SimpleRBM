@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Cudafy;
 
 namespace CudaRbm
@@ -7,10 +8,10 @@ namespace CudaRbm
     {
         public static ThreadOptimiser Instance;
 
-        public ThreadOptimiser(int maxProcs, int maxThreadsPerBlock, int maxThreadsPerMultiProcessor, dim3 maxGridSize,
+        public ThreadOptimiser(int multiprocessors, int maxThreadsPerBlock, int maxThreadsPerMultiProcessor, dim3 maxGridSize,
             dim3 maxBlockSize)
         {
-            MaxProcessors = maxProcs;
+            MultiProcessorCount = multiprocessors;
             MaxThreadsPerBlock = maxThreadsPerBlock;
             MaxThreadsPerMultiProcessor = maxThreadsPerMultiProcessor;
             MaxGridSize = maxGridSize;
@@ -19,7 +20,7 @@ namespace CudaRbm
 
         public dim3 MaxGridSize { get; protected set; }
 
-        public int MaxProcessors { get; protected set; }
+        public int MultiProcessorCount { get; protected set; }
         public int MaxThreadsPerBlock { get; protected set; }
 
         public int MaxThreadsPerMultiProcessor { get; protected set; }
@@ -33,10 +34,77 @@ namespace CudaRbm
         public void GetStrategy(int xReads, int yReads, out dim3 grid, out dim3 block)
         {
             //temp for now
+            //todo: work out better heuristic for assigning grids/blocks/threads
 
-            grid = new dim3(8);
-            block = new dim3(4, 256);
-            return;
+            //temp for now
+            Trace.TraceInformation("Generating Strategy for {{ xReads:{0}, yReads:{1} }}", xReads, yReads);
+
+
+
+            if (yReads == 1)
+            {
+                //grid = new dim3(16);
+                //block = new dim3(512);
+
+                grid = new dim3(Math.Max(1, (int)Math.Floor(xReads / 512f)));
+                block = new dim3(512, 1);
+            }
+            else if (xReads == 1)
+            {
+                grid = new dim3(1, Math.Max(1, (int)Math.Floor(yReads / 512f)));
+                block = new dim3(1, 512);
+            }
+            else
+            {
+                //grid = new dim3(16);
+                //block = new dim3(4, 256);
+                if (xReads >= yReads)
+                {
+                    int small, big;
+                    GetDimension(yReads, out small, out big);
+                    grid = new dim3(GetGrid((int)Math.Floor(xReads / (float)small)));
+                    block = new dim3(small, big);
+                }
+                else
+                {
+                    int small, big;
+                    GetDimension(xReads, out small, out big);
+                    grid = new dim3(1, GetGrid((int)Math.Floor(yReads / (float)small)));
+                    block = new dim3(big, small);
+                }
+            }
+
+            Trace.TraceInformation("block {{ x:{0}, y:{1} }} grid {{ x:{2}, y:{3} }}", block.x, block.y, grid.x, grid.y);
+        }
+
+        static int GetGrid(int input)
+        {
+            return Math.Max(1, (int)Math.Floor(input / 2f));
+        }
+
+        static void GetDimension(int width, out int small, out int big)
+        {
+            if (width > 256)
+            {
+                small = 2;
+                big = 256;
+                return;
+            }
+            if (width > 128)
+            {
+                small = 4;
+                big = 128;
+                return;
+            }
+            if (width > 64)
+            {
+                small = 8;
+                big = 64;
+                return;
+            }
+
+            small = 16;
+            big = 32;
 
 
         }

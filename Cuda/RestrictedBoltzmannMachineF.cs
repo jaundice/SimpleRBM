@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 using Cudafy;
 using Cudafy.Host;
@@ -11,23 +10,21 @@ using Cudafy.Maths.RAND;
 
 namespace CudaRbm
 {
-    public class RestrictedBoltzmannMachineF : IRestrictedBoltzmannMachine<float>
+    public class RestrictedBoltzmannMachineF : IRestrictedBoltzmannMachine<float>, IDisposable
     {
-        private readonly float LearningRate;
-        private readonly int NumHiddenElements;
-        public readonly int NumVisibleElements;
         private readonly GPGPU _gpu;
         private readonly GPGPURAND _rand;
 
         public RestrictedBoltzmannMachineF(GPGPU gpu, GPGPURAND rand, int numVisible,
             int numHidden,
+            IExitConditionEvaluator<float> exitCondition,
             float learningRate = 0.1f)
         {
             _gpu = gpu;
             _rand = rand;
 
 
-
+            ExitConditionEvaluator = exitCondition;
             NumHiddenElements = numHidden;
             NumVisibleElements = numVisible;
             LearningRate = learningRate;
@@ -46,12 +43,34 @@ namespace CudaRbm
             Console.WriteLine("Layer Initialized");
         }
 
+        public RestrictedBoltzmannMachineF(GPGPU gpu, GPGPURAND rand, int numVisible, int numHidden, float[,] weights, IExitConditionEvaluator<float> exitCondition, float learningRate)
+        {
+            _gpu = gpu;
+            _rand = rand;
+
+
+            ExitConditionEvaluator = exitCondition;
+            NumHiddenElements = numHidden;
+            NumVisibleElements = numVisible;
+            LearningRate = learningRate;
+
+            Matrix2D<float> gpuweights = _gpu.AllocateAndSet<float>(numVisible + 1, numHidden + 1);
+            _gpu.CopyToDevice(weights, gpuweights);
+
+            Weights = gpuweights;
+        }
+
         private Matrix2D<float> Weights { get; set; }
 
         public string LayerName
         {
             get { return string.Format("Layer {0}x{1}", NumVisibleElements, NumHiddenElements); }
         }
+
+        public float LearningRate { get; protected set; }
+        public int NumHiddenElements { get; protected set; }
+        public int NumVisibleElements { get; protected set; }
+        public IExitConditionEvaluator<float> ExitConditionEvaluator { get; protected set; }
 
         public float[,] GetHiddenLayer(float[,] srcData)
         {
@@ -68,24 +87,24 @@ namespace CudaRbm
 
             data.UpdateValuesAlongAxis(0, 1.0f, Axis.Column);
 
-            var hiddenActivations = data.Multiply(Weights);
+            Matrix2D<float> hiddenActivations = data.Multiply(Weights);
 
 
             data.Dispose();
 
-            var hiddenProbs = hiddenActivations.Logistic();
+            Matrix2D<float> hiddenProbs = hiddenActivations.Logistic();
 
             hiddenActivations.Dispose();
 
 
             Matrix2D<float> uniformRand = UniformDistribution(_gpu, _rand, numExamples, NumHiddenElements + 1);
 
-            var hsTemp = hiddenProbs.GreaterThan(uniformRand);
+            Matrix2D<float> hsTemp = hiddenProbs.GreaterThan(uniformRand);
 
             hiddenProbs.Dispose();
             uniformRand.Dispose();
 
-            var hiddenStates = hsTemp.SubMatrix(0, 1);
+            Matrix2D<float> hiddenStates = hsTemp.SubMatrix(0, 1);
 
             hsTemp.Dispose();
 
@@ -103,39 +122,39 @@ namespace CudaRbm
             int numExamples = srcData.GetLength(0);
 
             Matrix2D<float> data = _gpu.AllocateAndSet<float>(numExamples, srcData.GetLength(1) + 1);
-            var tempSrcData = MatrixEx.Upload(_gpu, srcData);
+            Matrix2D<float> tempSrcData = MatrixEx.Upload(_gpu, srcData);
 
 
             data.InsertValuesFrom(0, 1, tempSrcData);
 
             tempSrcData.Dispose();
 
-            var transposedWeights = Weights.Transpose();
+            Matrix2D<float> transposedWeights = Weights.Transpose();
 
-            var visibleActivations = data.Multiply(transposedWeights);
+            Matrix2D<float> visibleActivations = data.Multiply(transposedWeights);
 
 
             data.Dispose();
             transposedWeights.Dispose();
 
-            var visibleProbs = visibleActivations.Logistic();
+            Matrix2D<float> visibleProbs = visibleActivations.Logistic();
 
             visibleActivations.Dispose();
 
 
             Matrix2D<float> randomDist = UniformDistribution(_gpu, _rand, numExamples, NumVisibleElements + 1);
 
-            var visibleStatesTemp = visibleProbs.GreaterThan(randomDist);
+            Matrix2D<float> visibleStatesTemp = visibleProbs.GreaterThan(randomDist);
 
             visibleProbs.Dispose();
             randomDist.Dispose();
 
-            var visibleStates = visibleStatesTemp.SubMatrix(0, 1);
+            Matrix2D<float> visibleStates = visibleStatesTemp.SubMatrix(0, 1);
 
 
             visibleStatesTemp.Dispose();
 
-            var localVisStates = visibleStates.CopyLocal();
+            float[,] localVisStates = visibleStates.CopyLocal();
 
             visibleStates.Dispose();
             return localVisStates;
@@ -150,100 +169,56 @@ namespace CudaRbm
         public float[,] DayDream(int numberOfSamples)
         {
             Matrix2D<float> data = _gpu.AllocateAndSet<float>(numberOfSamples, NumVisibleElements + 1);
-            //_gpu.Launch(_grid, _block, Matrix2DCuda.Ones, data.Matrix);
             data.Ones();
 
             Matrix2D<float> uniform = UniformDistribution(_gpu, _rand, 1, NumVisibleElements);
 
-            //_gpu.Launch(_grid, _block, Matrix2DCuda.InsertValuesFrom, data.Matrix, 0, 1, uniform.Matrix, 0, 0);
-
             data.InsertValuesFrom(0, 1, uniform);
 
             uniform.Dispose();
-
-
-            //_gpu.Launch(_grid, _block, Matrix2DCuda.UpdateValueAlongAxis, data.Matrix, 0, 1f, Matrix2DCuda.TRUE);
 
             data.UpdateValuesAlongAxis(0, 1f, Axis.Row);
 
 
             for (int i = 0; i < numberOfSamples; i++)
             {
-                //Matrix2D<float> visible = _gpu.AllocateAndSet<float>(1, NumVisibleElements + 1);
-                //_gpu.Launch(_grid, _block, Matrix2DCuda.SubMatrix, data.Matrix, i, 0, 1, 0, visible.Matrix);
+                Matrix2D<float> visible = data.SubMatrix(i, 0, 1, 0);
 
-                var visible = data.SubMatrix(i, 0, 1, 0);
-
-
-                //Matrix2D<float> hiddenActivations = _gpu.AllocateAndSet<float>(1, NumHiddenElements + 1);
-                //_gpu.Launch(_grid, _block, Matrix2DCuda.Multiply, visible.Matrix, Weights.Matrix, hiddenActivations.Matrix);
-
-                var hiddenActivations = visible.Multiply(Weights);
+                Matrix2D<float> hiddenActivations = visible.Multiply(Weights);
 
                 visible.Dispose();
 
-
-                //Matrix2D<float> hiddenProbs = _gpu.AllocateAndSet<float>(1, NumHiddenElements + 1);
-                //_gpu.Launch(_grid, _block, ActivationFunctionsCuda.Logistic, hiddenActivations.Matrix, hiddenProbs.Matrix);
-
-                var hiddenProbs = hiddenActivations.Logistic();
+                Matrix2D<float> hiddenProbs = hiddenActivations.Logistic();
 
                 hiddenActivations.Dispose();
 
                 Matrix2D<float> uniform2 = UniformDistribution(_gpu, _rand, 1, NumHiddenElements + 1);
-                //Matrix2D<float> hiddenStates = _gpu.AllocateAndSet<float>(1, NumHiddenElements + 1);
-                //_gpu.Launch(_grid, _block, Matrix2DCuda.GreaterThan, hiddenProbs.Matrix, uniform2.Matrix,
-                //    hiddenStates.Matrix);
-                var hiddenStates = hiddenProbs.GreaterThan(uniform2);
+
+                Matrix2D<float> hiddenStates = hiddenProbs.GreaterThan(uniform2);
 
                 hiddenProbs.Dispose();
                 uniform2.Dispose();
 
-
-                //_gpu.Launch(_grid, _block, Matrix2DCuda.UpdateValueAlongAxis, hiddenStates.Matrix, 0, 1f, Matrix2DCuda.FALSE);
-
                 hiddenStates.UpdateValuesAlongAxis(0, 0f, Axis.Column);
 
+                Matrix2D<float> weightsTransposed = Weights.Transpose();
 
-
-                //Matrix2D<float> weightsTransposed = _gpu.AllocateAndSet<float>(NumHiddenElements + 1,
-                //    NumVisibleElements + 1);
-                //_gpu.Launch(_grid, _block, Matrix2DCuda.Transpose, Weights.Matrix, weightsTransposed.Matrix);
-                var weightsTransposed = Weights.Transpose();
-
-
-
-                //Matrix2D<float> visibleActivations = _gpu.AllocateAndSet<float>(1, NumVisibleElements + 1);
-                //_gpu.Launch(_grid, _block, Matrix2DCuda.Multiply, hiddenStates.Matrix, weightsTransposed.Matrix,
-                //    visibleActivations.Matrix);
-
-                var visibleActivations = hiddenStates.Multiply(weightsTransposed);
+                Matrix2D<float> visibleActivations = hiddenStates.Multiply(weightsTransposed);
 
                 hiddenStates.Dispose();
                 weightsTransposed.Dispose();
 
-                //Matrix2D<float> visibleProbs = _gpu.AllocateAndSet<float>(1, NumVisibleElements + 1);
-                //_gpu.Launch(_grid, _block, ActivationFunctionsCuda.Logistic, visibleActivations.Matrix, visibleProbs.Matrix);
-
-                var visibleProbs = visibleActivations.Logistic();
+                Matrix2D<float> visibleProbs = visibleActivations.Logistic();
 
                 visibleActivations.Dispose();
 
 
                 Matrix2D<float> uniform3 = UniformDistribution(_gpu, _rand, 1, NumVisibleElements + 1);
 
-                //Matrix2D<float> visibleStates = _gpu.AllocateAndSet<float>(1, NumVisibleElements + 1);
-                //_gpu.Launch(_grid, _block, Matrix2DCuda.GreaterThan, visibleProbs.Matrix, uniform3.Matrix,
-                //    visibleStates.Matrix);
-
-                var visibleStates = visibleProbs.GreaterThan(uniform3);
+                Matrix2D<float> visibleStates = visibleProbs.GreaterThan(uniform3);
 
                 visibleProbs.Dispose();
                 uniform3.Dispose();
-
-                //_gpu.Launch(_grid, _block, Matrix2DCuda.InsertValuesFromRowOrColumn, data.Matrix, visibleStates.Matrix, 0,
-                //    Matrix2DCuda.FALSE,
-                //    i, 0);
 
                 data.InsertValuesFromRowOrColumn(visibleStates, 0, Axis.Row, i, 0);
 
@@ -251,17 +226,9 @@ namespace CudaRbm
                 visibleStates.Dispose();
             }
 
-
-            //Matrix2D<float> returnVal = _gpu.AllocateAndSet<float>(numberOfSamples, NumVisibleElements);
-
-            //_gpu.Launch(_grid, _block, Matrix2DCuda.SubMatrix, data.Matrix, 0, 1, 0, 0, returnVal.Matrix);
-
-            var returnVal = data.SubMatrix(0, 1);
+            Matrix2D<float> returnVal = data.SubMatrix(0, 1);
             data.Dispose();
-            //var localReturn = new float[numberOfSamples, NumVisibleElements];
-            //_gpu.CopyFromDevice(returnVal, localReturn);
-
-            var localReturn = returnVal.CopyLocal();
+            float[,] localReturn = returnVal.CopyLocal();
 
             returnVal.Dispose();
 
@@ -280,7 +247,7 @@ namespace CudaRbm
 
         public float Train(float[,] srcData)
         {
-            _gpu.Synchronize();
+            ExitConditionEvaluator.Reset();
             float error = 0f;
 
             int numExamples = srcData.GetLength(0);
@@ -297,7 +264,6 @@ namespace CudaRbm
 
                 using (Matrix2D<float> dataTransposed = data.Transpose())
                 {
-
                     var sw = new Stopwatch();
                     var errors = new List<float>();
 
@@ -307,72 +273,73 @@ namespace CudaRbm
                     {
                         sw.Start();
 
-                        var posHiddenActivations = data.Multiply(Weights);
+                        Matrix2D<float> posHiddenActivations = data.Multiply(Weights);
 
-                        var posHiddenProbs = posHiddenActivations.Logistic();
+                        Matrix2D<float> posHiddenProbs = posHiddenActivations.Logistic();
 
 
                         posHiddenActivations.Dispose();
 
-                        Matrix2D<float> uniformRandom = UniformDistribution(_gpu, _rand, numExamples, NumHiddenElements + 1);
+                        Matrix2D<float> uniformRandom = UniformDistribution(_gpu, _rand, numExamples,
+                            NumHiddenElements + 1);
 
-                        var posHiddenStates = posHiddenProbs.GreaterThan(uniformRandom);
+                        Matrix2D<float> posHiddenStates = posHiddenProbs.GreaterThan(uniformRandom);
 
                         uniformRandom.Dispose();
 
-                        var posAssociations = dataTransposed.Multiply(posHiddenProbs);
+                        Matrix2D<float> posAssociations = dataTransposed.Multiply(posHiddenProbs);
 
                         posHiddenProbs.Dispose();
 
-                        var weightsTransposed = Weights.Transpose();
+                        Matrix2D<float> weightsTransposed = Weights.Transpose();
 
-                        var negVisibleActivations = posHiddenStates.Multiply(weightsTransposed);
+                        Matrix2D<float> negVisibleActivations = posHiddenStates.Multiply(weightsTransposed);
 
                         posHiddenStates.Dispose();
                         weightsTransposed.Dispose();
 
-                        var negVisibleProbs = negVisibleActivations.Logistic();
+                        Matrix2D<float> negVisibleProbs = negVisibleActivations.Logistic();
 
 
                         negVisibleActivations.Dispose();
 
                         negVisibleProbs.UpdateValuesAlongAxis(0, 1f, Axis.Column);
 
-                        var negHiddenActivations = negVisibleProbs.Multiply(Weights);
+                        Matrix2D<float> negHiddenActivations = negVisibleProbs.Multiply(Weights);
 
-                        var negHiddenProbs = negHiddenActivations.Logistic();
+                        Matrix2D<float> negHiddenProbs = negHiddenActivations.Logistic();
 
                         negHiddenActivations.Dispose();
 
-                        var negVisibleProbsTransposed = negVisibleProbs.Transpose();
+                        Matrix2D<float> negVisibleProbsTransposed = negVisibleProbs.Transpose();
 
-                        var negAssociations = negVisibleProbsTransposed.Multiply(negHiddenProbs);
+                        Matrix2D<float> negAssociations = negVisibleProbsTransposed.Multiply(negHiddenProbs);
 
                         negHiddenProbs.Dispose();
                         negVisibleProbsTransposed.Dispose();
 
-                        var posAssocMinusNegAssoc = posAssociations.Subtract(negAssociations);
+                        Matrix2D<float> posAssocMinusNegAssoc = posAssociations.Subtract(negAssociations);
 
                         posAssociations.Dispose();
                         negAssociations.Dispose();
 
-                        var tmult = posAssocMinusNegAssoc.Multiply(LearningRate / numExamples);
+                        Matrix2D<float> tmult = posAssocMinusNegAssoc.Multiply(LearningRate / numExamples);
 
                         posAssocMinusNegAssoc.Dispose();
 
-                        var tweight = Weights.Add(tmult);
+                        Matrix2D<float> tweight = Weights.Add(tmult);
 
                         Weights.Dispose();
                         tmult.Dispose();
 
                         Weights = tweight;
 
-                        var delta = data.Subtract(negVisibleProbs);
+                        Matrix2D<float> delta = data.Subtract(negVisibleProbs);
 
 
                         negVisibleProbs.Dispose();
 
-                        var pow = delta.Pow(2.0f);
+                        Matrix2D<float> pow = delta.Pow(2.0f);
 
                         delta.Dispose();
 
@@ -387,17 +354,18 @@ namespace CudaRbm
                                 sw.ElapsedMilliseconds);
                         sw.Reset();
 
-
-                        if (i > 150
-                            && errors[i] > errors[i - 1]
-                            && errors.Skip(Math.Max(0, i - 10)).Take(10).Average() >
-                            errors.Skip(Math.Max(0, i - 150)).Take(150).Average())
-                        {
-                            Console.WriteLine("Error rates are increasing. Stop training");
+                        if (ExitConditionEvaluator.Exit(i, error))
                             break;
-                        }
-                    }
 
+                        //if (i > 150
+                        //    && errors[i] > errors[i - 1]
+                        //    && errors.Skip(Math.Max(0, i - 10)).Take(10).Average() >
+                        //    errors.Skip(Math.Max(0, i - 150)).Take(150).Average())
+                        //{
+                        //    Console.WriteLine("Error rates are increasing. Stop training");
+                        //    break;
+                        //}
+                    }
                 }
             }
 
@@ -475,12 +443,15 @@ namespace CudaRbm
             Matrix2D<float> array = gpu.AllocateAndSet<float>(x, y);
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(y, 0, out grid, out block);
+
+            int my = (int)Math.Ceiling((float)y / 2) * 2;
+
             using (Matrix1D<float> tempGaussian = gpu.AllocateAndSet<float>(y))
             {
                 for (int i = 0; i < x; i++)
                 {
                     if (rand != null)
-                        rand.GenerateNormal(tempGaussian, 0f, 1f, y);
+                        rand.GenerateNormal(tempGaussian, 0f, 1f, my);
                     gpu.Launch(grid, block, CopyToArrayAtN, array.Matrix, tempGaussian.Matrix, i);
                 }
             }
@@ -493,11 +464,13 @@ namespace CudaRbm
             Matrix2D<float> array = gpu.AllocateAndSet<float>(x, y);
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(y, 0, out grid, out block);
+            int my = (int)Math.Ceiling((float)y / 2) * 2;
+
             using (Matrix1D<float> tempUniform = gpu.AllocateAndSet<float>(y))
             {
                 for (int i = 0; i < x; i++)
                 {
-                    rand.GenerateUniform(tempUniform, y);
+                    rand.GenerateUniform(tempUniform, my);
 
                     gpu.Launch(grid, block, CopyToArrayAtN, array.Matrix, tempUniform.Matrix, i);
                 }
@@ -542,6 +515,37 @@ namespace CudaRbm
                     yield return matrix[i, j];
                 }
             }
+        }
+
+
+        public ILayerSaveInfo<float> GetSaveInfo()
+        {
+            return new LayerSaveInfoF(NumVisibleElements, NumHiddenElements, Weights.CopyLocal());
+        }
+
+        public void Dispose()
+        {
+            if (!Disposed)
+            {
+                this.Disposed = true;
+                Dispose(true);
+                GC.SuppressFinalize(this);
+            }
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                this.Weights.Dispose();
+            }
+        }
+
+        public bool Disposed { get; protected set; }
+
+        ~RestrictedBoltzmannMachineF()
+        {
+            Dispose(false);
         }
     }
 }
