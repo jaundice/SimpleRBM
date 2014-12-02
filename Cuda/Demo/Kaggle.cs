@@ -9,6 +9,9 @@ using Cudafy.Translator;
 
 namespace CudaRbm.Demo
 {
+    ///example usage (loads an existing net from bin/net40k, then trains layers higher than 2 using 40000 training records offset 0  records from the beginning): 
+    /// -kaggle -net:40k -trainfromlevel:2 -learningrate:0.1 -trainingsize:40000 -skiptrainingrecords:0
+    /// get data from https://www.kaggle.com/c/digit-recognizer
     public class Kaggle
     {
         public static float[,] ReadTrainingData(string filePath, int startLine, int count, out int[] labels)
@@ -63,9 +66,6 @@ namespace CudaRbm.Demo
         public static void Execute()
         {
             Console.WriteLine("Kaggle");
-            //Our dataset cosists of images of handwritten digits (0-9)
-            //Let's only take 100 of those for training
-            float[][] trainingData = DataParser.Parse("optdigits-tra.txt").ToArray();
             Console.WriteLine("Getting Host");
 
             CudafyHost.ClearAllDeviceMemories();

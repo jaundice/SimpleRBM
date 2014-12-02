@@ -13,6 +13,9 @@ using Cudafy.Translator;
 
 namespace CudaRbm.Demo
 {
+    /// <summary>
+    /// This class didnt get much attention as my graphics card does not have enough memory to deal with such large data
+    /// </summary>
     public class Mnist
     {
         const int ImageCountForTraining = 10;
@@ -46,9 +49,6 @@ namespace CudaRbm.Demo
 
         public static void Execute()
         {
-            //Our dataset cosists of images of handwritten digits (0-9)
-            //Let's only take 100 of those for training
-
             var directory = new DirectoryInfo(ConfigurationManager.AppSettings["FacesDirectory"]);
             var files = directory.GetFiles("*.jpg", SearchOption.AllDirectories);
             var trainingFiles = files.Take(ImageCountForTraining);
@@ -96,7 +96,6 @@ namespace CudaRbm.Demo
                 }
 
 
-                //Although it is tempting to say that the final hidden layer has 10 features (10 numbers) but let's keep it real.
                 Console.WriteLine("Building Deep Belief network");
 
                 var trainingData = ImageData(trainingFiles); //need to call this to initialize _colourComponents for now
@@ -107,8 +106,6 @@ namespace CudaRbm.Demo
                 var rbm = new DeepBeliefNetworkF(
                     dev,
                     rand,
-                    //new[] { 1024, 768, 512, 256, 64, 32, 10 },
-                    //new[] { 1024, 512, 256, 64, 16 },
                      new[] { inputLayerSize, inputLayerSize / 8, 256 },
                     0.4f, new EpochCountExitConditionFactory<float>(150));
 
