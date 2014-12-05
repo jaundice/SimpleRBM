@@ -44,4 +44,15 @@ Cuda/Readme/README.txt
 Cuda/Tools/place_these_executables_in_same_folder_as_Cudafy.NET.dll.txt
 *.cu
 *.ptx
-*.txt
+packages/CUDAfy.NET.1.27.5314.36419/content/Readme/CUDA.NET.Readme.txt
+packages/CUDAfy.NET.1.27.5314.36419/content/Readme/CUDAfy-License.txt
+packages/CUDAfy.NET.1.27.5314.36419/content/Readme/example_source_code.cs.txt
+packages/CUDAfy.NET.1.27.5314.36419/content/Readme/ILSpy-license.txt
+packages/CUDAfy.NET.1.27.5314.36419/content/Readme/README.txt
+packages/CUDAfy.NET.1.27.5314.36419/content/Tools/place_these_executables_in_same_folder_as_Cudafy.NET.dll.txt
+SimpleRBM.Demo/Tools/place_these_executables_in_same_folder_as_Cudafy.NET.dll.txt
+SimpleRBM.Demo/Readme/README.txt
+SimpleRBM.Demo/Readme/ILSpy-license.txt
+SimpleRBM.Demo/Readme/example_source_code.cs.txt
+SimpleRBM.Demo/Readme/CUDAfy-License.txt
+SimpleRBM.Demo/Readme/CUDA.NET.Readme.txt
