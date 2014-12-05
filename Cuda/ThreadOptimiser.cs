@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using Cudafy;
 
-namespace CudaRbm
+namespace SimpleRBM.Cuda
 {
     public class ThreadOptimiser
     {
@@ -41,15 +41,12 @@ namespace CudaRbm
 
 
 
-            if (yReads == 1)
+            if (yReads < 2)
             {
-                //grid = new dim3(16);
-                //block = new dim3(512);
-
                 grid = new dim3(Math.Max(1, (int)Math.Floor(xReads / 512f)));
                 block = new dim3(512, 1);
             }
-            else if (xReads == 1)
+            else if (xReads < 2)
             {
                 grid = new dim3(1, Math.Max(1, (int)Math.Floor(yReads / 512f)));
                 block = new dim3(1, 512);

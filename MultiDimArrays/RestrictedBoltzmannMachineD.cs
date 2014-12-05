@@ -3,18 +3,19 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using SimpleRBM.Common;
+using SimpleRBM.Common.Save;
 
 namespace MultidimRBM
 {
     public class RestrictedBoltzmannMachineD : IRestrictedBoltzmannMachine<double>
     {
-        private readonly double LearningRate;
-        private readonly int NumHiddenElements;
-        public readonly int NumVisibleElements;
         private double[,] Weights;
 
-        public RestrictedBoltzmannMachineD(int numVisible, int numHidden, double learningRate = 0.1)
+        public RestrictedBoltzmannMachineD(int numVisible, int numHidden, IExitConditionEvaluator<double> exitCondition,
+            double learningRate = 0.1)
         {
+            ExitConditionEvaluator = exitCondition;
             NumHiddenElements = numHidden;
             NumVisibleElements = numVisible;
             LearningRate = learningRate;
@@ -30,6 +31,22 @@ namespace MultidimRBM
                         numHidden),
                     learningRate));
         }
+
+
+        public RestrictedBoltzmannMachineD(int numVisible, int numHidden, double[,] weights,
+            IExitConditionEvaluator<double> exitCondition,
+            double learningRate = 0.1)
+        {
+            ExitConditionEvaluator = exitCondition;
+            NumHiddenElements = numHidden;
+            NumVisibleElements = numVisible;
+            LearningRate = learningRate;
+            Weights = weights;
+        }
+
+        public double LearningRate { get; protected set; }
+        public int NumHiddenElements { get; protected set; }
+        public int NumVisibleElements { get; protected set; }
 
         public double[,] GetHiddenLayer(double[,] srcData)
         {
@@ -115,6 +132,7 @@ namespace MultidimRBM
 
         public double Train(double[,] srcData)
         {
+            ExitConditionEvaluator.Reset();
             double error = 0d;
 
             int numExamples = srcData.GetLength(0);
@@ -126,7 +144,7 @@ namespace MultidimRBM
             var sw = new Stopwatch();
             var errors = new List<double>();
             int i;
-            for (i = 0; ; i++)
+            for (i = 0;; i++)
             {
                 sw.Start();
 
@@ -160,20 +178,14 @@ namespace MultidimRBM
                 errors.Add(error);
                 RaiseEpochEnd(i, error);
 
-                if (i % 20 == 0)
+                if (i%20 == 0)
                     Console.WriteLine("Epoch {0}: error is {1}, computation time (ms): {2}", i, error,
                         sw.ElapsedMilliseconds);
                 sw.Reset();
 
 
-                if (i > 150 
-                    && errors[i] > errors[i - 1] 
-                    && errors.Skip(Math.Max(0, i - 10)).Take(10).Average() >
-                    errors.Skip(Math.Max(0, i - 150)).Take(150).Average())
-                {
-                    Console.WriteLine("Error rates are increasing. Stop training");
+                if (ExitConditionEvaluator.Exit(i, error))
                     break;
-                }
             }
 
             RaiseTrainEnd(i, error);
@@ -190,16 +202,26 @@ namespace MultidimRBM
 
         public event EventHandler<EpochEventArgs<double>> TrainEnd;
 
+
+        public ILayerSaveInfo<double> GetSaveInfo()
+        {
+            return new LayerSaveInfoD(NumVisibleElements, NumHiddenElements,
+                Matrix2D.Duplicate(Weights, sizeof (double)));
+        }
+
+
+        public IExitConditionEvaluator<double> ExitConditionEvaluator { get; protected set; }
+
         private void RaiseTrainEnd(int epoch, double error)
         {
             if (TrainEnd != null)
-                TrainEnd(this, new EpochEventArgs<double> { Epoch = epoch, Error = error });
+                TrainEnd(this, new EpochEventArgs<double> {Epoch = epoch, Error = error});
         }
 
         private void RaiseEpochEnd(int epoch, double error)
         {
             if (EpochEnd != null)
-                EpochEnd(this, new EpochEventArgs<double> { Epoch = epoch, Error = error });
+                EpochEnd(this, new EpochEventArgs<double> {Epoch = epoch, Error = error});
         }
     }
 }

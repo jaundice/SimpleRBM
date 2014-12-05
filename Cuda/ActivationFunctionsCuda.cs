@@ -1,8 +1,6 @@
-﻿using System;
-using System.Runtime.CompilerServices;
-using Cudafy;
+﻿using Cudafy;
 
-namespace CudaRbm
+namespace SimpleRBM.Cuda
 {
     public static class ActivationFunctionsCuda
     {

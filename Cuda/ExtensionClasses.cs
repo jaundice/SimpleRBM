@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Text;
 
-namespace CudaRbm
+namespace SimpleRBM.Cuda
 {
     public static class ExtensionClasses
     {
@@ -21,18 +21,22 @@ namespace CudaRbm
             }
         }
 
-        public static void PrintKaggleMap(this float[,] arr, int[] labels = null, float[,] reference = null)
+        public static void PrintKaggleMap(this float[,] arr, int[] labels = null, float[,] reference = null,
+            ulong[] keys = null)
         {
             var dataWidth = (int)Math.Sqrt(arr.GetLength(1));
-
 
 
             for (int i = 0; i < arr.GetLength(0); i++)
             {
                 Console.WriteLine();
                 if (labels != null)
-                    Console.WriteLine(labels[i]);
+                    Console.Write("{0} ", labels[i]);
 
+                if (keys != null)
+                    Console.Write(keys[i]);
+
+                Console.WriteLine();
                 var builder1 = new StringBuilder();
                 var builder2 = new StringBuilder();
 
@@ -49,16 +53,17 @@ namespace CudaRbm
                     builder1.Append(GetCharFor(arr[i, j]));
                     if (reference != null)
                         builder2.Append(GetCharFor(reference[i, j]));
-
                 }
 
-                var l1 = builder1.ToString();
-                var l2 = builder2.ToString();
+                string l1 = builder1.ToString();
+                string l2 = builder2.ToString();
 
-                for (var line = 0; line < dataWidth; line++)
+                for (int line = 0; line < dataWidth; line++)
                 {
                     var line1 = new string(l1.Skip(line * dataWidth).Take(dataWidth).ToArray());
-                    var line2 = reference == null ? null : new string(l2.Skip(line * dataWidth).Take(dataWidth).ToArray());
+                    string line2 = reference == null
+                        ? null
+                        : new string(l2.Skip(line * dataWidth).Take(dataWidth).ToArray());
 
                     if (reference == null)
                     {
@@ -78,7 +83,5 @@ namespace CudaRbm
         {
             return f == 1f ? "1" : f > 0f ? "." : "0";
         }
-
-
     }
 }

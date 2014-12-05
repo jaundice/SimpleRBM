@@ -1,8 +1,8 @@
 ﻿using Cudafy;
 using Cudafy.Host;
-using GASS.CUDA.Types;
+using SimpleRBM.Common;
 
-namespace CudaRbm
+namespace SimpleRBM.Cuda
 {
     public static class MatrixEx
     {

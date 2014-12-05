@@ -1,6 +1,7 @@
 using Cudafy.Host;
+using SimpleRBM.Common;
 
-namespace CudaRbm
+namespace SimpleRBM.Cuda
 {
     public static class GPGPUEx
     {

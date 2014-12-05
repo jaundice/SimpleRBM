@@ -1,4 +1,4 @@
-namespace CudaRbm
+namespace SimpleRBM.Cuda
 {
     public enum Location
     {

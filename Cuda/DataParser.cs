@@ -2,25 +2,42 @@
 using System.IO;
 using System.Linq;
 
-namespace CudaRbm
+namespace SimpleRBM.Common
 {
-    public static class DataParser
-    {
-        public static float[][] Parse(string filePath)
-        {
-            string x = File.ReadAllText(filePath);
+    //public static class DataParser
+    //{
+    //    public static float[][] Parse(string filePath)
+    //    {
+    //        string x = File.ReadAllText(filePath);
 
-            x = x.Replace("\r\n", "");
+    //        x = x.Replace("\r\n", "");
 
-            string[] y = x.Split(" ".ToCharArray());
+    //        string[] y = x.Split(" ".ToCharArray());
 
-            float[][] t =
-                y.Select(
-                    s =>
-                        s.Substring(1).PadRight(1024, '0').Select(
-                            n => float.Parse(n.ToString(CultureInfo.InvariantCulture))).ToArray()).ToArray();
+    //        float[][] t =
+    //            y.Select(
+    //                s =>
+    //                    s.Substring(1).PadRight(1024, '0').Select(
+    //                        n => float.Parse(n.ToString(CultureInfo.InvariantCulture))).ToArray()).ToArray();
 
-            return t;
-        }
-    }
+    //        return t;
+    //    }
+
+    //    public static double[][] Parse(string filePath)
+    //    {
+    //        string x = File.ReadAllText(filePath);
+
+    //        x = x.Replace("\r\n", "");
+
+    //        string[] y = x.Split(" ".ToCharArray());
+
+    //        float[][] t =
+    //            y.Select(
+    //                s =>
+    //                    s.Substring(1).PadRight(1024, '0').Select(
+    //                        n => float.Parse(n.ToString(CultureInfo.InvariantCulture))).ToArray()).ToArray();
+
+    //        return t;
+    //    }
+    //}
 }

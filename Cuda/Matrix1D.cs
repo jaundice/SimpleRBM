@@ -1,7 +1,7 @@
 using System;
 using Cudafy.Host;
 
-namespace CudaRbm
+namespace SimpleRBM.Cuda
 {
     public class Matrix1D<T> : Matrix
     {

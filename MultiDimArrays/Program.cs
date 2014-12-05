@@ -5,6 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SimpleRBM.Common;
+using SimpleRBM.Common.ExitCondition;
 
 namespace MultidimRBM
 {
@@ -17,7 +19,7 @@ namespace MultidimRBM
             double[][] trainingData = DataParser.Parse("optdigits-tra.txt").ToArray();
 
             //Although it is tempting to say that the final hidden layer has 10 features (10 numbers) but let's keep it real.
-            var rbm = new DeepBeliefNetworkD(new[] { 1024, 512, 10 }, 0.1);
+            var rbm = new DeepBeliefNetworkD(new[] { 1024, 512, 10 }, 0.1, new EpochCountExitConditionFactory<double>(5000));
             //var rbm = new DeepBeliefNetworkD(new[] { 1024, 128, 16 }, 0.3);
 
 

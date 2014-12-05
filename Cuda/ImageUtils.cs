@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 
-namespace CudaRbm
+namespace SimpleRBM.Cuda
 {
     public static class ImageUtils
     {

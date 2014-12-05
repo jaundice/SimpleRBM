@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using Cudafy.Host;
 
-namespace CudaRbm
+namespace SimpleRBM.Cuda
 {
     public class Matrix : IDisposable
     {

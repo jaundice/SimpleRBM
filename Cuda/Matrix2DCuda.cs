@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Cudafy;
 
-namespace CudaRbm
+namespace SimpleRBM.Cuda
 {
     public static class Matrix2DCuda
     {
