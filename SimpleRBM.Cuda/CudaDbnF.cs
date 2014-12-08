@@ -68,6 +68,8 @@ namespace SimpleRBM.Cuda
                     Machines[saveInfos.Count + j + 1] = rbm;
                 }
             }
+
+            _gpu.Synchronize();
         }
 
         public CudaDbnF(GPGPU gpu, GPGPURAND rand, int[] layerSizes, float learningRate,

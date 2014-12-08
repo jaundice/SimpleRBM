@@ -5,9 +5,9 @@ namespace SimpleRBM.Demo
 {
     internal interface IDemo
     {
-        void Execute<T>(IDeepBeliefNetworkFactory<T> dbnFactory,
+        void Execute<T,L>(IDeepBeliefNetworkFactory<T> dbnFactory,
             IExitConditionEvaluatorFactory<T> exitConditionEvaluatorFactory, int[] defaultLayerSizes,
-            IDataIO<T> dataProvider, T learningRate, int trainingSize, int skipTrainingRecords)
+            IDataIO<T,L> dataProvider, T learningRate, int trainingSize, int skipTrainingRecords)
             where T : struct,
                 IComparable<T>;
     }

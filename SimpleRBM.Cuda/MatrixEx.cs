@@ -152,7 +152,7 @@ namespace SimpleRBM.Cuda
             Axis axis, int mPos, int nPos)
         {
             dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(length, 0, out grid, out block);
+            ThreadOptimiser.Instance.GetStrategy(length, 1, out grid, out block);
             self.GPU.Launch(grid, block, Matrix2DCuda.InsertValuesFromRowOrColumn, self.Matrix, source.Matrix, length, axis == Axis.Column ? Matrix2DCuda.TRUE : Matrix2DCuda.FALSE, mPos, nPos);
 
         }

@@ -62,7 +62,7 @@ namespace SimpleRBM.Cuda
                 );
 
 
-            ThreadOptimiser.Instance = new ThreadOptimiser(props.MultiProcessorCount, props.MaxThreadsPerBlock,
+            ThreadOptimiser.Instance = new ThreadOptimiser(props.Capability, props.MultiProcessorCount, props.MaxThreadsPerBlock,
                 props.MaxThreadsPerMultiProcessor, props.MaxGridSize, props.MaxThreadsSize);
 
             rand = props.Name == "Emulated GPGPU Kernel"

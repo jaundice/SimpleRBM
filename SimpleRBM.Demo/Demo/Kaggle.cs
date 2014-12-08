@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using SimpleRBM.Common;
 
 namespace SimpleRBM.Demo.Demo
@@ -13,9 +11,9 @@ namespace SimpleRBM.Demo.Demo
     /// get data from https://www.kaggle.com/c/digit-recognizer
     public class Kaggle :IDemo
     {
-        public  void Execute<T>(IDeepBeliefNetworkFactory<T> dbnFactory,
+        public  void Execute<T,L>(IDeepBeliefNetworkFactory<T> dbnFactory,
             IExitConditionEvaluatorFactory<T> exitConditionEvaluatorFactory, int[] defaultLayerSizes,
-            IDataIO<T> dataProvider, T learningRate, int trainingSize, int skipTrainingRecords)
+            IDataIO<T, L> dataProvider, T learningRate, int trainingSize, int skipTrainingRecords)
             where T : struct, IComparable<T>
         {
             Console.WriteLine("Kaggle");
@@ -44,7 +42,7 @@ namespace SimpleRBM.Demo.Demo
 
 
                 Console.WriteLine("Training Network");
-                int[] labels;
+                L[] labels;
 
 
                 int trainFrom = CommandLine.ReadCommandLine("-trainfromlevel:", int.TryParse, -1);
@@ -87,7 +85,7 @@ namespace SimpleRBM.Demo.Demo
                 Console.WriteLine("Training Data:");
                 Console.WriteLine();
                 //Take a sample of input arrays and try to reconstruct them.
-                int[] labels2;
+                L[] labels2;
                 T[,] tdata = dataProvider.ReadTrainingData(ConfigurationManager.AppSettings["KaggleTrainingData"],
                     skipTrainingRecords + trainingSize,
                     100, out labels2);
@@ -133,28 +131,6 @@ namespace SimpleRBM.Demo.Demo
                 if (disp != null)
                     disp.Dispose();
             }
-        }
-    }
-
-    public class KeyEncoder
-    {
-        public static ulong[] GenerateKeys<T>(T[,] encoded) where T : struct, IComparable<T>
-        {
-            var keys = new ulong[encoded.GetLength(0)];
-            int width = encoded.GetLength(1);
-            Parallel.For(0, keys.Length, a =>
-            {
-                ulong v = 0;
-                for (int i = 0; i < width; i++)
-                {
-                    if (Comparer<T>.Default.Compare(encoded[a, i], default(T)) > 0)
-                    {
-                        v |= ((ulong) 1u << (width - i));
-                    }
-                }
-                keys[a] = v;
-            });
-            return keys;
         }
     }
 }

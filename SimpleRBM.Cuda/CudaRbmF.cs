@@ -381,7 +381,7 @@ namespace SimpleRBM.Cuda
         public static float Sum(GPGPU gpu, Matrix2D<float> matrix, int x)
         {
             dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(x, 0, out grid, out block);
+            ThreadOptimiser.Instance.GetStrategy(x, 1, out grid, out block);
 
             float[,] working = gpu.Allocate<float>(x, 1);
             gpu.Launch(grid, block, SumMatrixRows, matrix.Matrix, working);
@@ -436,7 +436,7 @@ namespace SimpleRBM.Cuda
         {
             Matrix2D<float> array = gpu.AllocateAndSet<float>(x, y);
             dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(y, 0, out grid, out block);
+            ThreadOptimiser.Instance.GetStrategy(1, y, out grid, out block);
 
             int my = (int)Math.Ceiling((float)y / 2) * 2;
 
@@ -457,7 +457,7 @@ namespace SimpleRBM.Cuda
         {
             Matrix2D<float> array = gpu.AllocateAndSet<float>(x, y);
             dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(y, 0, out grid, out block);
+            ThreadOptimiser.Instance.GetStrategy(1, y, out grid, out block);
             int my = (int)Math.Ceiling((float)y / 2) * 2;
 
             using (Matrix1D<float> tempUniform = gpu.AllocateAndSet<float>(y))

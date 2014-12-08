@@ -7,9 +7,9 @@ namespace SimpleRBM.Demo.Demo
 {
     public class HandwrittenNumbers : IDemo
     {
-        public void Execute<T>(IDeepBeliefNetworkFactory<T> dbnFactory,
+        public void Execute<T,L>(IDeepBeliefNetworkFactory<T> dbnFactory,
             IExitConditionEvaluatorFactory<T> exitConditionEvaluatorFactory, int[] defaultLayerSizes,
-            IDataIO<T> dataProvider, T learningRate, int trainingSize, int skipTrainingRecords)
+            IDataIO<T, L> dataProvider, T learningRate, int trainingSize, int skipTrainingRecords)
             where T : struct, IComparable<T>
         {
             IDeepBeliefNetwork<T> dbn = null;
@@ -35,7 +35,7 @@ namespace SimpleRBM.Demo.Demo
 
 
                 Console.WriteLine("Training Network");
-                int[] labels;
+                L[] labels;
 
 
                 int trainFrom = CommandLine.ReadCommandLine("-trainfromlevel:", int.TryParse, -1);
@@ -77,7 +77,7 @@ namespace SimpleRBM.Demo.Demo
                 Console.WriteLine("Training Data:");
                 Console.WriteLine();
                 //Take a sample of input arrays and try to reconstruct them.
-                int[] labels2;
+                L[] labels2;
                 T[,] tdata = dataProvider.ReadTrainingData("optdigits-tra.txt",
                     skipTrainingRecords + trainingSize,
                     100, out labels2);

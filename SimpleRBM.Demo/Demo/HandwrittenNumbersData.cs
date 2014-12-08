@@ -8,7 +8,7 @@ using SimpleRBM.Common;
 
 namespace SimpleRBM.Demo.Demo
 {
-    public class HandwrittenNumbersData : IDataIO<double>, IDataIO<float>
+    public class HandwrittenNumbersData : IDataIO<double, int>, IDataIO<float, int>
     {
         public double[,] ReadTrainingData(string filePath, int startLine, int count, out int[] labels)
         {
@@ -27,7 +27,7 @@ namespace SimpleRBM.Demo.Demo
             return Matrix2D.JaggedToMultidimesional(t);
         }
 
-         float[,] IDataIO<float>.ReadTrainingData(string filePath, int startLine, int count, out int[] labels)
+         float[,] IDataIO<float, int>.ReadTrainingData(string filePath, int startLine, int count, out int[] labels)
         {
             string x = File.ReadAllText(filePath);
 
@@ -60,7 +60,7 @@ namespace SimpleRBM.Demo.Demo
             return Matrix2D.JaggedToMultidimesional(t);
         }
 
-        float[,] IDataIO<float>.ReadTestData(string filePath, int startLine, int count)
+        float[,] IDataIO<float, int>.ReadTestData(string filePath, int startLine, int count)
         {
             string x = File.ReadAllText(filePath);
 
@@ -134,7 +134,7 @@ namespace SimpleRBM.Demo.Demo
                 {
                     if (j%dataWidth == 0)
                         Console.WriteLine();
-                    Console.Write(arr[i, j].ToString("N0"));
+                    Console.Write(GetCharFor(arr[i, j]));
                 }
                 Console.WriteLine();
             }

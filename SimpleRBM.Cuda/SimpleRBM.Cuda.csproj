@@ -101,7 +101,6 @@
     <Compile Include="CudaDbnF.cs" />
     <Compile Include="ExtensionClasses.cs" />
     <Compile Include="GPGPUEx.cs" />
-    <Compile Include="ImageUtils.cs" />
     <Compile Include="Location.cs" />
     <Compile Include="Matrix.cs" />
     <Compile Include="Matrix1D.cs" />
