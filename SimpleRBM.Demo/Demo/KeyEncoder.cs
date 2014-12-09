@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace SimpleRBM.Demo.Demo
@@ -10,6 +11,12 @@ namespace SimpleRBM.Demo.Demo
         {
             var keys = new ulong[encoded.GetLength(0)];
             int width = encoded.GetLength(1);
+
+            if (width > 64)
+            {
+                Trace.TraceWarning("Data is too wide to fit in ulong and will be truncated");
+            }
+
             Parallel.For(0, keys.Length, a =>
             {
                 ulong v = 0;
@@ -25,4 +32,6 @@ namespace SimpleRBM.Demo.Demo
             return keys;
         }
     }
+
+   
 }

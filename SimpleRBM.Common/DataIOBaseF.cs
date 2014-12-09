@@ -1,42 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using SimpleRBM.Common;
 
-namespace SimpleRBM.Demo.Demo
+namespace SimpleRBM.Common
 {
-    public class MNistData : IDataIO<float, string>
+    public abstract class DataIOBaseF<TLabel> : IDataIO<float, TLabel>
     {
-        private static int _colourComponents;
-
-        public float[,] ReadTrainingData(string filePath, int startLine, int count, out string[] labels)
+        protected DataIOBaseF(string dataPath)
         {
-            List<FileInfo> files =
-                new DirectoryInfo(filePath).EnumerateFiles("*.jpg", SearchOption.AllDirectories)
-                    .Skip(startLine)
-                    .Take(count)
-                    .ToList();
-
-            labels = files.Select(a => a.Directory.Name).ToArray();
-
-            return ImageData(files);
+            DataPath = dataPath;
         }
 
-        public float[,] ReadTestData(string filePath, int startLine, int count)
-        {
-            List<FileInfo> files =
-                new DirectoryInfo(filePath).EnumerateFiles("*.jpg", SearchOption.AllDirectories)
-                    .Skip(startLine)
-                    .Take(count)
-                    .ToList();
+        public string DataPath { get; protected set; }
 
-            return ImageData(files);
-        }
-
-        public void PrintToScreen(float[,] arr, string[] labels = null, float[,] reference = null, ulong[] keys = null)
+        public virtual void PrintToScreen(float[,] arr, TLabel[] labels = null, float[,] reference = null,
+            ulong[] keys = null)
         {
             var dataWidth = (int) Math.Sqrt(arr.GetLength(1));
 
@@ -85,7 +63,7 @@ namespace SimpleRBM.Demo.Demo
             }
         }
 
-        public void PrintMap(float[,] arr)
+        public virtual void PrintMap(float[,] arr)
         {
             var dataWidth = (int) Math.Sqrt(arr.GetLength(1));
             for (int i = 0; i < arr.GetLength(0); i++)
@@ -100,37 +78,23 @@ namespace SimpleRBM.Demo.Demo
             }
         }
 
-        private static string GetCharFor(float f)
+        public virtual float[,] ReadTrainingData(int skipRecords, int count, out TLabel[] labels)
+        {
+            return ReadTrainingData(DataPath, skipRecords, count, out labels);
+        }
+
+        public virtual float[,] ReadTestData(int skipRecords, int count)
+        {
+            return ReadTestData(DataPath ,skipRecords, count);
+        }
+
+        protected abstract float[,] ReadTrainingData(string filePath, int skipRecords, int count, out TLabel[] labels);
+
+        protected abstract float[,] ReadTestData(string filePath, int skipRecords, int count);
+
+        protected static string GetCharFor(float f)
         {
             return f > 0.5f ? "1" : f > 0f ? "." : "0";
-        }
-
-        private static string GetCharFor(double f)
-        {
-            return f > 0.5 ? "1" : f > 0d ? "." : "0";
-        }
-
-        private static float[,] ImageData(IEnumerable<FileInfo> files)
-        {
-            List<FileInfo> lstFiles = files.ToList();
-
-            IEnumerable<float[]> trainingImageData = ImageUtils.ReadImageData(lstFiles, ImageUtils.ConvertRGBToGreyFloat);
-
-
-            float[,] data = null;
-            int i = 0;
-
-            foreach (var bytese in trainingImageData)
-            {
-                if (i == 0)
-                {
-                    data = new float[lstFiles.Count, bytese.Length];
-                }
-                float[] localBytes = bytese;
-                Parallel.For(0, bytese.Length, a => { data[i, a] = localBytes[a]; });
-                i++;
-            }
-            return data;
         }
     }
 }

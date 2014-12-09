@@ -103,7 +103,7 @@ namespace SimpleRBM.Cuda
             }
             else
             {
-                int y = rows > 1 ? 32 : 1;
+                int y = cols > 1 ? 32 : 1;
                 int x = 32;
                 if (rows > 1024)
                 {

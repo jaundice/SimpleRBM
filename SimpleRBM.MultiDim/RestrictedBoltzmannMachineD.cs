@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using SimpleRBM.Common;
 using SimpleRBM.Common.Save;
 
-namespace MultidimRBM
+namespace SimpleRBM.MultiDim
 {
     public class RestrictedBoltzmannMachineD : IRestrictedBoltzmannMachine<double>
     {

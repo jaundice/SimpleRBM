@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
-namespace MultidimRBM
+namespace SimpleRBM.MultiDim
 {
     public static class Distributions
     {

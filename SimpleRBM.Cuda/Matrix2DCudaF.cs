@@ -4,7 +4,7 @@ using Cudafy;
 
 namespace SimpleRBM.Cuda
 {
-    public static class Matrix2DCuda
+    public static class Matrix2DCudaF
     {
         public const uint TRUE = 1u;
         public const uint FALSE = 0u;
@@ -475,4 +475,7 @@ namespace SimpleRBM.Cuda
             }
         }
     }
+
+
+   
 }

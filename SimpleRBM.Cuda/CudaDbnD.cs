@@ -12,9 +12,9 @@ using SimpleRBM.Common.Save;
 
 namespace SimpleRBM.Cuda
 {
-    public class CudaDbnF : IDeepBeliefNetwork<float>, IDisposable
+    public class CudaDbnD : IDeepBeliefNetwork<double>, IDisposable
     {
-        private readonly CudaRbmF[] Machines;
+        private readonly CudaRbmD[] Machines;
 
         public int NumMachines
         {
@@ -24,20 +24,20 @@ namespace SimpleRBM.Cuda
         private readonly GPGPURAND _rand;
 
 
-        public CudaDbnF(GPGPU gpu, GPGPURAND rand, DirectoryInfo network, float learningRate,
-            IExitConditionEvaluatorFactory<float> exitConditionExitConditionEvaluatorFactory, int[] appendLayers = null)
+        public CudaDbnD(GPGPU gpu, GPGPURAND rand, DirectoryInfo network, double learningRate,
+            IExitConditionEvaluatorFactory<double> exitConditionExitConditionEvaluatorFactory, int[] appendLayers = null)
         {
             _gpu = gpu;
             _rand = rand;
             ExitConditionEvaluatorFactory = exitConditionExitConditionEvaluatorFactory;
-            List<LayerSaveInfoF> saveInfos =
+            List<LayerSaveInfoD> saveInfos =
                 network.GetFiles("*.bin")
                     .OrderBy(a => int.Parse(Regex.Match(Path.GetFileNameWithoutExtension(a.Name), "[0-9]+").Value))
-                    .Select(a => new LayerSaveInfoF(a.FullName)).ToList();
+                    .Select(a => new LayerSaveInfoD(a.FullName)).ToList();
 
             appendLayers = appendLayers ?? new int[0];
             Machines =
-                new CudaRbmF[saveInfos.Count() + (appendLayers.Length == 0 ? 0 : appendLayers.Length)
+                new CudaRbmD[saveInfos.Count() + (appendLayers.Length == 0 ? 0 : appendLayers.Length)
                     ];
 
 
@@ -45,7 +45,7 @@ namespace SimpleRBM.Cuda
             {
                 Console.WriteLine("Building Layer {0}: {1}x{2}", i, saveInfos[i].NumVisible, saveInfos[i].NumHidden);
 
-                var rbm = new CudaRbmF(gpu, rand, saveInfos[i].NumVisible, saveInfos[i].NumHidden,
+                var rbm = new CudaRbmD(gpu, rand, saveInfos[i].NumVisible, saveInfos[i].NumHidden,
                     saveInfos[i].Weights,
                     ExitConditionEvaluatorFactory.Create(i, saveInfos[i].NumVisible, saveInfos[i].NumHidden),
                     learningRate);
@@ -60,7 +60,7 @@ namespace SimpleRBM.Cuda
                     Console.WriteLine("Appending Layer {0}: {1}x{2}", j + saveInfos.Count + 1,
                         j == -1 ? saveInfos.Last().NumHidden : appendLayers[j], appendLayers[j + 1]);
 
-                    var rbm = new CudaRbmF(gpu, rand,
+                    var rbm = new CudaRbmD(gpu, rand,
                         j == -1 ? saveInfos.Last().NumHidden : appendLayers[j], appendLayers[j + 1],
                         ExitConditionEvaluatorFactory.Create(saveInfos.Count + j,
                             j == -1 ? saveInfos.Last().NumHidden : appendLayers[j], appendLayers[j + 1]), learningRate);
@@ -72,21 +72,21 @@ namespace SimpleRBM.Cuda
             _gpu.Synchronize();
         }
 
-        public CudaDbnF(GPGPU gpu, GPGPURAND rand, int[] layerSizes, float learningRate,
-            IExitConditionEvaluatorFactory<float> exitConditionExitConditionEvaluatorFactory)
+        public CudaDbnD(GPGPU gpu, GPGPURAND rand, int[] layerSizes, double learningRate,
+            IExitConditionEvaluatorFactory<double> exitConditionExitConditionEvaluatorFactory)
         {
             _gpu = gpu;
             _rand = rand;
             ExitConditionEvaluatorFactory = exitConditionExitConditionEvaluatorFactory;
 
 
-            Machines = new CudaRbmF[layerSizes.Length - 1];
+            Machines = new CudaRbmD[layerSizes.Length - 1];
 
             for (int i = 0; i < layerSizes.Length - 1; i++)
             {
                 Console.WriteLine("Building Layer {0}: {1}x{2}", i, layerSizes[i], layerSizes[i + 1]);
 
-                var rbm = new CudaRbmF(gpu, rand, layerSizes[i], layerSizes[i + 1],
+                var rbm = new CudaRbmD(gpu, rand, layerSizes[i], layerSizes[i + 1],
                     ExitConditionEvaluatorFactory.Create(i, layerSizes[i], layerSizes[i + 1]), learningRate);
                 rbm.EpochEnd += OnRbm_EpochEnd;
                 Machines[i] = rbm;
@@ -95,7 +95,7 @@ namespace SimpleRBM.Cuda
 
         public bool Disposed { get; protected set; }
 
-        public float[,] Encode(float[,] data)
+        public double[,] Encode(double[,] data)
         {
             data = Machines[0].GetHiddenLayer(data);
 
@@ -107,7 +107,7 @@ namespace SimpleRBM.Cuda
             return data;
         }
 
-        public float[,] Decode(float[,] data)
+        public double[,] Decode(double[,] data)
         {
             data = Machines[Machines.Length - 1].GetVisibleLayer(data);
 
@@ -119,49 +119,49 @@ namespace SimpleRBM.Cuda
             return data;
         }
 
-        public float[,] Reconstruct(float[,] data)
+        public double[,] Reconstruct(double[,] data)
         {
-            float[,] hl = Encode(data);
+            double[,] hl = Encode(data);
             return Decode(hl);
         }
 
-        public float[,] DayDream(int numberOfDreams)
+        public double[,] DayDream(int numberOfDreams)
         {
             int elems = Machines[0].NumVisibleElements;
             using (
-                Matrix2D<float> dreamRawData = CudaRbmF.UniformDistribution(_gpu, _rand,
+                Matrix2D<double> dreamRawData = CudaRbmD.UniformDistribution(_gpu, _rand,
                     numberOfDreams, elems))
             {
                 dim3 grid, block;
                 ThreadOptimiser.Instance.GetStrategy(numberOfDreams, elems, out grid, out block);
 
-                _gpu.Launch(grid, block, Matrix2DCudaF.ToBinary, dreamRawData.Matrix);
+                _gpu.Launch(grid, block, Matrix2DCudaD.ToBinaryD, dreamRawData.Matrix);
 
-                var localRaw = new float[numberOfDreams, elems];
+                var localRaw = new double[numberOfDreams, elems];
                 _gpu.CopyFromDevice(dreamRawData, localRaw);
-                float[,] ret = Reconstruct(localRaw);
+                double[,] ret = Reconstruct(localRaw);
                 return ret;
             }
         }
 
-        public float[,] Train(float[,] data, int layerNumber, out float error)
+        public double[,] Train(double[,] data, int layerNumber, out double error)
         {
-            float err = Machines[layerNumber].Train(data);
+            double err = Machines[layerNumber].Train(data);
             RaiseTrainEnd(err);
             error = err;
             return Machines[layerNumber].GetHiddenLayer(data);
         }
 
-        public Task AsyncTrain(float[,] data, int layerPosition)
+        public Task AsyncTrain(double[,] data, int layerPosition)
         {
-            float err;
+            double err;
             return Task.Run(
                 () => Train(data, layerPosition, out err));
         }
 
-        public void TrainAll(float[,] visibleData)
+        public void TrainAll(double[,] visibleData)
         {
-            float error;
+            double error;
 
             for (int i = 0; i < Machines.Length; i++)
             {
@@ -170,18 +170,18 @@ namespace SimpleRBM.Cuda
             }
         }
 
-        public Task AsyncTrainAll(float[,] visibleData)
+        public Task AsyncTrainAll(double[,] visibleData)
         {
             return Task.Run(() => TrainAll(visibleData));
         }
 
 
-        public event EventHandler<EpochEventArgs<float>> EpochEnd;
+        public event EventHandler<EpochEventArgs<double>> EpochEnd;
 
-        public event EventHandler<EpochEventArgs<float>> TrainEnd;
-        public IExitConditionEvaluatorFactory<float> ExitConditionEvaluatorFactory { get; protected set; }
+        public event EventHandler<EpochEventArgs<double>> TrainEnd;
+        public IExitConditionEvaluatorFactory<double> ExitConditionEvaluatorFactory { get; protected set; }
 
-        public IEnumerable<ILayerSaveInfo<float>> GetLayerSaveInfos()
+        public IEnumerable<ILayerSaveInfo<double>> GetLayerSaveInfos()
         {
             return Machines.Select(restrictedBoltzmannMachineF => restrictedBoltzmannMachineF.GetSaveInfo());
         }
@@ -196,9 +196,9 @@ namespace SimpleRBM.Cuda
             }
         }
 
-        public void TrainLayersFrom(float[,] visibleData, int startDepth)
+        public void TrainLayersFrom(double[,] visibleData, int startDepth)
         {
-            float error;
+            double error;
             for (int i = 0; i < Machines.Length; i++)
             {
                 visibleData = i < startDepth
@@ -207,25 +207,25 @@ namespace SimpleRBM.Cuda
             }
         }
 
-        private void RaiseTrainEnd(float error)
+        private void RaiseTrainEnd(double error)
         {
             if (TrainEnd != null)
-                TrainEnd(this, new EpochEventArgs<float>
+                TrainEnd(this, new EpochEventArgs<double>
                 {
                     Epoch = -1,
                     Error = error
                 });
         }
 
-        private void OnRbm_EpochEnd(object sender, EpochEventArgs<float> e)
+        private void OnRbm_EpochEnd(object sender, EpochEventArgs<double> e)
         {
             RaiseEpochEnd(e.Epoch, e.Error);
         }
 
-        private void RaiseEpochEnd(int epoch, float error)
+        private void RaiseEpochEnd(int epoch, double error)
         {
             if (EpochEnd != null)
-                EpochEnd(this, new EpochEventArgs<float>
+                EpochEnd(this, new EpochEventArgs<double>
                 {
                     Epoch = epoch,
                     Error = error
@@ -236,7 +236,7 @@ namespace SimpleRBM.Cuda
         {
             if (disposing)
             {
-                foreach (CudaRbmF restrictedBoltzmannMachineF in Machines)
+                foreach (CudaRbmD restrictedBoltzmannMachineF in Machines)
                 {
                     restrictedBoltzmannMachineF.Dispose();
                 }
@@ -248,7 +248,7 @@ namespace SimpleRBM.Cuda
             }
         }
 
-        ~CudaDbnF()
+        ~CudaDbnD()
         {
             Dispose(false);
         }

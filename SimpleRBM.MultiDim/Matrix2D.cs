@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
-namespace MultidimRBM
+namespace SimpleRBM.MultiDim
 {
     public static class Matrix2D
     {
@@ -157,9 +156,9 @@ namespace MultidimRBM
                 var arr = (double*)handle.AddrOfPinnedObject();
 
 
-                Parallel.For(0, aRows, y => Parallel.For(0, bCols, x =>
+                Parallel.For(0, aRows, row => Parallel.For(0, bCols, col =>
                 {
-                    UnsafeUpdate2DArray(arr, bCols, y, x, MultiplyElement(A, B, y, x));
+                    UnsafeUpdate2DArray(arr, bCols, row, col, MultiplyElement(A, B, row, col));
                     //output[y, x] = MultiplyElement(A, B, y, x);
                 }));
             }

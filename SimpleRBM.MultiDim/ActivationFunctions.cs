@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace MultidimRBM
+namespace SimpleRBM.MultiDim
 {
     public static class ActivationFunctions
     {

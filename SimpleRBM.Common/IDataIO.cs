@@ -2,12 +2,14 @@
 
 namespace SimpleRBM.Common
 {
-    public interface IDataIO<T,L> where T : struct, IComparable<T>
+    public interface IDataIO<TDataElement, TLabel> where TDataElement : struct, IComparable<TDataElement>
     {
-        T[,] ReadTrainingData(string filePath, int startLine, int count, out L[] labels);
-        T[,] ReadTestData(string filePath, int startLine, int count);
+        TDataElement[,] ReadTrainingData(int skipRecords, int count, out TLabel[] labels);
+        TDataElement[,] ReadTestData(int skipRecords, int count);
 
-        void PrintToScreen(T[,] arr, L[] labels = null, T[,] reference = null, ulong[] keys = null);
-        void PrintMap(T[,] arr);
+        void PrintToScreen(TDataElement[,] arr, TLabel[] labels = null, TDataElement[,] reference = null,
+            ulong[] keys = null);
+
+        void PrintMap(TDataElement[,] arr);
     }
 }

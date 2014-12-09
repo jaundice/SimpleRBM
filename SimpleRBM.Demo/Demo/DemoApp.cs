@@ -5,20 +5,19 @@ using SimpleRBM.Common;
 
 namespace SimpleRBM.Demo.Demo
 {
-    public class HandwrittenNumbers : IDemo
+    public class DemoApp : IDemo
     {
-        public void Execute<T,L>(IDeepBeliefNetworkFactory<T> dbnFactory,
-            IExitConditionEvaluatorFactory<T> exitConditionEvaluatorFactory, int[] defaultLayerSizes,
-            IDataIO<T, L> dataProvider, T learningRate, int trainingSize, int skipTrainingRecords)
-            where T : struct, IComparable<T>
+        public void Execute<TDataElement, TLabel>(IDeepBeliefNetworkFactory<TDataElement> dbnFactory,
+            IExitConditionEvaluatorFactory<TDataElement> exitConditionEvaluatorFactory, int[] defaultLayerSizes,
+            IDataIO<TDataElement, TLabel> dataProvider, TDataElement learningRate, int trainingSize,
+            int skipTrainingRecords)
+            where TDataElement : struct, IComparable<TDataElement>
         {
-            IDeepBeliefNetwork<T> dbn = null;
+            IDeepBeliefNetwork<TDataElement> dbn = null;
 
             try
             {
                 Console.WriteLine("Building Deep Belief network");
-
-
                 var net = CommandLine.ReadCommandLine<string>("-net", CommandLine.FakeParseString, null);
 
 
@@ -35,12 +34,12 @@ namespace SimpleRBM.Demo.Demo
 
 
                 Console.WriteLine("Training Network");
-                L[] labels;
+                TLabel[] labels;
 
 
                 int trainFrom = CommandLine.ReadCommandLine("-trainfromlevel:", int.TryParse, -1);
 
-                T[,] trainingData = dataProvider.ReadTrainingData("optdigits-tra.txt",
+                TDataElement[,] trainingData = dataProvider.ReadTrainingData(
                     skipTrainingRecords,
                     trainingSize,
                     out labels);
@@ -77,17 +76,17 @@ namespace SimpleRBM.Demo.Demo
                 Console.WriteLine("Training Data:");
                 Console.WriteLine();
                 //Take a sample of input arrays and try to reconstruct them.
-                L[] labels2;
-                T[,] tdata = dataProvider.ReadTrainingData("optdigits-tra.txt",
+                TLabel[] labels2;
+                TDataElement[,] tdata = dataProvider.ReadTrainingData(
                     skipTrainingRecords + trainingSize,
                     100, out labels2);
 
                 //float[,] reconstructedItems =
                 //    dbn.Reconstruct(tdata);                
 
-                T[,] encoded = dbn.Encode(tdata);
+                TDataElement[,] encoded = dbn.Encode(tdata);
                 ulong[] featureKeys = KeyEncoder.GenerateKeys(encoded);
-                T[,] reconstructedItems = dbn.Decode(encoded);
+                TDataElement[,] reconstructedItems = dbn.Decode(encoded);
 
                 dataProvider.PrintToScreen(reconstructedItems, labels2, tdata, featureKeys);
 
@@ -95,11 +94,11 @@ namespace SimpleRBM.Demo.Demo
                 Console.WriteLine();
                 Console.WriteLine("Test Data:");
                 Console.WriteLine();
-                T[,] testData = dataProvider.ReadTestData("optdigits-tra.txt", 0, 100);
+                TDataElement[,] testData = dataProvider.ReadTestData(0, 100);
 
-                T[,] encoded2 = dbn.Encode(testData);
+                TDataElement[,] encoded2 = dbn.Encode(testData);
                 ulong[] featKeys2 = KeyEncoder.GenerateKeys(encoded2);
-                T[,] reconstructedTestData = dbn.Decode(encoded);
+                TDataElement[,] reconstructedTestData = dbn.Decode(encoded);
                 //float[,] reconstructedTestData = dbn.Reconstruct(testData);
                 dataProvider.PrintToScreen(reconstructedTestData, reference: testData, keys: featKeys2);
 

@@ -4,14 +4,14 @@ using SimpleRBM.Common;
 
 namespace SimpleRBM.Cuda
 {
-    public static class MatrixEx
+    public static partial class MatrixEx
     {
         public static Matrix2D<float> Multiply(this Matrix2D<float> self, float scalar)
         {
             Matrix2D<float> output = self.GPU.AllocateAndSet<float>(self.GetLength(0), self.GetLength(1));
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCuda.MultiplyScalar, self.Matrix, scalar, output.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCudaF.MultiplyScalar, self.Matrix, scalar, output.Matrix);
             return output;
         }
 
@@ -21,7 +21,7 @@ namespace SimpleRBM.Cuda
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self.GetLength(0), other.GetLength(1), out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCuda.Multiply, self.Matrix, other.Matrix, result.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCudaF.Multiply, self.Matrix, other.Matrix, result.Matrix);
             return result;
         }
 
@@ -30,7 +30,7 @@ namespace SimpleRBM.Cuda
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(source, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCuda.InsertValuesFrom, self.Matrix, mPos, nPos, source.Matrix, mSize,
+            self.GPU.Launch(grid, block, Matrix2DCudaF.InsertValuesFrom, self.Matrix, mPos, nPos, source.Matrix, mSize,
                 nSize);
         }
 
@@ -38,8 +38,8 @@ namespace SimpleRBM.Cuda
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCuda.UpdateValueAlongAxis, self.Matrix, index, value,
-                axis == Axis.Row ? Matrix2DCuda.TRUE : Matrix2DCuda.FALSE);
+            self.GPU.Launch(grid, block, Matrix2DCudaF.UpdateValueAlongAxis, self.Matrix, index, value,
+                axis == Axis.Row ? Matrix2DCudaF.TRUE : Matrix2DCudaF.FALSE);
         }
 
         public static Matrix2D<float> Logistic(this Matrix2D<float> self)
@@ -47,7 +47,7 @@ namespace SimpleRBM.Cuda
             var res = self.GPU.AllocateAndSet<float>(self.GetLength(0), self.GetLength(1));
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-            self.GPU.Launch(grid, block, ActivationFunctionsCuda.Logistic, self.Matrix, res.Matrix);
+            self.GPU.Launch(grid, block, ActivationFunctionsCuda.LogisticF, self.Matrix, res.Matrix);
             return res;
         }
 
@@ -58,7 +58,7 @@ namespace SimpleRBM.Cuda
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCuda.GreaterThan, self.Matrix, other.Matrix, res.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCudaF.GreaterThan, self.Matrix, other.Matrix, res.Matrix);
 
             return res;
         }
@@ -74,7 +74,7 @@ namespace SimpleRBM.Cuda
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(numRows, numCols, out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCuda.SubMatrix, self.Matrix, startRow, startCol, numRows, numCols, res.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCudaF.SubMatrix, self.Matrix, startRow, startCol, numRows, numCols, res.Matrix);
 
             return res;
         }
@@ -85,7 +85,7 @@ namespace SimpleRBM.Cuda
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(res, out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCuda.Transpose, self.Matrix, res.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCudaF.Transpose, self.Matrix, res.Matrix);
 
             return res;
         }
@@ -96,7 +96,7 @@ namespace SimpleRBM.Cuda
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCuda.Subtract, self.Matrix, other.Matrix, res.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCudaF.Subtract, self.Matrix, other.Matrix, res.Matrix);
             return res;
         }
 
@@ -106,7 +106,7 @@ namespace SimpleRBM.Cuda
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCuda.Add, self.Matrix, other.Matrix, res.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCudaF.Add, self.Matrix, other.Matrix, res.Matrix);
             return res;
         }
 
@@ -116,7 +116,7 @@ namespace SimpleRBM.Cuda
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCuda.Pow, self.Matrix, power, res.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCudaF.Pow, self.Matrix, power, res.Matrix);
             return res;
         }
 
@@ -138,14 +138,14 @@ namespace SimpleRBM.Cuda
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCuda.Ones, self.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCudaF.Ones, self.Matrix);
         }
 
         public static void Zeros(this Matrix2D<float> self)
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCuda.Zeros, self.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCudaF.Zeros, self.Matrix);
         }
 
         public static void InsertValuesFromRowOrColumn(this Matrix2D<float> self, Matrix2D<float> source, int length,
@@ -153,7 +153,7 @@ namespace SimpleRBM.Cuda
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(length, 1, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCuda.InsertValuesFromRowOrColumn, self.Matrix, source.Matrix, length, axis == Axis.Column ? Matrix2DCuda.TRUE : Matrix2DCuda.FALSE, mPos, nPos);
+            self.GPU.Launch(grid, block, Matrix2DCudaF.InsertValuesFromRowOrColumn, self.Matrix, source.Matrix, length, axis == Axis.Column ? Matrix2DCudaF.TRUE : Matrix2DCudaF.FALSE, mPos, nPos);
 
         }
     }
@@ -163,4 +163,6 @@ namespace SimpleRBM.Cuda
         Row,
         Column
     }
+
+  
 }

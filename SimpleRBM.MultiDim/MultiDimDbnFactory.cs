@@ -1,10 +1,10 @@
-﻿using System.IO;
-using MultidimRBM;
+﻿using System;
+using System.IO;
 using SimpleRBM.Common;
 
 namespace SimpleRBM.MultiDim
 {
-    public class MultiDimDbnFactory : IDeepBeliefNetworkFactory<double>
+    public class MultiDimDbnFactory : IDeepBeliefNetworkFactory<double>, IDeepBeliefNetworkFactory<float>
     {
         public IDeepBeliefNetwork<double> Create(DirectoryInfo networkDataDir, int[] appendLayers = null,
             double learningRate = 0.2,
@@ -17,6 +17,18 @@ namespace SimpleRBM.MultiDim
             IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory = null)
         {
             return new DeepBeliefNetworkD(layerSizes, learningRate, exitConditionEvaluatorFactory);
+        }
+
+        IDeepBeliefNetwork<float> IDeepBeliefNetworkFactory<float>.Create(DirectoryInfo networkDataDir,
+            int[] appendLayers, float learningRate, IExitConditionEvaluatorFactory<float> exitConditionEvaluatorFactory)
+        {
+            throw new NotImplementedException();
+        }
+
+        IDeepBeliefNetwork<float> IDeepBeliefNetworkFactory<float>.Create(int[] layerSizes, float learningRate,
+            IExitConditionEvaluatorFactory<float> exitConditionEvaluatorFactory)
+        {
+            throw new NotImplementedException();
         }
     }
 }

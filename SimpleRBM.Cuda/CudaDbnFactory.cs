@@ -8,8 +8,32 @@ using SimpleRBM.Common;
 
 namespace SimpleRBM.Cuda
 {
-    public class CudaDbnFactory : IDeepBeliefNetworkFactory<float>
+    public class CudaDbnFactory : IDeepBeliefNetworkFactory<float>, IDeepBeliefNetworkFactory<double>
     {
+        public IDeepBeliefNetwork<double> Create(DirectoryInfo networkDataDir, int[] appendLayers = null,
+            double learningRate = 0.2, IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory = null)
+        {
+            GPGPU dev;
+            GPGPURAND rand;
+            CreateDevice(out dev, out rand);
+
+            return new CudaDbnD(dev, rand, networkDataDir, learningRate, exitConditionEvaluatorFactory, appendLayers);
+        }
+
+        public IDeepBeliefNetwork<double> Create(int[] layerSizes, double learningRate = 0.2,
+            IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory = null)
+        {
+            GPGPU dev;
+            GPGPURAND rand;
+            CreateDevice(out dev, out rand);
+
+            return new CudaDbnD(
+                dev,
+                rand,
+                layerSizes,
+                learningRate, exitConditionEvaluatorFactory);
+        }
+
         public IDeepBeliefNetwork<float> Create(DirectoryInfo networkDataDir, int[] appendLayers = null,
             float learningRate = 0.2f, IExitConditionEvaluatorFactory<float> exitConditionEvaluatorFactory = null)
         {
@@ -56,13 +80,16 @@ namespace SimpleRBM.Cuda
             CudafyModule mod = CudafyTranslator.Cudafy(
                 plat,
                 arch,
-                typeof (ActivationFunctionsCuda),
-                typeof (Matrix2DCuda),
-                typeof (CudaRbmF)
+                typeof(ActivationFunctionsCuda),
+                typeof(Matrix2DCudaF),
+                typeof(Matrix2DCudaD),
+                typeof(CudaRbmF),
+                typeof(CudaRbmD)
                 );
 
 
-            ThreadOptimiser.Instance = new ThreadOptimiser(props.Capability, props.MultiProcessorCount, props.MaxThreadsPerBlock,
+            ThreadOptimiser.Instance = new ThreadOptimiser(props.Capability, props.MultiProcessorCount,
+                props.MaxThreadsPerBlock,
                 props.MaxThreadsPerMultiProcessor, props.MaxGridSize, props.MaxThreadsSize);
 
             rand = props.Name == "Emulated GPGPU Kernel"
@@ -75,7 +102,7 @@ namespace SimpleRBM.Cuda
             Console.WriteLine("Initializing Randoms");
             if (rand != null)
             {
-                rand.SetPseudoRandomGeneratorSeed((ulong) DateTime.Now.Ticks);
+                rand.SetPseudoRandomGeneratorSeed((ulong)DateTime.Now.Ticks);
                 rand.GenerateSeeds();
             }
         }
