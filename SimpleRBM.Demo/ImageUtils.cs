@@ -12,7 +12,7 @@ namespace SimpleRBM.Demo
     {
         public delegate T ConvertPixel<T>(IntPtr startAddress, int stride, int x, int y);
 
-        public static unsafe float ConvertRGBToGreyFloat(IntPtr startAddress, int stride, int x, int y)
+        public static unsafe float ConvertRGBToGreyF(IntPtr startAddress, int stride, int x, int y)
         {
             var data = (byte*) startAddress;
             int ost = y*stride + (x*3);
@@ -22,6 +22,18 @@ namespace SimpleRBM.Demo
             byte R = data[ost + 2];
 
             return ((R*0.3f) + (G*0.59f) + (B*0.11f))/255f;
+        }
+
+        public static unsafe double ConvertRGBToGreyD(IntPtr startAddress, int stride, int x, int y)
+        {
+            var data = (byte*)startAddress;
+            int ost = y * stride + (x * 3);
+
+            byte B = data[ost];
+            byte G = data[ost + 1];
+            byte R = data[ost + 2];
+
+            return ((R * 0.3) + (G * 0.59) + (B * 0.11)) / 255.0;
         }
 
         public static IEnumerable<T[]> ReadImageData<T>(IEnumerable<FileInfo> files,

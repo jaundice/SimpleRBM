@@ -19,8 +19,8 @@ namespace SimpleRBM.MultiDim
         ///     Apply a logistic function on all elements of a matrix
         /// </summary>
         /// <param name="matrix">Matrix</param>
-        /// <returns>Logistic matrix</returns>
-        public static double[,] Logistic(double[,] matrix)
+        /// <returns>LogisticD matrix</returns>
+        public static double[,] LogisticD(double[,] matrix)
         {
             var result = new double[matrix.GetLength(0), matrix.GetLength(1)];
 
@@ -29,13 +29,22 @@ namespace SimpleRBM.MultiDim
             return result;
         }
 
-        //public static RVector Logistic(RVector vector)
+        public static float[,] LogisticF(float[,] matrix)
+        {
+            var result = new float[matrix.GetLength(0), matrix.GetLength(1)];
+
+            Parallel.For(0, matrix.GetLength(0),
+                i => Parallel.For(0, matrix.GetLength(1), j => { result[i, j] = (float)Logistic(matrix[i, j]); }));
+            return result;
+        }
+
+        //public static RVector LogisticD(RVector vector)
         //{
         //    var result = new RVector(vector.Length);
 
         //    for (int i = 0; i < vector.Length; i++)
         //    {
-        //        result[i] = Logistic(vector[i]);
+        //        result[i] = LogisticD(vector[i]);
         //    }
         //    return result;
         //}

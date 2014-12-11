@@ -1,6 +1,5 @@
 ﻿using System;
 using Cudafy;
-using Cudafy.Atomics;
 
 namespace SimpleRBM.Cuda
 {
@@ -75,16 +74,40 @@ namespace SimpleRBM.Cuda
         [Cudafy]
         public static void MultiplyD(GThread thread, double[,] input1, double[,] input2, double[,] output)
         {
-            int rowIdx = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int colIdx = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
-            var row = rowIdx;
-            while (row < input1.GetLength(0))
+            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+
+            while (i < input1.GetLength(0))
             {
-                var col = colIdx;
-                while (col < input2.GetLength(1))
+                int n = j;
+                while (n < input2.GetLength(1))
                 {
-                    double res = MultiplyElementD(input1, input2, row, col);
-                    output[row, col] = res;
+                    thread.SyncThreads();
+                    var d = MultiplyElementD(input1, input2, i, n);
+                    thread.SyncThreads();
+                    output[i, n] = d;
+
+                    n += thread.gridDim.y * thread.blockDim.y;
+                }
+                i += thread.gridDim.x * thread.blockDim.x;
+            }
+            thread.SyncThreads();
+        }
+
+        [Cudafy]
+        public static void IncrementD(GThread thread, double[,] input)
+        {
+            int rowIdx = thread.threadIdx.x + (thread.blockIdx.x * thread.blockDim.x);
+            int colIdx = thread.threadIdx.y + (thread.blockIdx.y * thread.blockDim.y);
+
+
+            int row = rowIdx;
+            while (row < input.GetLength(0))
+            {
+                int col = colIdx;
+                while (col < input.GetLength(1))
+                {
+                    input[row, col] = input[row, col] + 1.0;
                     col += thread.gridDim.y * thread.blockDim.y;
                 }
                 row += thread.gridDim.x * thread.blockDim.x;
@@ -425,7 +448,7 @@ namespace SimpleRBM.Cuda
                     }
                     i += thread.gridDim.x * thread.blockDim.x;
                 }
-                thread.SyncThreads();
+                //thread.SyncThreads();
             }
             else
             {
@@ -434,15 +457,33 @@ namespace SimpleRBM.Cuda
                     int n = j;
                     while (n < matrix1.GetLength(1))
                     {
-                        target[i, n] = Math.Pow(matrix1[i, n], power);
+                        thread.SyncThreads();
+                        var d = Math.Pow(matrix1[i, n], power);
+                        thread.SyncThreads();
+
+                        target[i, n] =d ;
                         n += thread.gridDim.y * thread.blockDim.y;
                     }
                     i += thread.gridDim.x * thread.blockDim.x;
                 }
-                thread.SyncThreads();
-
+                //thread.SyncThreads();
             }
-            thread.SyncThreads();
+            //thread.SyncThreads();
+        }
+
+        [Cudafy]
+        public static void IdentityD(GThread thread, double[,] matrix1)
+        {
+            int rowidx = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
+            int colidx = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            for (var row = rowidx; row < matrix1.GetLength(0); row += thread.gridDim.x * thread.blockDim.x)
+            {
+                for (int col = colidx; col < matrix1.GetLength(1); col += thread.gridDim.y * thread.blockDim.y)
+                {
+                    var d = (row == col) ? 1.0 : 0.0;
+                    matrix1[row, col] = d;
+                }
+            }
         }
 
 

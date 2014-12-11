@@ -22,13 +22,13 @@ namespace SimpleRBM.MultiDim
         IDeepBeliefNetwork<float> IDeepBeliefNetworkFactory<float>.Create(DirectoryInfo networkDataDir,
             int[] appendLayers, float learningRate, IExitConditionEvaluatorFactory<float> exitConditionEvaluatorFactory)
         {
-            throw new NotImplementedException();
+            return new DeepBeliefNetworkF(networkDataDir, learningRate, exitConditionEvaluatorFactory, appendLayers);
         }
 
         IDeepBeliefNetwork<float> IDeepBeliefNetworkFactory<float>.Create(int[] layerSizes, float learningRate,
             IExitConditionEvaluatorFactory<float> exitConditionEvaluatorFactory)
         {
-            throw new NotImplementedException();
+            return new DeepBeliefNetworkF(layerSizes, learningRate, exitConditionEvaluatorFactory);
         }
     }
 }

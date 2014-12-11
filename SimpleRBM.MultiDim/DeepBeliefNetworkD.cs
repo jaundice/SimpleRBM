@@ -117,7 +117,7 @@ namespace SimpleRBM.MultiDim
 
         public double[,] DayDream(int numberOfDreams)
         {
-            double[,] dreamRawData = Distributions.UniformRandromMatrixBool(numberOfDreams,
+            double[,] dreamRawData = Distributions.UniformRandromMatrixBoolD(numberOfDreams,
                 Machines[0].NumVisibleElements);
 
             double[,] ret = Reconstruct(dreamRawData);

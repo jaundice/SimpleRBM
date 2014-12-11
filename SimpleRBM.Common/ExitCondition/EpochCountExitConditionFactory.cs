@@ -8,6 +8,7 @@ namespace SimpleRBM.Common.ExitCondition
 
         public EpochCountExitConditionFactory(int maxEpochs)
         {
+            Console.WriteLine("RBMs will exit after {0} epochs", maxEpochs);
             _maxEpochs = maxEpochs;
         }
 

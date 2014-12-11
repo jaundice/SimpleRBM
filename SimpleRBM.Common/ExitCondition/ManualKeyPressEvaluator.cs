@@ -11,6 +11,8 @@ namespace SimpleRBM.Common.ExitCondition
         private readonly CancellationTokenSource src = new CancellationTokenSource();
         private readonly int _maxEpochs;
         private readonly T _minError;
+        private T _lowestErrorSeen;
+        private bool _exitOnNextLowest;
 
         public bool Exit(int epochNumber, T lastError)
         {
@@ -18,6 +20,20 @@ namespace SimpleRBM.Common.ExitCondition
             {
                 src.Cancel();
                 _exit = true;
+            }
+            if (epochNumber == 0)
+            {
+                _lowestErrorSeen = lastError;
+
+            }
+            else if (Comparer<T>.Default.Compare(lastError, _lowestErrorSeen) < 0)
+            {
+                _lowestErrorSeen = lastError;
+                if (_exitOnNextLowest)
+                {
+                    src.Cancel();
+                    _exit = true;
+                }
             }
 
             return _exit;
@@ -31,10 +47,22 @@ namespace SimpleRBM.Common.ExitCondition
 
         public void Reset()
         {
+            _exit = false;
+            _exitOnNextLowest = false;
+
+
             Task.Factory.StartNew(() =>
             {
-                Console.ReadKey();
-                _exit = true;
+                var key = Console.ReadKey();
+                if (key.KeyChar == 'l' || key.KeyChar == 'L')
+                {
+                    _exitOnNextLowest = true;
+                    Console.WriteLine("Exiting next time epoch error < {0}", _lowestErrorSeen);
+                }
+                else
+                {
+                    _exit = true;
+                }
                 src.Cancel();
             }, src.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }

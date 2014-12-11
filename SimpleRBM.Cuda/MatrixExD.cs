@@ -22,6 +22,19 @@ namespace SimpleRBM.Cuda
             self.GPU.Launch(grid, block, Matrix2DCudaD.MultiplyD, self.Matrix, other.Matrix, result.Matrix);
             return result;
         }
+        public static void Increment(this Matrix2D<double> self)
+        {
+            dim3 grid, block;
+            ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
+            self.GPU.Launch(grid, block, Matrix2DCudaD.IncrementD, self.Matrix);
+        }
+
+        public static void Identity(this Matrix2D<double> self)
+        {
+            dim3 grid, block;
+            ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
+            self.GPU.Launch(grid, block, Matrix2DCudaD.IdentityD, self.Matrix);
+        }
 
         public static void InsertValuesFrom(this Matrix2D<double> self, int mPos, int nPos, Matrix2D<double> source,
             int mSize = 0, int nSize = 0)

@@ -45,12 +45,11 @@ namespace SimpleRBM.MultiDim
                 var arr = (double*)handle.AddrOfPinnedObject();
 
 
-                Parallel.For(0, sourceRows, i =>
-                    Parallel.For(0, sourceCols, j =>
-                    {
-                        UnsafeUpdate2DArray(arr, sourceRows, j, i, source[i, j]);
-                        //output[j, i] = source[i, j];
-                    }));
+                Parallel.For(0, sourceRows,
+                    i =>
+                        Parallel.For(0, sourceCols,
+                            j =>
+                                UnsafeUpdate2DArray(arr, sourceRows, j, i, source[i, j])));
 
             }
             finally
@@ -84,6 +83,11 @@ namespace SimpleRBM.MultiDim
             return Multiply(source, 1 / denom);
         }
 
+        public static float[,] Divide(float[,] source, float denom)
+        {
+            return Multiply(source, 1 / denom);
+        }
+
         public static unsafe double[,] Multiply(double[,] source, double scalar)
         {
             int rows = source.GetLength(0);
@@ -96,14 +100,11 @@ namespace SimpleRBM.MultiDim
                 handle = GCHandle.Alloc(output, GCHandleType.Pinned);
                 var arr = (double*)handle.AddrOfPinnedObject();
 
-                Parallel.For(0, rows, y =>
-                {
-                    Parallel.For(0, cols, x =>
-                    {
-                        UnsafeUpdate2DArray(arr, cols, y, x, source[y, x] * scalar);
-                        //output[y, x] = source[y, x]*scalar;
-                    });
-                });
+                Parallel.For(0, rows,
+                    y =>
+                        Parallel.For(0, cols,
+                            x =>
+                                UnsafeUpdate2DArray(arr, cols, y, x, source[y, x] * scalar)));
             }
             finally
             {
@@ -155,12 +156,11 @@ namespace SimpleRBM.MultiDim
                 handle = GCHandle.Alloc(output, GCHandleType.Pinned);
                 var arr = (double*)handle.AddrOfPinnedObject();
 
-
-                Parallel.For(0, aRows, row => Parallel.For(0, bCols, col =>
-                {
-                    UnsafeUpdate2DArray(arr, bCols, row, col, MultiplyElement(A, B, row, col));
-                    //output[y, x] = MultiplyElement(A, B, y, x);
-                }));
+                Parallel.For(0, aRows,
+                    row =>
+                        Parallel.For(0, bCols,
+                            col =>
+                                UnsafeUpdate2DArray(arr, bCols, row, col, MultiplyElement(A, B, row, col))));
             }
             finally
             {
@@ -185,12 +185,12 @@ namespace SimpleRBM.MultiDim
         private static double MultiplyElement(double[,] A, double[,] B, int y, int x)
         {
             int aCols = A.GetLength(1);
-            double accumulate =0;
+            double accumulate = 0;
             for (int xx = 0; xx < aCols; xx++)
             {
-                accumulate += A[y, xx]*B[xx, x];
+                accumulate += A[y, xx] * B[xx, x];
             }
-           
+
             return accumulate;
         }
 
@@ -566,11 +566,10 @@ namespace SimpleRBM.MultiDim
                 int width = matrix.GetLength(1);
 
                 Parallel.For(0, matrix.GetLength(0),
-                    i => Parallel.For(0, matrix.GetLength(1), j =>
-                    {
-                        UnsafeUpdate2DArray(arr, width, i, j, value);
-                        //matrix[i, j] = value;
-                    }));
+                    i =>
+                        Parallel.For(0, matrix.GetLength(1),
+                            j =>
+                                UnsafeUpdate2DArray(arr, width, i, j, value)));
             }
             finally
             {
@@ -624,12 +623,35 @@ namespace SimpleRBM.MultiDim
                 var arr = (double*)handle.AddrOfPinnedObject();
                 int width = target.GetLength(1);
 
-                Parallel.For(0, mSize, i =>
-                    Parallel.For(0, nSize, j =>
-                    {
-                        UnsafeUpdate2DArray(arr, width, i + mPos, j + nPos, src[i, j]);
-                        //target[i + mPos, j + nPos] = src[i, j];
-                    }));
+                Parallel.For(0, mSize,
+                    i =>
+                        Parallel.For(0, nSize,
+                            j =>
+                                UnsafeUpdate2DArray(arr, width, i + mPos, j + nPos, src[i, j])));
+            }
+            finally
+            {
+                handle.Free();
+            }
+        }
+
+        public static unsafe void InsertValuesFrom(float[,] target, int mPos, int nPos, float[,] src, int mSize = 0,
+    int nSize = 0)
+        {
+            mSize = mSize == 0 ? target.GetLength(0) - mPos : mSize;
+            nSize = nSize == 0 ? target.GetLength(1) - nPos : nSize;
+            GCHandle handle = default(GCHandle);
+            try
+            {
+                handle = GCHandle.Alloc(target, GCHandleType.Pinned);
+                var arr = (float*)handle.AddrOfPinnedObject();
+                int width = target.GetLength(1);
+
+                Parallel.For(0, mSize,
+                    i =>
+                        Parallel.For(0, nSize,
+                            j =>
+                                UnsafeUpdate2DArrayF(arr, width, i + mPos, j + nPos, src[i, j])));
             }
             finally
             {
@@ -696,11 +718,39 @@ namespace SimpleRBM.MultiDim
                 handle = GCHandle.Alloc(result, GCHandleType.Pinned);
                 var arr = (double*)handle.AddrOfPinnedObject();
 
-                Parallel.For(0, numRows, i => Parallel.For(0, numCols, j =>
-                {
-                    UnsafeUpdate2DArray(arr, numCols, i, j, matrix[i + startRow, j + startCol]);
-                    //result[i, j] = matrix[i + startRow, j + startCol];
-                }));
+                Parallel.For(0, numRows,
+                    i =>
+                        Parallel.For(0, numCols,
+                            j =>
+                                UnsafeUpdate2DArray(arr, numCols, i, j, matrix[i + startRow, j + startCol])));
+            }
+            finally
+            {
+                handle.Free();
+            }
+
+
+            return result;
+        }
+
+        internal static unsafe float[,] SubMatrix(float[,] matrix, int startRow, int startCol, int numRows = 0,
+           int numCols = 0)
+        {
+            numRows = numRows != 0 ? numRows : matrix.GetLength(0) - startRow;
+            numCols = numCols != 0 ? numCols : matrix.GetLength(1) - startCol;
+
+            var result = new float[numRows, numCols];
+            GCHandle handle = default(GCHandle);
+            try
+            {
+                handle = GCHandle.Alloc(result, GCHandleType.Pinned);
+                var arr = (float*)handle.AddrOfPinnedObject();
+
+                Parallel.For(0, numRows,
+                    i =>
+                        Parallel.For(0, numCols,
+                            j =>
+                                UnsafeUpdate2DArrayF(arr, numCols, i, j, matrix[i + startRow, j + startCol])));
             }
             finally
             {
@@ -712,6 +762,20 @@ namespace SimpleRBM.MultiDim
         }
 
         internal static double[,] ToVector(double[,] matrix)
+        {
+            if (matrix.GetLength(1) == 1)
+            {
+                return SubMatrix(matrix, 0, 0, 0, 1);
+            }
+            if (matrix.GetLength(0) == 1)
+            {
+                return SubMatrix(matrix, 0, 0, 1);
+            }
+
+            throw new MatrixException("Matrix is not a one liner");
+        }
+
+        internal static float[,] ToVector(float[,] matrix)
         {
             if (matrix.GetLength(1) == 1)
             {
@@ -757,6 +821,38 @@ namespace SimpleRBM.MultiDim
             }
         }
 
+        internal static unsafe void InsertValuesFromRowOrColumn(float[,] matrix, float[,] src, int length = 0,
+           bool fromColumn = true,
+           int mPos = 0, int nPos = 0)
+        {
+            length = length == 0 ? Math.Max(src.GetLength(0), src.GetLength(1)) : length;
+            GCHandle handle = default(GCHandle);
+            try
+            {
+                handle = GCHandle.Alloc(matrix, GCHandleType.Pinned);
+                var arr = (float*)handle.AddrOfPinnedObject();
+                int width = matrix.GetLength(1);
+
+                Parallel.For(0, length, i =>
+                {
+                    if (fromColumn)
+                    {
+                        UnsafeUpdate2DArrayF(arr, width, mPos + i, nPos, src[i, 0]);
+                        //matrix[mPos + i, nPos] = src[i, 0];
+                    }
+                    else
+                    {
+                        UnsafeUpdate2DArrayF(arr, width, mPos, nPos + i, src[0, i]);
+                        //matrix[mPos, nPos + i] = src[0, i];
+                    }
+                });
+            }
+            finally
+            {
+                handle.Free();
+            }
+        }
+
         public static unsafe void UpdateValueAlongAxis(double[,] matrix, int index, int value, Axis axis)
         {
             GCHandle handle = default(GCHandle);
@@ -768,19 +864,39 @@ namespace SimpleRBM.MultiDim
 
                 if (axis == Axis.Horizontal)
                 {
-                    Parallel.For(0, matrix.GetLength(1), i =>
-                    {
-                        UnsafeUpdate2DArray(arr, width, index, i, value);
-                        //matrix[index, i] = value;
-                    });
+                    Parallel.For(0, matrix.GetLength(1),
+                        i => UnsafeUpdate2DArray(arr, width, index, i, value));
                 }
                 else
                 {
-                    Parallel.For(0, matrix.GetLength(0), i =>
-                    {
-                        UnsafeUpdate2DArray(arr, width, i, index, value);
-                        //matrix[i, index] = value;
-                    });
+                    Parallel.For(0, matrix.GetLength(0),
+                        i => UnsafeUpdate2DArray(arr, width, i, index, value));
+                }
+            }
+            finally
+            {
+                handle.Free();
+            }
+        }
+
+        public static unsafe void UpdateValueAlongAxis(float[,] matrix, int index, int value, Axis axis)
+        {
+            GCHandle handle = default(GCHandle);
+            try
+            {
+                handle = GCHandle.Alloc(matrix, GCHandleType.Pinned);
+                var arr = (float*)handle.AddrOfPinnedObject();
+                int width = matrix.GetLength(1);
+
+                if (axis == Axis.Horizontal)
+                {
+                    Parallel.For(0, matrix.GetLength(1),
+                        i => UnsafeUpdate2DArrayF(arr, width, index, i, value));
+                }
+                else
+                {
+                    Parallel.For(0, matrix.GetLength(0),
+                        i => UnsafeUpdate2DArrayF(arr, width, i, index, value));
                 }
             }
             finally
@@ -801,11 +917,36 @@ namespace SimpleRBM.MultiDim
                 int width = res.GetLength(1);
 
 
-                Parallel.For(0, res.GetLength(0), i => Parallel.For(0, res.GetLength(1), j =>
-                {
-                    UnsafeUpdate2DArray(arr, width, i, j, m1[i, j] + m2[i, j]);
-                    //res[i, j] = m1[i, j] + m2[i, j];
-                }));
+                Parallel.For(0, res.GetLength(0),
+                    i =>
+                       Parallel.For(0, res.GetLength(1),
+                        j =>
+                            UnsafeUpdate2DArray(arr, width, i, j, m1[i, j] + m2[i, j])));
+                return res;
+            }
+            finally
+            {
+                handle.Free();
+            }
+        }
+
+        public static unsafe float[,] Add(float[,] m1, float[,] m2)
+        {
+            var res = new float[m1.GetLength(0), m1.GetLength(1)];
+
+            GCHandle handle = default(GCHandle);
+            try
+            {
+                handle = GCHandle.Alloc(res, GCHandleType.Pinned);
+                var arr = (float*)handle.AddrOfPinnedObject();
+                int width = res.GetLength(1);
+
+
+                Parallel.For(0, res.GetLength(0),
+                    i =>
+                       Parallel.For(0, res.GetLength(1),
+                        j =>
+                            UnsafeUpdate2DArrayF(arr, width, i, j, m1[i, j] + m2[i, j])));
                 return res;
             }
             finally
@@ -824,11 +965,11 @@ namespace SimpleRBM.MultiDim
                 var arr = (double*)handle.AddrOfPinnedObject();
                 int width = res.GetLength(1);
 
-                Parallel.For(0, res.GetLength(0), i => Parallel.For(0, res.GetLength(1), j =>
-                {
-                    UnsafeUpdate2DArray(arr, width, i, j, m1[i, j] - m2[i, j]);
-                    //res[i, j] = m1[i, j] - m2[i, j];
-                }));
+                Parallel.For(0, res.GetLength(0),
+                    i =>
+                        Parallel.For(0, res.GetLength(1),
+                            j =>
+                                UnsafeUpdate2DArray(arr, width, i, j, m1[i, j] - m2[i, j])));
                 return res;
             }
             finally
@@ -836,6 +977,30 @@ namespace SimpleRBM.MultiDim
                 handle.Free();
             }
         }
+
+        public static unsafe float[,] Subtract(float[,] m1, float[,] m2)
+        {
+            var res = new float[m1.GetLength(0), m1.GetLength(1)];
+            GCHandle handle = default(GCHandle);
+            try
+            {
+                handle = GCHandle.Alloc(res, GCHandleType.Pinned);
+                var arr = (float*)handle.AddrOfPinnedObject();
+                int width = res.GetLength(1);
+
+                Parallel.For(0, res.GetLength(0),
+                    i =>
+                        Parallel.For(0, res.GetLength(1),
+                            j =>
+                                UnsafeUpdate2DArrayF(arr, width, i, j, m1[i, j] - m2[i, j])));
+                return res;
+            }
+            finally
+            {
+                handle.Free();
+            }
+        }
+
 
         public static unsafe double[,] Pow(double[,] matrix, double power)
         {
@@ -850,19 +1015,55 @@ namespace SimpleRBM.MultiDim
 
                 if (power == 2d)
                 {
-                    Parallel.For(0, res.GetLength(0), i => Parallel.For(0, res.GetLength(1), j =>
-                    {
-                        UnsafeUpdate2DArray(arr, width, i, j, matrix[i, j] * matrix[i, j]);
-                        //res[i, j] = matrix[i, j]*matrix[i, j];
-                    }));
+                    Parallel.For(0, res.GetLength(0),
+                        i =>
+                            Parallel.For(0, res.GetLength(1),
+                                j =>
+                                    UnsafeUpdate2DArray(arr, width, i, j, matrix[i, j] * matrix[i, j])));
                 }
                 else
                 {
-                    Parallel.For(0, res.GetLength(0), i => Parallel.For(0, res.GetLength(1), j =>
-                    {
-                        UnsafeUpdate2DArray(arr, width, i, j, Math.Pow(matrix[i, j], power));
-                        //res[i, j] = Math.Pow(matrix[i, j], power);
-                    }));
+                    Parallel.For(0, res.GetLength(0),
+                        i =>
+                            Parallel.For(0, res.GetLength(1),
+                                j =>
+                                    UnsafeUpdate2DArray(arr, width, i, j, Math.Pow(matrix[i, j], power))));
+                }
+                return res;
+            }
+            finally
+            {
+                handle.Free();
+            }
+        }
+
+
+        public static unsafe float[,] Pow(float[,] matrix, float power)
+        {
+            var res = new float[matrix.GetLength(0), matrix.GetLength(1)];
+
+            GCHandle handle = default(GCHandle);
+            try
+            {
+                handle = GCHandle.Alloc(res, GCHandleType.Pinned);
+                var arr = (float*)handle.AddrOfPinnedObject();
+                int width = res.GetLength(1);
+
+                if (power == 2d)
+                {
+                    Parallel.For(0, res.GetLength(0),
+                        i =>
+                            Parallel.For(0, res.GetLength(1),
+                                j =>
+                                    UnsafeUpdate2DArrayF(arr, width, i, j, matrix[i, j] * matrix[i, j])));
+                }
+                else
+                {
+                    Parallel.For(0, res.GetLength(0),
+                        i =>
+                            Parallel.For(0, res.GetLength(1),
+                                j =>
+                                    UnsafeUpdate2DArrayF(arr, width, i, j, (float)Math.Pow(matrix[i, j], power))));
                 }
                 return res;
             }
@@ -885,6 +1086,12 @@ namespace SimpleRBM.MultiDim
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe void UnsafeUpdate2DArray(double* array, int dim1Length, int row, int col, double value)
+        {
+            array[dim1Length * row + col] = value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe void UnsafeUpdate2DArrayF(float* array, int dim1Length, int row, int col, float value)
         {
             array[dim1Length * row + col] = value;
         }

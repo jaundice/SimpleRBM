@@ -95,6 +95,7 @@
     <Compile Include="Demo\KaggleDataD.cs" />
     <Compile Include="Demo\KaggleDataF.cs" />
     <Compile Include="Demo\KeyEncoder.cs" />
+    <Compile Include="Demo\MNistDataD.cs" />
     <Compile Include="Demo\MNistDataF.cs" />
     <Compile Include="IDemo.cs" />
     <Compile Include="ImageUtils.cs" />

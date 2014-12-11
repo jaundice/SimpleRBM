@@ -1,4 +1,4 @@
-﻿//#define USEFLOAT
+﻿#define USEFLOAT
 
 using System;
 using System.Configuration;
@@ -15,18 +15,25 @@ namespace SimpleRBM.Demo
     {
         private static readonly int[] _defaultHandwrittenLayerSizes = {1024, 500, 500, 2000, 10};
         private static readonly int[] _defaultKaggleLayerSizes = {784, 500, 500, 2000, 64, 10};
-        private static readonly int[] _defaultMNistLayerSizes = {250*250, 2000, 2000};
+        private static readonly int[] _defaultMNistLayerSizes = {250*250, 1000, 1000, 64};
 
         private static void Main()
         {
             float learningRate = CommandLine.ReadCommandLine("-learningrate:", float.TryParse, 0.2f);
             int trainingSize = CommandLine.ReadCommandLine("-trainingsize:", int.TryParse, 2048);
             int skipTrainingRecords = CommandLine.ReadCommandLine("-skiptrainingrecords:", int.TryParse, 0);
-
+            
 
             var demo = new DemoApp();
-            //var factory = new CudaDbnFactory();
-            var factory = new MultiDimDbnFactory();
+            var factory = new CudaDbnFactory();
+            //var factory = new MultiDimDbnFactory();
+            Console.WriteLine("Using {0}", factory.GetType());
+
+#if USEFLOAT
+            Console.WriteLine("Using single precision");
+#else
+            Console.WriteLine("Using double precision")
+#endif
 
             if (Environment.GetCommandLineArgs().Contains("-mnist"))
             {

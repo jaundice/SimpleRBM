@@ -83,12 +83,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ActivationFunctions.cs" />
+    <Compile Include="DeepBeliefNetworkF.cs" />
     <Compile Include="DeepBeliefNetworkD.cs" />
     <Compile Include="Distributions.cs" />
     <Compile Include="MatrixException.cs" />
     <Compile Include="Matrix2D.cs" />
     <Compile Include="MultiDimDbnFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RestrictedBoltzmannMachineF.cs" />
     <Compile Include="RestrictedBoltzmannMachineD.cs" />
   </ItemGroup>
   <ItemGroup>

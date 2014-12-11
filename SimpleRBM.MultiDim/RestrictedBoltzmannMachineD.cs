@@ -58,9 +58,9 @@ namespace SimpleRBM.MultiDim
             Matrix2D.UpdateValueAlongAxis(data, 0, 1, Matrix2D.Axis.Vertical);
             double[,] hiddenActivations = Matrix2D.Multiply(data, Weights);
 
-            double[,] hiddenProbs = ActivationFunctions.Logistic(hiddenActivations);
+            double[,] hiddenProbs = ActivationFunctions.LogisticD(hiddenActivations);
             hiddenStates = Matrix2D.GreaterThan(hiddenProbs,
-                Distributions.UniformRandromMatrix(numExamples, NumHiddenElements + 1));
+                Distributions.UniformRandromMatrixD(numExamples, NumHiddenElements + 1));
             hiddenStates = Matrix2D.SubMatrix(hiddenStates, 0, 1);
 
             return hiddenStates;
@@ -74,10 +74,10 @@ namespace SimpleRBM.MultiDim
 
             double[,] visibleActivations = Matrix2D.Multiply(data, Matrix2D.Transpose(Weights));
 
-            double[,] visibleProbs = ActivationFunctions.Logistic(visibleActivations);
+            double[,] visibleProbs = ActivationFunctions.LogisticD(visibleActivations);
 
             double[,] visibleStates = Matrix2D.GreaterThan(
-                visibleProbs, Distributions.UniformRandromMatrix(numExamples, NumVisibleElements + 1));
+                visibleProbs, Distributions.UniformRandromMatrixD(numExamples, NumVisibleElements + 1));
 
             visibleStates = Matrix2D.SubMatrix(visibleStates, 0, 1);
             return visibleStates;
@@ -92,7 +92,7 @@ namespace SimpleRBM.MultiDim
         public double[,] DayDream(int numberOfSamples)
         {
             double[,] data = Matrix2D.OnesD(numberOfSamples, NumVisibleElements + 1);
-            Matrix2D.InsertValuesFrom(data, 0, 1, Distributions.UniformRandromMatrixBool(1, NumVisibleElements), 1);
+            Matrix2D.InsertValuesFrom(data, 0, 1, Distributions.UniformRandromMatrixBoolD(1, NumVisibleElements), 1);
             //data = Matrix2D.Update(data, 0, 1, 1);
             for (int i = 0; i < numberOfSamples; i++)
             {
@@ -100,19 +100,19 @@ namespace SimpleRBM.MultiDim
                 double[,] hiddenActivations = Matrix2D.ToVector(Matrix2D.Multiply(
                     visible, Weights));
 
-                double[,] hiddenProbs = ActivationFunctions.Logistic(hiddenActivations);
+                double[,] hiddenProbs = ActivationFunctions.LogisticD(hiddenActivations);
                 double[,] hiddenStates = Matrix2D.GreaterThan(hiddenProbs,
-                    Distributions.UniformRandromVector(NumHiddenElements + 1));
+                    Distributions.UniformRandromVectorD(NumHiddenElements + 1));
 
                 hiddenStates[0, 0] = 1;
 
                 double[,] visibleActivations = Matrix2D.ToVector(Matrix2D.Multiply(hiddenStates, Matrix2D.Transpose(
                     Weights)));
 
-                double[,] visibleProbs = ActivationFunctions.Logistic(visibleActivations);
+                double[,] visibleProbs = ActivationFunctions.LogisticD(visibleActivations);
 
                 double[,] visibleStates = Matrix2D.GreaterThan(visibleProbs,
-                    Distributions.UniformRandromVector(NumVisibleElements + 1));
+                    Distributions.UniformRandromVectorD(NumVisibleElements + 1));
 
                 Matrix2D.InsertValuesFromRowOrColumn(data, visibleStates, 0, false, i, 0);
             }
@@ -149,18 +149,18 @@ namespace SimpleRBM.MultiDim
                 sw.Start();
 
                 double[,] posHiddenActivations = Matrix2D.Multiply(data, Weights);
-                double[,] posHiddenProbs = ActivationFunctions.Logistic(posHiddenActivations);
+                double[,] posHiddenProbs = ActivationFunctions.LogisticD(posHiddenActivations);
                 double[,] posHiddenStates = Matrix2D.GreaterThan(posHiddenProbs,
-                    Distributions.UniformRandromMatrix(numExamples, NumHiddenElements + 1));
+                    Distributions.UniformRandromMatrixD(numExamples, NumHiddenElements + 1));
                 double[,] posAssociations = Matrix2D.Multiply(Matrix2D.Transpose(data), posHiddenProbs);
 
                 double[,] negVisibleActivations = Matrix2D.Multiply(posHiddenStates, Matrix2D.Transpose(Weights));
-                double[,] negVisibleProbs = ActivationFunctions.Logistic(negVisibleActivations);
+                double[,] negVisibleProbs = ActivationFunctions.LogisticD(negVisibleActivations);
 
                 Matrix2D.UpdateValueAlongAxis(negVisibleProbs, 0, 1, Matrix2D.Axis.Vertical);
 
                 double[,] negHiddenActivations = Matrix2D.Multiply(negVisibleProbs, Weights);
-                double[,] negHiddenProbs = ActivationFunctions.Logistic(negHiddenActivations);
+                double[,] negHiddenProbs = ActivationFunctions.LogisticD(negHiddenActivations);
 
                 double[,] negAssociations = Matrix2D.Multiply(Matrix2D.Transpose(negVisibleProbs), negHiddenProbs);
 

@@ -93,10 +93,11 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="CompareCudaVsMultidimMatrixOpsF.cs" />
     <Compile Include="ThreadOptimizerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DataSourcesTest.cs" />
-    <Compile Include="CompareCudaVsMultidimMatrixOps.cs" />
+    <Compile Include="CompareCudaVsMultidimMatrixOpsD.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SimpleRBM.Common\SimpleRBM.Common.csproj">

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -6,14 +6,15 @@ using SimpleRBM.Common;
 
 namespace SimpleRBM.Demo.Demo
 {
-    public class MNistDataF : DataIOBaseF<string>
+    public class MNistDataD : DataIOBaseD<string>
     {
-        public MNistDataF(string dataPath) : base(dataPath)
+        public MNistDataD(string dataPath)
+            : base(dataPath)
         {
 
         }
 
-        protected override float[,] ReadTrainingData(string filePath, int skipRecords, int count, out string[] labels)
+        protected override double[,] ReadTrainingData(string filePath, int skipRecords, int count, out string[] labels)
         {
             List<FileInfo> files =
                 new DirectoryInfo(filePath).EnumerateFiles("*.jpg", SearchOption.AllDirectories)
@@ -26,7 +27,7 @@ namespace SimpleRBM.Demo.Demo
             return ImageData(files);
         }
 
-        protected override float[,] ReadTestData(string filePath, int skipRecords, int count)
+        protected override double[,] ReadTestData(string filePath, int skipRecords, int count)
         {
             List<FileInfo> files =
                 new DirectoryInfo(filePath).EnumerateFiles("*.jpg", SearchOption.AllDirectories)
@@ -38,23 +39,23 @@ namespace SimpleRBM.Demo.Demo
         }
 
 
-        private static float[,] ImageData(IEnumerable<FileInfo> files)
+        private static double[,] ImageData(IEnumerable<FileInfo> files)
         {
             List<FileInfo> lstFiles = files.ToList();
 
-            IEnumerable<float[]> trainingImageData = ImageUtils.ReadImageData(lstFiles, ImageUtils.ConvertRGBToGreyF);
+            IEnumerable<double[]> trainingImageData = ImageUtils.ReadImageData(lstFiles, ImageUtils.ConvertRGBToGreyD);
 
 
-            float[,] data = null;
+            double[,] data = null;
             int i = 0;
 
             foreach (var bytese in trainingImageData)
             {
                 if (i == 0)
                 {
-                    data = new float[lstFiles.Count, bytese.Length];
+                    data = new double[lstFiles.Count, bytese.Length];
                 }
-                float[] localBytes = bytese;
+                double[] localBytes = bytese;
                 Parallel.For(0, bytese.Length, a => { data[i, a] = localBytes[a]; });
                 i++;
             }
