@@ -78,7 +78,8 @@
     <StartupObject>SimpleRBM.Demo.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Cudafy.NET">
+    <Reference Include="Cudafy.NET, Version=1.27.5314.36419, Culture=neutral, PublicKeyToken=63a4c9931616906b, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\CUDAfy.NET.1.27.5314.36419\lib\net40\Cudafy.NET.dll</HintPath>
     </Reference>
     <Reference Include="System" />

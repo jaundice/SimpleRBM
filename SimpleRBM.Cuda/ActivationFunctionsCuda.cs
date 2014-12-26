@@ -41,7 +41,7 @@ namespace SimpleRBM.Cuda
         } 
        
         [Cudafy]
-        public static void Logistic(GThread thread, double[,] input, double[,] output)
+        public static void LogisticD(GThread thread, double[,] input, double[,] output)
         {
             int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
             int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;

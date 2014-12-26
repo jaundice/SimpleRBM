@@ -384,10 +384,10 @@ namespace SimpleRBM.Cuda
             ThreadOptimiser.Instance.GetStrategy(x, 1, out grid, out block);
 
             float[,] working = gpu.Allocate<float>(x, 1);
-            gpu.Launch(grid, block, SumMatrixRows, matrix.Matrix, working);
+            gpu.Launch(grid, block, SumMatrixRowsF, matrix.Matrix, working);
 
             float[,] working2 = gpu.Allocate<float>(1, 1);
-            gpu.Launch(new dim3(1), new dim3(1), SumMatrixColumns, working, working2);
+            gpu.Launch(new dim3(1), new dim3(1), SumMatrixColumnsF, working, working2);
 
 
             var local = new float[1, 1];
@@ -399,7 +399,7 @@ namespace SimpleRBM.Cuda
         }
 
         [Cudafy]
-        public static void SumMatrixRows(GThread thread, float[,] matrix, float[,] reduced)
+        public static void SumMatrixRowsF(GThread thread, float[,] matrix, float[,] reduced)
         {
             int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
 
@@ -416,7 +416,7 @@ namespace SimpleRBM.Cuda
         }
 
         [Cudafy]
-        public static void SumMatrixColumns(GThread thread, float[,] matrix, float[,] reduced)
+        public static void SumMatrixColumnsF(GThread thread, float[,] matrix, float[,] reduced)
         {
             int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
 
@@ -445,7 +445,7 @@ namespace SimpleRBM.Cuda
                 for (int i = 0; i < x; i++)
                 {
                     rand.GenerateNormal(tempGaussian, 0f, 1f, my);
-                    gpu.Launch(grid, block, CopyToArrayAtN, array.Matrix, tempGaussian.Matrix, i);
+                    gpu.Launch(grid, block, CopyToArrayAtNF, array.Matrix, tempGaussian.Matrix, i);
                 }
             }
             return array;
@@ -465,7 +465,7 @@ namespace SimpleRBM.Cuda
                 {
                     rand.GenerateUniform(tempUniform, my);
 
-                    gpu.Launch(grid, block, CopyToArrayAtN, array.Matrix, tempUniform.Matrix, i);
+                    gpu.Launch(grid, block, CopyToArrayAtNF, array.Matrix, tempUniform.Matrix, i);
                 }
             }
             return array;
@@ -473,7 +473,7 @@ namespace SimpleRBM.Cuda
 
 
         [Cudafy]
-        public static void CopyToArrayAtN(GThread thread, float[,] target, float[] source, int x)
+        public static void CopyToArrayAtNF(GThread thread, float[,] target, float[] source, int x)
         {
             int id = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
 

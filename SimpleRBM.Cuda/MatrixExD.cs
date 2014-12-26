@@ -58,7 +58,7 @@ namespace SimpleRBM.Cuda
             Matrix2D<double> res = self.GPU.AllocateAndSet<double>(self.GetLength(0), self.GetLength(1));
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-            self.GPU.Launch(grid, block, ActivationFunctionsCuda.Logistic, self.Matrix, res.Matrix);
+            self.GPU.Launch(grid, block, ActivationFunctionsCuda.LogisticD, self.Matrix, res.Matrix);
             return res;
         }
 

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using Cudafy.Host;
 
@@ -31,15 +32,22 @@ namespace SimpleRBM.Cuda
 
         public void Dispose()
         {
-            Dispose(true);
+            if (!Disposed)
+            {
+                Disposed = true;
+                Dispose(true);
+                GC.SuppressFinalize(this);
+            }
         }
+
+        public bool Disposed { get; protected set; }
 
         public int GetLength(int dimension)
         {
             return _dimensions[dimension];
         }
 
-        private void Dispose(bool disposing)
+        protected virtual void Dispose(bool disposing)
         {
             if (disposing)
             {
@@ -48,6 +56,12 @@ namespace SimpleRBM.Cuda
                     GPU.Free(InnerMatrix);
                 }
             }
+        }
+
+        ~Matrix()
+        {
+            Trace.TraceError("Matrix finalizer called. Dispose properly!");
+            Dispose(false);
         }
     }
 }

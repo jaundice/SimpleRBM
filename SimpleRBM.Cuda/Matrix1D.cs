@@ -5,8 +5,8 @@ namespace SimpleRBM.Cuda
 {
     public class Matrix1D<T> : Matrix
     {
-        public Matrix1D(GPGPU gpu, Array array, int[] dimensions)
-            : base(gpu, array, dimensions)
+        public Matrix1D(GPGPU gpu, Array array, int rows)
+            : base(gpu, array, new[] { rows })
         {
         }
 

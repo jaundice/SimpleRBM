@@ -27,12 +27,12 @@ namespace SimpleRBM.Demo
             var demo = new DemoApp();
             var factory = new CudaDbnFactory();
             //var factory = new MultiDimDbnFactory();
-            Console.WriteLine("Using {0}", factory.GetType());
+            Console.WriteLine("Using {0}", factory.GetType().Name);
 
 #if USEFLOAT
             Console.WriteLine("Using single precision");
 #else
-            Console.WriteLine("Using double precision")
+            Console.WriteLine("Using double precision");
 #endif
 
             if (Environment.GetCommandLineArgs().Contains("-mnist"))

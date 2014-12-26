@@ -448,7 +448,6 @@ namespace SimpleRBM.Cuda
                     }
                     i += thread.gridDim.x * thread.blockDim.x;
                 }
-                //thread.SyncThreads();
             }
             else
             {
@@ -457,18 +456,14 @@ namespace SimpleRBM.Cuda
                     int n = j;
                     while (n < matrix1.GetLength(1))
                     {
-                        thread.SyncThreads();
                         var d = Math.Pow(matrix1[i, n], power);
-                        thread.SyncThreads();
-
-                        target[i, n] =d ;
+                        target[i, n] = d;
                         n += thread.gridDim.y * thread.blockDim.y;
                     }
                     i += thread.gridDim.x * thread.blockDim.x;
                 }
-                //thread.SyncThreads();
             }
-            //thread.SyncThreads();
+            thread.SyncThreads();
         }
 
         [Cudafy]

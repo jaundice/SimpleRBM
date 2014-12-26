@@ -9,7 +9,7 @@ namespace SimpleRBM.Cuda
         {
             T[] res = gpu.Allocate<T>(rows);
             gpu.Set(res);
-            return new Matrix1D<T>(gpu, res, new[] { rows });
+            return new Matrix1D<T>(gpu, res, rows);
         }
 
         public static Matrix2D<T> AllocateAndSet<T>(this GPGPU gpu, int rows, int cols) where T : struct
