@@ -87,15 +87,23 @@
   <ItemGroup>
     <Compile Include="DataIOBaseD.cs" />
     <Compile Include="DataIOBaseF.cs" />
+    <Compile Include="ExitCondition\CompanionDatasetExitConditionEvaluator.cs" />
+    <Compile Include="ExitCondition\CompanionDatasetExitConditionEvaluatorFactory.cs" />
     <Compile Include="ExitCondition\EpochCountExitCondition.cs" />
     <Compile Include="ExitCondition\EpochCountExitConditionFactory.cs" />
+    <Compile Include="ExitCondition\EpochErrorFileTracker.cs" />
+    <Compile Include="ExitCondition\IEpochErrorTracker.cs" />
     <Compile Include="IDataIO.cs" />
     <Compile Include="IDeepBeliefNetwork.cs" />
     <Compile Include="IDeepBeliefNetworkFactory.cs" />
     <Compile Include="IExitConditionEvaluator.cs" />
     <Compile Include="IExitConditionEvaluatorFactory.cs" />
+    <Compile Include="ILayerDefinition.cs" />
     <Compile Include="ILayerSaveInfo.cs" />
+    <Compile Include="ILearningRateCalculator.cs" />
     <Compile Include="IRestrictedBoltzmannMachine.cs" />
+    <Compile Include="LayerDefinition.cs" />
+    <Compile Include="LearningRate\ConstantLearningRate.cs" />
     <Compile Include="Save\LayerSaveInfoD.cs" />
     <Compile Include="Save\LayerSaveInfoF.cs" />
     <Compile Include="ExitCondition\ManualKeyPressEvaluator.cs" />

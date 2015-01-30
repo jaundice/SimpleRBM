@@ -6,26 +6,26 @@ namespace SimpleRBM.MultiDim
 {
     public class MultiDimDbnFactory : IDeepBeliefNetworkFactory<double>, IDeepBeliefNetworkFactory<float>
     {
-        public IDeepBeliefNetwork<double> Create(DirectoryInfo networkDataDir, int[] appendLayers = null,
-            double learningRate = 0.2,
+        public IDeepBeliefNetwork<double> Create(DirectoryInfo networkDataDir, ILayerDefinition[] appendLayers,
+            ILearningRateCalculator<double> learningRateCalculator ,
             IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory = null)
         {
-            return new DeepBeliefNetworkD(networkDataDir, learningRate, exitConditionEvaluatorFactory, appendLayers);
+            return new DeepBeliefNetworkD(networkDataDir, learningRateCalculator, exitConditionEvaluatorFactory, appendLayers);
         }
 
-        public IDeepBeliefNetwork<double> Create(int[] layerSizes = null, double learningRate = 0.2,
+        public IDeepBeliefNetwork<double> Create(ILayerDefinition[] layerSizes, ILearningRateCalculator<double> learningRateCalculator,
             IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory = null)
         {
-            return new DeepBeliefNetworkD(layerSizes, learningRate, exitConditionEvaluatorFactory);
+            return new DeepBeliefNetworkD(layerSizes, learningRateCalculator, exitConditionEvaluatorFactory);
         }
 
         IDeepBeliefNetwork<float> IDeepBeliefNetworkFactory<float>.Create(DirectoryInfo networkDataDir,
-            int[] appendLayers, float learningRate, IExitConditionEvaluatorFactory<float> exitConditionEvaluatorFactory)
+            ILayerDefinition[] appendLayers, ILearningRateCalculator<float> learningRateCalculator, IExitConditionEvaluatorFactory<float> exitConditionEvaluatorFactory)
         {
-            return new DeepBeliefNetworkF(networkDataDir, learningRate, exitConditionEvaluatorFactory, appendLayers);
+            return new DeepBeliefNetworkF(networkDataDir, learningRateCalculator, exitConditionEvaluatorFactory, appendLayers);
         }
 
-        IDeepBeliefNetwork<float> IDeepBeliefNetworkFactory<float>.Create(int[] layerSizes, float learningRate,
+        IDeepBeliefNetwork<float> IDeepBeliefNetworkFactory<float>.Create(ILayerDefinition[] layerSizes, ILearningRateCalculator<float> learningRate,
             IExitConditionEvaluatorFactory<float> exitConditionEvaluatorFactory)
         {
             return new DeepBeliefNetworkF(layerSizes, learningRate, exitConditionEvaluatorFactory);

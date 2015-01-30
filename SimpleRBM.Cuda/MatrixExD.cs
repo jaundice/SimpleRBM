@@ -48,7 +48,16 @@ namespace SimpleRBM.Cuda
         public static void UpdateValuesAlongAxis(this Matrix2D<double> self, int index, double value, Axis axis)
         {
             dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
+            if (axis == Axis.Column)
+            {
+                ThreadOptimiser.Instance.GetStrategy(self.GetLength(0), 1, out grid, out block);
+
+            }
+            else
+            {
+                ThreadOptimiser.Instance.GetStrategy(1, self.GetLength(1), out grid, out block);
+            }
+            //ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
             self.GPU.Launch(grid, block, Matrix2DCudaD.UpdateValueAlongAxisD, self.Matrix, index, value,
                 axis == Axis.Row ? Matrix2DCudaF.TRUE : Matrix2DCudaF.FALSE);
         }
@@ -132,7 +141,7 @@ namespace SimpleRBM.Cuda
             return res;
         }
 
-        public static Matrix2D<double> Upload(GPGPU gpu, double[,] source)
+        public static Matrix2D<double> Upload(this GPGPU gpu, double[,] source)
         {
             Matrix2D<double> tempSrcData = gpu.AllocateAndSet<double>(source.GetLength(0), source.GetLength(1));
             gpu.CopyToDevice(source, tempSrcData);

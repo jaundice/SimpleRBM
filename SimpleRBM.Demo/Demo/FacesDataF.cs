@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -6,30 +7,50 @@ using SimpleRBM.Common;
 
 namespace SimpleRBM.Demo.Demo
 {
-    public class MNistDataF : DataIOBaseF<string>
+    public class FacesDataF : DataIOBaseF<string>
     {
-        public MNistDataF(string dataPath) : base(dataPath)
+        public FacesDataF(string dataPath)
+            : base(dataPath)
         {
-
         }
 
-        protected override float[,] ReadTrainingData(string filePath, int skipRecords, int count, out string[] labels)
+        protected override float[,] ReadTrainingData(string filePath, int skipRecords, int count, out string[] labels,
+            out float[,] labelsCoded)
         {
+            var rnd = new Random();
+
             List<FileInfo> files =
-                new DirectoryInfo(filePath).EnumerateFiles("*.jpg", SearchOption.AllDirectories)
+                new DirectoryInfo(filePath).EnumerateFiles("*.jpg", SearchOption.AllDirectories).Select(a => new
+                {
+                    a,
+                    rnd = rnd.Next()
+                }).OrderBy(a => a.rnd).Select(a => a.a)
                     .Skip(skipRecords)
                     .Take(count)
                     .ToList();
 
             labels = files.Select(a => a.Directory.Name).ToArray();
 
+            string[] allLabelOptions =
+                new DirectoryInfo(filePath).EnumerateDirectories("*", SearchOption.AllDirectories)
+                    .Select(a => a.Name)
+                    .ToArray();
+
+            labelsCoded = LabelEncoder.EncodeLabels<string, float>(labels, allLabelOptions);
             return ImageData(files);
         }
 
         protected override float[,] ReadTestData(string filePath, int skipRecords, int count)
         {
+            var rnd = new Random();
+
+
             List<FileInfo> files =
-                new DirectoryInfo(filePath).EnumerateFiles("*.jpg", SearchOption.AllDirectories)
+                new DirectoryInfo(filePath).EnumerateFiles("*.jpg", SearchOption.AllDirectories).Select(a => new
+                {
+                    a,
+                    rnd = rnd.Next()
+                }).OrderBy(a => a.rnd).Select(a => a.a)
                     .Skip(skipRecords)
                     .Take(count)
                     .ToList();

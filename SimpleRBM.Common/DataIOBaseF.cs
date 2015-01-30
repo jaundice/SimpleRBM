@@ -13,21 +13,47 @@ namespace SimpleRBM.Common
 
         public string DataPath { get; protected set; }
 
-        public virtual void PrintToScreen(float[,] arr, TLabel[] labels = null, float[,] reference = null,
-            ulong[] keys = null)
+        public virtual void PrintToScreen(float[,] arr, float[,] reference = null, TLabel[] referenceLabels = null, float[,] referenceLabelsCoded = null, ulong[][] keys = null, float[,] computedLabels = null)
         {
-            var dataWidth = (int) Math.Sqrt(arr.GetLength(1));
+            var dataWidth = (int)Math.Sqrt(arr.GetLength(1));
 
 
             for (int i = 0; i < arr.GetLength(0); i++)
             {
                 Console.WriteLine();
-                if (labels != null)
-                    Console.Write("{0} ", labels[i]);
+                if (referenceLabels != null)
+                    Console.WriteLine("Label:\t{0} ", referenceLabels[i]);
 
                 if (keys != null)
-                    Console.Write(keys[i]);
+                    Console.WriteLine("Key:\t{0}", string.Join(" ", keys[i]));
 
+                if (referenceLabelsCoded != null)
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.Append("Reference Label:\t");
+                    for (var q = 0; q < referenceLabelsCoded.GetLength(1); q++)
+                    {
+                        float f = referenceLabelsCoded[i, q];
+
+                        sb.Append(float.IsNaN(f) ? "N" : f == 0f ? "." : f < 0.5f ? "-" : "+");
+                    }
+
+                    Console.WriteLine(sb.ToString());
+                }
+
+                if (computedLabels != null)
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.Append("Computed Label:\t\t");
+                    for (var q = 0; q < computedLabels.GetLength(1); q++)
+                    {
+                        float f = computedLabels[i, q];
+                        
+                        sb.Append( float.IsNaN(f)? "N": f == 0f ? "." : f < 0.5f ? "-" : "+");
+                    }
+
+                    Console.WriteLine(sb.ToString());
+                }
                 Console.WriteLine();
                 var builder1 = new StringBuilder();
                 var builder2 = new StringBuilder();
@@ -44,10 +70,10 @@ namespace SimpleRBM.Common
 
                 for (int line = 0; line < dataWidth; line++)
                 {
-                    var line1 = new string(l1.Skip(line*dataWidth).Take(dataWidth).ToArray());
+                    var line1 = new string(l1.Skip(line * dataWidth).Take(dataWidth).ToArray());
                     string line2 = reference == null
                         ? null
-                        : new string(l2.Skip(line*dataWidth).Take(dataWidth).ToArray());
+                        : new string(l2.Skip(line * dataWidth).Take(dataWidth).ToArray());
 
                     if (reference == null)
                     {
@@ -65,12 +91,12 @@ namespace SimpleRBM.Common
 
         public virtual void PrintMap(float[,] arr)
         {
-            var dataWidth = (int) Math.Sqrt(arr.GetLength(1));
+            var dataWidth = (int)Math.Sqrt(arr.GetLength(1));
             for (int i = 0; i < arr.GetLength(0); i++)
             {
                 for (int j = 0; j < arr.GetLength(1); j++)
                 {
-                    if (j%dataWidth == 0)
+                    if (j % dataWidth == 0)
                         Console.WriteLine();
                     Console.Write(GetCharFor(arr[i, j]));
                 }
@@ -78,23 +104,23 @@ namespace SimpleRBM.Common
             }
         }
 
-        public virtual float[,] ReadTrainingData(int skipRecords, int count, out TLabel[] labels)
+        public virtual float[,] ReadTrainingData(int skipRecords, int count, out TLabel[] labels, out float[,] labelsCoded)
         {
-            return ReadTrainingData(DataPath, skipRecords, count, out labels);
+            return ReadTrainingData(DataPath, skipRecords, count, out labels, out labelsCoded);
         }
 
         public virtual float[,] ReadTestData(int skipRecords, int count)
         {
-            return ReadTestData(DataPath ,skipRecords, count);
+            return ReadTestData(DataPath, skipRecords, count);
         }
 
-        protected abstract float[,] ReadTrainingData(string filePath, int skipRecords, int count, out TLabel[] labels);
+        protected abstract float[,] ReadTrainingData(string filePath, int skipRecords, int count, out TLabel[] labels, out float[,] labelsCoded);
 
         protected abstract float[,] ReadTestData(string filePath, int skipRecords, int count);
 
         protected static string GetCharFor(float f)
         {
-            return f > 0.5f ? "1" : f > 0f ? "." : "0";
+            return f > 0.5f ? "+" : f > 0f ? "-" : ".";
         }
     }
 }

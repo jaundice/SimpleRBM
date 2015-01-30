@@ -13,9 +13,14 @@ namespace SimpleRBM.Common.ExitCondition
         private readonly T _minError;
         private T _lowestErrorSeen;
         private bool _exitOnNextLowest;
+        private readonly int _layerDepth;
 
-        public bool Exit(int epochNumber, T lastError)
+        public bool Exit(int epochNumber, T lastError, TimeSpan elapsedTime)
         {
+            if (epochNumber % 20 == 0)
+                Console.WriteLine("Epoch: {0}\tLayer: {1}\tError: {2}\tElapsed: {3}", epochNumber, _layerDepth, lastError, elapsedTime);
+
+
             if (epochNumber > _maxEpochs || Comparer<T>.Default.Compare(lastError, _minError) < 0)
             {
                 src.Cancel();
@@ -39,10 +44,11 @@ namespace SimpleRBM.Common.ExitCondition
             return _exit;
         }
 
-        public ManualKeyPressEvaluator(int maxEpochs, T minError)
+        public ManualKeyPressEvaluator(int layerDepth, int maxEpochs, T minError)
         {
             _maxEpochs = maxEpochs;
             _minError = minError;
+            _layerDepth = layerDepth;
         }
 
         public void Reset()

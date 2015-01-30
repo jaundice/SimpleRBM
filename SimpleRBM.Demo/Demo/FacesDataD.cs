@@ -6,15 +6,15 @@ using SimpleRBM.Common;
 
 namespace SimpleRBM.Demo.Demo
 {
-    public class MNistDataD : DataIOBaseD<string>
+    public class FacesDataD : DataIOBaseD<string>
     {
-        public MNistDataD(string dataPath)
+        public FacesDataD(string dataPath)
             : base(dataPath)
         {
 
         }
 
-        protected override double[,] ReadTrainingData(string filePath, int skipRecords, int count, out string[] labels)
+        protected override double[,] ReadTrainingData(string filePath, int skipRecords, int count, out string[] labels, out double[,] labelsCoded)
         {
             List<FileInfo> files =
                 new DirectoryInfo(filePath).EnumerateFiles("*.jpg", SearchOption.AllDirectories)
@@ -23,6 +23,13 @@ namespace SimpleRBM.Demo.Demo
                     .ToList();
 
             labels = files.Select(a => a.Directory.Name).ToArray();
+
+            var allLabelOptions =
+                new DirectoryInfo(filePath).EnumerateDirectories("*", SearchOption.AllDirectories)
+                    .Select(a => a.Name)
+                    .ToArray();
+
+            labelsCoded = LabelEncoder.EncodeLabels<string, double>(labels, allLabelOptions);
 
             return ImageData(files);
         }

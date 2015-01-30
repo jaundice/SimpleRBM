@@ -27,27 +27,27 @@ namespace DeepLearn
         {
             if (TrainEnd != null)
                 TrainEnd(this, new EpochEventArgs(seq, err));
-        } 
+        }
         #endregion
 
         #region Private fields
         private readonly int m_numHiddenElements;
         private readonly int m_numVisibleElements;
         private readonly double m_learningRate;
-        private RealMatrix m_weights; 
+        private RealMatrix m_weights;
         #endregion
 
         #region Public Properties
         public int NumberOfVisibleElements { get { return m_numVisibleElements; } }
         #endregion
-       
+
         public RBM(int numVisible, int numHidden, double learningRate = 0.1)
         {
             m_numHiddenElements = numHidden;
             m_numVisibleElements = numVisible;
             m_learningRate = learningRate;
 
-            m_weights = 0.1*Distributions.GaussianMatrix(numVisible, numHidden);
+            m_weights = 0.1 * Distributions.GaussianMatrix(numVisible, numHidden);
             m_weights = m_weights.InsertRow(0);
             m_weights = m_weights.InsertCol(0);
         }
@@ -65,7 +65,7 @@ namespace DeepLearn
 
             // Create a matrix, where each row is to be the hidden units (plus a bias unit)
             // sampled from a training example.
-            var hidden_states = RealMatrix.Ones(num_examples, m_numHiddenElements + 1);
+            //var hidden_states = RealMatrix.Ones(num_examples, m_numHiddenElements + 1);
 
             var data = new RealMatrix(dataArray);
             // Insert bias units of 1 into the first column of data.
@@ -76,7 +76,7 @@ namespace DeepLearn
             // Calculate the probabilities of turning the hidden units on.
             var hiddenProbs = ActivationFunctions.Logistic(hiddenActivations);
             // Turn the hidden units on with their specified probabilities.
-            hidden_states = hiddenProbs > Distributions.UniformRandromMatrix(num_examples, m_numHiddenElements + 1);
+            var hidden_states = hiddenProbs > Distributions.UniformRandromMatrix(num_examples, m_numHiddenElements + 1);
 
             // Ignore the bias units.
             hidden_states = hidden_states.RemoveFirstCol(); //  hidden_states[:,1:]
@@ -124,12 +124,12 @@ namespace DeepLearn
             for (int i = 0; i < numberOfSamples; i++)
             {
                 var visible = data.Submatrix(i, 0, 1).ToVector();
-                var hidden_activations = (visible*m_weights).ToVector();
+                var hidden_activations = (visible * m_weights).ToVector();
                 var hidden_probs = ActivationFunctions.Logistic(hidden_activations);
                 var hidden_states = hidden_probs > RVector.Random(m_numHiddenElements + 1);
                 hidden_states[0] = 1;
 
-                var visible_activations = (hidden_states*m_weights.Transpose).ToVector();
+                var visible_activations = (hidden_states * m_weights.Transpose).ToVector();
                 var visible_probs = ActivationFunctions.Logistic(visible_activations);
                 var visible_states = visible_probs > RVector.Random(m_numVisibleElements + 1);
                 data.Update(visible_states, 0, false, i, 0);
@@ -137,7 +137,7 @@ namespace DeepLearn
 
             return data.Submatrix(0, 1).ToArray();
         }
-    
+
         public void AsyncTrain(double[][] data, int maxEpochs)
         {
             double e = 0;
@@ -158,18 +158,24 @@ namespace DeepLearn
             for (int i = 0; i < maxEpochs; i++)
             {
                 sw.Start();
+                //similar to gethiddenlayer
                 var posHiddenActivations = data * m_weights;
                 var posHiddenProbs = ActivationFunctions.Logistic(posHiddenActivations);
                 var posHiddenStates = posHiddenProbs > Distributions.UniformRandromMatrix(numExamples, m_numHiddenElements + 1);
-                var posAssociations = data.Transpose * posHiddenProbs;
+                //end
+                //posHiddenStates is equivalent to result of gethiddenlayer but including bias
+                //also eqivalent to data in getvisiblelayer after bias is added
 
+                //similar to getvisiblelayer
                 var negVisibleActivations = posHiddenStates * m_weights.Transpose;
                 var negVisibleProbs = ActivationFunctions.Logistic(negVisibleActivations);
+                //end
 
-                negVisibleProbs = negVisibleProbs.Update(0, 1, 1);
+                negVisibleProbs = negVisibleProbs.Update(0, 1, 1); //reconstructed data
                 var negHiddenActivations = negVisibleProbs * m_weights;
                 var negHiddenProbs = ActivationFunctions.Logistic(negHiddenActivations);
 
+                var posAssociations = data.Transpose * posHiddenProbs;
                 var negAssociations = negVisibleProbs.Transpose * negHiddenProbs;
 
                 m_weights = m_weights + (m_learningRate * ((posAssociations - negAssociations) / numExamples));
@@ -177,13 +183,13 @@ namespace DeepLearn
                 sw.Stop();
                 error = ((data - negVisibleProbs) ^ 2).Sum();
                 RaiseEpochEnd(i, error);
-                Console.WriteLine("Epoch {0}: error is {1}, computation time (ms): {2}", i, error,sw.ElapsedMilliseconds);
+                Console.WriteLine("Epoch {0}: error is {1}, computation time (ms): {2}", i, error, sw.ElapsedMilliseconds);
                 sw.Reset();
             }
 
             RaiseTrainEnd(maxEpochs, error);
         }
-        
+
         public double[][] Reconstruct(double[][] data)
         {
             var hl = GetHiddenLayer(data);

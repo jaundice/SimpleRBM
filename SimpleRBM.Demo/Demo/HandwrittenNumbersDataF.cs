@@ -10,38 +10,40 @@ namespace SimpleRBM.Demo.Demo
     {
         private const int ImgDimension = 32;
 
-        public HandwrittenNumbersDataF(string dataPath) : base(dataPath)
+        public HandwrittenNumbersDataF(string dataPath)
+            : base(dataPath)
         {
         }
 
-        protected override float[,] ReadTrainingData(string filePath, int skipRecords, int count, out int[] labels)
+        protected override float[,] ReadTrainingData(string filePath, int skipRecords, int count, out int[] labels, out float[,] labelsCoded)
         {
             string x = File.ReadAllText(filePath);
 
             x = Regex.Replace(x, @"\s", "");
 
-            int recordlength = (ImgDimension*ImgDimension) + 1;
+            int recordlength = (ImgDimension * ImgDimension) + 1;
             var lbl = new int[count];
-            var data = new float[count, ImgDimension*ImgDimension];
+            var data = new float[count, ImgDimension * ImgDimension];
 
-            Parallel.For(0, count, a => Parallel.For(0, ImgDimension*ImgDimension, b =>
+            Parallel.For(0, count, a => Parallel.For(0, ImgDimension * ImgDimension, b =>
             {
-                data[a, b] = float.Parse(x[((skipRecords + a)*recordlength) + b].ToString(CultureInfo.InvariantCulture));
+                data[a, b] = float.Parse(x[((skipRecords + a) * recordlength) + b].ToString(CultureInfo.InvariantCulture));
                 lbl[a] =
                     int.Parse(
-                        x[((skipRecords + a)*recordlength) + ImgDimension*ImgDimension].ToString(
+                        x[((skipRecords + a) * recordlength) + ImgDimension * ImgDimension].ToString(
                             CultureInfo.InvariantCulture));
             }));
 
             labels = lbl;
-
+            labelsCoded = LabelEncoder.EncodeLabels<int, float>(labels,10);
             return data;
         }
 
         protected override float[,] ReadTestData(string filePath, int skipRecords, int count)
         {
             int[] labels;
-            return ReadTrainingData(filePath, skipRecords, count, out labels);
+            float[,] labelsCoded;
+            return ReadTrainingData(filePath, skipRecords, count, out labels, out labelsCoded);
         }
     }
 }

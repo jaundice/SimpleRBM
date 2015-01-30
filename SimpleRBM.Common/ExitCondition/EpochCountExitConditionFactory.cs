@@ -16,6 +16,7 @@ namespace SimpleRBM.Common.ExitCondition
         {
             return new EpochCountExitCondition<T>()
             {
+                LayerDepth = layerDepth,
                 MaxEpoch = _maxEpochs
             };
         }

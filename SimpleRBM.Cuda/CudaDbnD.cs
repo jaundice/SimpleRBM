@@ -12,7 +12,7 @@ using SimpleRBM.Common.Save;
 
 namespace SimpleRBM.Cuda
 {
-    public class CudaDbnD : IDeepBeliefNetwork<double>, IDisposable
+    public class CudaDbnD : IDeepBeliefNetworkExtended<double>, IDisposable
     {
         private readonly CudaRbmD[] Machines;
 
@@ -24,8 +24,8 @@ namespace SimpleRBM.Cuda
         private readonly GPGPURAND _rand;
 
 
-        public CudaDbnD(GPGPU gpu, GPGPURAND rand, DirectoryInfo network, double learningRate,
-            IExitConditionEvaluatorFactory<double> exitConditionExitConditionEvaluatorFactory, int[] appendLayers = null)
+        public CudaDbnD(GPGPU gpu, GPGPURAND rand, DirectoryInfo network, ILearningRateCalculator<double> learningRate,
+            IExitConditionEvaluatorFactory<double> exitConditionExitConditionEvaluatorFactory, ILayerDefinition[] appendLayers = null)
         {
             _gpu = gpu;
             _rand = rand;
@@ -35,10 +35,9 @@ namespace SimpleRBM.Cuda
                     .OrderBy(a => int.Parse(Regex.Match(Path.GetFileNameWithoutExtension(a.Name), "[0-9]+").Value))
                     .Select(a => new LayerSaveInfoD(a.FullName)).ToList();
 
-            appendLayers = appendLayers ?? new int[0];
+            appendLayers = appendLayers ?? new ILayerDefinition[0];
             Machines =
-                new CudaRbmD[saveInfos.Count() + (appendLayers.Length == 0 ? 0 : appendLayers.Length)
-                    ];
+                new CudaRbmD[saveInfos.Count() + appendLayers.Length];
 
 
             for (int i = 0; i < saveInfos.Count; i++)
@@ -46,7 +45,7 @@ namespace SimpleRBM.Cuda
                 Console.WriteLine("Building Layer {0}: {1}x{2}", i, saveInfos[i].NumVisible, saveInfos[i].NumHidden);
 
                 var rbm = new CudaRbmD(gpu, rand, saveInfos[i].NumVisible, saveInfos[i].NumHidden,
-                    saveInfos[i].Weights,
+                    i, saveInfos[i].Weights,
                     ExitConditionEvaluatorFactory.Create(i, saveInfos[i].NumVisible, saveInfos[i].NumHidden),
                     learningRate);
                 rbm.EpochEnd += OnRbm_EpochEnd;
@@ -55,15 +54,15 @@ namespace SimpleRBM.Cuda
 
             if (appendLayers.Length > 0)
             {
-                for (int j = -1; j < appendLayers.Length - 1; j++)
+                for (int j = 0; j < appendLayers.Length; j++)
                 {
-                    Console.WriteLine("Appending Layer {0}: {1}x{2}", j + saveInfos.Count + 1,
-                        j == -1 ? saveInfos.Last().NumHidden : appendLayers[j], appendLayers[j + 1]);
+                    Console.WriteLine("Appending Layer {0}: {1}x{2}", j + saveInfos.Count,
+                        appendLayers[j].VisibleUnits, appendLayers[j].HiddenUnits);
 
                     var rbm = new CudaRbmD(gpu, rand,
-                        j == -1 ? saveInfos.Last().NumHidden : appendLayers[j], appendLayers[j + 1],
-                        ExitConditionEvaluatorFactory.Create(saveInfos.Count + j,
-                            j == -1 ? saveInfos.Last().NumHidden : appendLayers[j], appendLayers[j + 1]), learningRate);
+                        appendLayers[j].VisibleUnits, appendLayers[j].HiddenUnits,
+                       saveInfos.Count + j + 1, ExitConditionEvaluatorFactory.Create(saveInfos.Count + j,
+                            appendLayers[j].VisibleUnits, appendLayers[j].HiddenUnits), learningRate);
                     rbm.EpochEnd += OnRbm_EpochEnd;
                     Machines[saveInfos.Count + j + 1] = rbm;
                 }
@@ -72,7 +71,7 @@ namespace SimpleRBM.Cuda
             _gpu.Synchronize();
         }
 
-        public CudaDbnD(GPGPU gpu, GPGPURAND rand, int[] layerSizes, double learningRate,
+        public CudaDbnD(GPGPU gpu, GPGPURAND rand, ILayerDefinition[] layerSizes, ILearningRateCalculator<double> learningRate,
             IExitConditionEvaluatorFactory<double> exitConditionExitConditionEvaluatorFactory)
         {
             _gpu = gpu;
@@ -80,14 +79,14 @@ namespace SimpleRBM.Cuda
             ExitConditionEvaluatorFactory = exitConditionExitConditionEvaluatorFactory;
 
 
-            Machines = new CudaRbmD[layerSizes.Length - 1];
+            Machines = new CudaRbmD[layerSizes.Length];
 
-            for (int i = 0; i < layerSizes.Length - 1; i++)
+            for (int i = 0; i < layerSizes.Length; i++)
             {
-                Console.WriteLine("Building Layer {0}: {1}x{2}", i, layerSizes[i], layerSizes[i + 1]);
+                Console.WriteLine("Building Layer {0}: {1}x{2}", i, layerSizes[i].VisibleUnits, layerSizes[i].HiddenUnits);
 
-                var rbm = new CudaRbmD(gpu, rand, layerSizes[i], layerSizes[i + 1],
-                    ExitConditionEvaluatorFactory.Create(i, layerSizes[i], layerSizes[i + 1]), learningRate);
+                var rbm = new CudaRbmD(gpu, rand, layerSizes[i].VisibleUnits, layerSizes[i].HiddenUnits,
+                    i, ExitConditionEvaluatorFactory.Create(i, layerSizes[i].VisibleUnits, layerSizes[i].HiddenUnits), learningRate);
                 rbm.EpochEnd += OnRbm_EpochEnd;
                 Machines[i] = rbm;
             }
@@ -97,9 +96,16 @@ namespace SimpleRBM.Cuda
 
         public double[,] Encode(double[,] data)
         {
+            return Encode(data, Machines.Length - 1);
+        }
+        public double[,] Encode(double[,] data, int maxDepth)
+        {
+            if (maxDepth < 0)
+                return data;
+
             data = Machines[0].GetHiddenLayer(data);
 
-            for (int i = 0; i < Machines.Length - 1; i++)
+            for (int i = 0; i < maxDepth; i++)
             {
                 data = Machines[i + 1].GetHiddenLayer(data);
             }
@@ -109,9 +115,13 @@ namespace SimpleRBM.Cuda
 
         public double[,] Decode(double[,] data)
         {
-            data = Machines[Machines.Length - 1].GetVisibleLayer(data);
+            return Decode(data, Machines.Length - 1);
+        }
+        public double[,] Decode(double[,] data, int maxDepth)
+        {
+            data = Machines[maxDepth].GetVisibleLayer(data);
 
-            for (int i = Machines.Length - 1; i > 0; i--)
+            for (int i = maxDepth; i > 0; i--)
             {
                 data = Machines[i - 1].GetVisibleLayer(data);
             }
@@ -121,11 +131,19 @@ namespace SimpleRBM.Cuda
 
         public double[,] Reconstruct(double[,] data)
         {
-            double[,] hl = Encode(data);
-            return Decode(hl);
+            return Reconstruct(data, Machines.Length - 1);
+        }
+        public double[,] Reconstruct(double[,] data, int maxDepth)
+        {
+            double[,] hl = Encode(data, maxDepth);
+            return Decode(hl, maxDepth);
         }
 
         public double[,] DayDream(int numberOfDreams)
+        {
+            return DayDream(numberOfDreams, Machines.Length - 1);
+        }
+        public double[,] DayDream(int numberOfDreams, int maxDepth)
         {
             int elems = Machines[0].NumVisibleElements;
             using (
@@ -139,40 +157,40 @@ namespace SimpleRBM.Cuda
 
                 var localRaw = new double[numberOfDreams, elems];
                 _gpu.CopyFromDevice(dreamRawData, localRaw);
-                double[,] ret = Reconstruct(localRaw);
+                double[,] ret = Reconstruct(localRaw, maxDepth);
                 return ret;
             }
         }
 
-        public double[,] Train(double[,] data, int layerNumber, out double error)
+        public double[,] GreedyTrain(double[,] data, int layerNumber, out double error)
         {
-            double err = Machines[layerNumber].Train(data);
-            RaiseTrainEnd(err);
+            double err = Machines[layerNumber].GreedyTrain(data);
+            RaiseTrainEnd(layerNumber, err);
             error = err;
             return Machines[layerNumber].GetHiddenLayer(data);
         }
 
-        public Task AsyncTrain(double[,] data, int layerPosition)
+        public Task AsyncGreedyTrain(double[,] data, int layerPosition)
         {
             double err;
             return Task.Run(
-                () => Train(data, layerPosition, out err));
+                () => GreedyTrain(data, layerPosition, out err));
         }
 
-        public void TrainAll(double[,] visibleData)
+        public void GreedyTrainAll(double[,] visibleData)
         {
             double error;
 
             for (int i = 0; i < Machines.Length; i++)
             {
-                visibleData = Train(visibleData, i, out error);
-                RaiseTrainEnd(error);
+                visibleData = GreedyTrain(visibleData, i, out error);
+                RaiseTrainEnd(i, error);
             }
         }
 
-        public Task AsyncTrainAll(double[,] visibleData)
+        public Task AsyncGreedyTrainAll(double[,] visibleData)
         {
-            return Task.Run(() => TrainAll(visibleData));
+            return Task.Run(() => GreedyTrainAll(visibleData));
         }
 
 
@@ -196,22 +214,23 @@ namespace SimpleRBM.Cuda
             }
         }
 
-        public void TrainLayersFrom(double[,] visibleData, int startDepth)
+        public void GreedyTrainLayersFrom(double[,] visibleData, int startDepth)
         {
             double error;
             for (int i = 0; i < Machines.Length; i++)
             {
                 visibleData = i < startDepth
                     ? Machines[i].GetHiddenLayer(visibleData)
-                    : Train(visibleData, i, out error);
+                    : GreedyTrain(visibleData, i, out error);
             }
         }
 
-        private void RaiseTrainEnd(double error)
+        private void RaiseTrainEnd(int layer, double error)
         {
             if (TrainEnd != null)
                 TrainEnd(this, new EpochEventArgs<double>
                 {
+                    Layer = layer,
                     Epoch = -1,
                     Error = error
                 });
@@ -219,17 +238,13 @@ namespace SimpleRBM.Cuda
 
         private void OnRbm_EpochEnd(object sender, EpochEventArgs<double> e)
         {
-            RaiseEpochEnd(e.Epoch, e.Error);
+            RaiseEpochEnd(e);
         }
 
-        private void RaiseEpochEnd(int epoch, double error)
+        private void RaiseEpochEnd(EpochEventArgs<double> e)
         {
             if (EpochEnd != null)
-                EpochEnd(this, new EpochEventArgs<double>
-                {
-                    Epoch = epoch,
-                    Error = error
-                });
+                EpochEnd(this, e);
         }
 
         private void Dispose(bool disposing)
@@ -251,6 +266,96 @@ namespace SimpleRBM.Cuda
         ~CudaDbnD()
         {
             Dispose(false);
+        }
+
+
+        public double[,] GreedyBatchedTrain(double[,] data, int layerPosition, int batchRows, out double error)
+        {
+            double err = Machines[layerPosition].GreedyBatchedTrain(data, batchRows);
+            RaiseTrainEnd(layerPosition, err);
+            error = err;
+            return Machines[layerPosition].GetHiddenLayer(data);
+        }
+
+        public Task AsyncGreedyBatchedTrain(double[,] data, int layerPosition, int batchRows)
+        {
+            double err;
+            return Task.Run(
+                () => GreedyBatchedTrain(data, layerPosition, batchRows, out err));
+        }
+
+        public void GreedyBatchedTrainAll(double[,] visibleData, int batchRows)
+        {
+            double error;
+
+            for (int i = 0; i < Machines.Length; i++)
+            {
+                visibleData = GreedyBatchedTrain(visibleData, i, batchRows, out error);
+                RaiseTrainEnd(i, error);
+            }
+        }
+
+        public Task AsyncGreedyBatchedTrainAll(double[,] visibleData, int batchRows)
+        {
+            return Task.Run(() => GreedyBatchedTrainAll(visibleData, batchRows));
+        }
+
+        public void GreedyBatchedTrainLayersFrom(double[,] visibleData, int startDepth, int batchRows)
+        {
+            double error;
+            for (int i = 0; i < Machines.Length; i++)
+            {
+                visibleData = i < startDepth
+                    ? Machines[i].GetHiddenLayer(visibleData)
+                    : GreedyBatchedTrain(visibleData, i, batchRows, out error);
+            }
+        }
+
+
+        public double GetReconstructionError(double[,] srcData, int depth)
+        {
+            var data = Encode(srcData, depth - 1);
+            return Machines[depth].CalculateReconstructionError(data);
+        }
+
+        public double[,] Classify(double[,] data, int maxDepth)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public double GreedySupervisedTrainAll(double[,] srcData, double[,] labels)
+        {
+            throw new NotImplementedException();
+        }
+
+        public double[,] Classify(double[,] data, out double[,] labels)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public double[,] GreedySupervisedTrain(double[,] data, double[,] labels, int layerPosition, out double error, out double[,] labelsPredicted)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public double GreedyBatchedSupervisedTrainAll(double[,] srcData, double[,] labels, int batchSize)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public void UpDownTrainAll(double[,] visibleData, int iterations, int epochsPerMachine, double learningRate)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public void UpDownTrainSupervisedAll(double[,] visibleData, double[,] labels, int iterations, int epochsPerMachine, double learningRate)
+        {
+            throw new NotImplementedException();
         }
     }
 }

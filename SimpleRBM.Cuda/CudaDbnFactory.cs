@@ -10,8 +10,8 @@ namespace SimpleRBM.Cuda
 {
     public class CudaDbnFactory : IDeepBeliefNetworkFactory<float>, IDeepBeliefNetworkFactory<double>
     {
-        public IDeepBeliefNetwork<double> Create(DirectoryInfo networkDataDir, int[] appendLayers = null,
-            double learningRate = 0.2, IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory = null)
+        public IDeepBeliefNetwork<double> Create(DirectoryInfo networkDataDir, ILayerDefinition[] appendLayers,
+            ILearningRateCalculator<double> learningRate , IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory = null)
         {
             GPGPU dev;
             GPGPURAND rand;
@@ -20,7 +20,7 @@ namespace SimpleRBM.Cuda
             return new CudaDbnD(dev, rand, networkDataDir, learningRate, exitConditionEvaluatorFactory, appendLayers);
         }
 
-        public IDeepBeliefNetwork<double> Create(int[] layerSizes, double learningRate = 0.2,
+        public IDeepBeliefNetwork<double> Create(ILayerDefinition[] layerSizes, ILearningRateCalculator<double> learningRate ,
             IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory = null)
         {
             GPGPU dev;
@@ -34,8 +34,8 @@ namespace SimpleRBM.Cuda
                 learningRate, exitConditionEvaluatorFactory);
         }
 
-        public IDeepBeliefNetwork<float> Create(DirectoryInfo networkDataDir, int[] appendLayers = null,
-            float learningRate = 0.2f, IExitConditionEvaluatorFactory<float> exitConditionEvaluatorFactory = null)
+        public IDeepBeliefNetwork<float> Create(DirectoryInfo networkDataDir, ILayerDefinition[] appendLayers,
+            ILearningRateCalculator<float> learningRate , IExitConditionEvaluatorFactory<float> exitConditionEvaluatorFactory = null)
         {
             GPGPU dev;
             GPGPURAND rand;
@@ -44,7 +44,7 @@ namespace SimpleRBM.Cuda
             return new CudaDbnF(dev, rand, networkDataDir, learningRate, exitConditionEvaluatorFactory, appendLayers);
         }
 
-        public IDeepBeliefNetwork<float> Create(int[] layerSizes, float learningRate = 0.2f,
+        public IDeepBeliefNetwork<float> Create(ILayerDefinition[] layerSizes, ILearningRateCalculator<float> learningRate ,
             IExitConditionEvaluatorFactory<float> exitConditionEvaluatorFactory = null)
         {
             GPGPU dev;

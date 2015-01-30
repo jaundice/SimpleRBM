@@ -19,13 +19,14 @@ namespace SimpleRBM.Cuda
 
         public CudaRbmD(GPGPU gpu, GPGPURAND rand, int numVisible,
             int numHidden,
+            int layerIndex,
             IExitConditionEvaluator<double> exitCondition,
-            double learningRate = 0.1)
+            ILearningRateCalculator<double> learningRate)
         {
             _gpu = gpu;
             _rand = rand;
 
-
+            LayerIndex = layerIndex;
             ExitConditionEvaluator = exitCondition;
             NumHiddenElements = numHidden;
             NumVisibleElements = numVisible;
@@ -45,12 +46,14 @@ namespace SimpleRBM.Cuda
             Console.WriteLine("Layer Initialized");
         }
 
-        public CudaRbmD(GPGPU gpu, GPGPURAND rand, int numVisible, int numHidden, double[,] weights, IExitConditionEvaluator<double> exitCondition, double learningRate)
+        public int LayerIndex { get; protected set; }
+
+        public CudaRbmD(GPGPU gpu, GPGPURAND rand, int numVisible, int numHidden, int layerIndex, double[,] weights, IExitConditionEvaluator<double> exitCondition, ILearningRateCalculator<double> learningRate)
         {
             _gpu = gpu;
             _rand = rand;
 
-
+            LayerIndex = layerIndex;
             ExitConditionEvaluator = exitCondition;
             NumHiddenElements = numHidden;
             NumVisibleElements = numVisible;
@@ -69,19 +72,19 @@ namespace SimpleRBM.Cuda
             get { return string.Format("Layer {0}x{1}", NumVisibleElements, NumHiddenElements); }
         }
 
-        public double LearningRate { get; protected set; }
+        public ILearningRateCalculator<double> LearningRate { get; protected set; }
         public int NumHiddenElements { get; protected set; }
         public int NumVisibleElements { get; protected set; }
         public IExitConditionEvaluator<double> ExitConditionEvaluator { get; protected set; }
 
-        public double[,] GetHiddenLayer(double[,] srcData)
+        public double[,] GetHiddenLayer(double[,] visibleStates)
         {
-            int numExamples = srcData.GetLength(0);
+            int numExamples = visibleStates.GetLength(0);
 
-            Matrix2D<double> tempSrcData = _gpu.AllocateAndSet<double>(srcData.GetLength(0), srcData.GetLength(1));
-            _gpu.CopyToDevice(srcData, tempSrcData);
+            Matrix2D<double> tempSrcData = _gpu.AllocateAndSet<double>(visibleStates.GetLength(0), visibleStates.GetLength(1));
+            _gpu.CopyToDevice(visibleStates, tempSrcData);
 
-            Matrix2D<double> data = _gpu.AllocateAndSet<double>(numExamples, srcData.GetLength(1) + 1);
+            Matrix2D<double> data = _gpu.AllocateAndSet<double>(numExamples, visibleStates.GetLength(1) + 1);
 
             data.InsertValuesFrom(0, 1, tempSrcData);
 
@@ -119,13 +122,14 @@ namespace SimpleRBM.Cuda
             return localHiddenStates;
         }
 
-        public double[,] GetVisibleLayer(double[,] srcData)
+        public double[,] GetVisibleLayer(double[,] hiddenStates)
         {
-            int numExamples = srcData.GetLength(0);
+            int numExamples = hiddenStates.GetLength(0);
 
-            Matrix2D<double> data = _gpu.AllocateAndSet<double>(numExamples, srcData.GetLength(1) + 1);
-            Matrix2D<double> tempSrcData = MatrixEx.Upload(_gpu, srcData);
+            Matrix2D<double> data = _gpu.AllocateAndSet<double>(numExamples, hiddenStates.GetLength(1) + 1);
+            Matrix2D<double> tempSrcData = MatrixEx.Upload(_gpu, hiddenStates);
 
+            data.UpdateValuesAlongAxis(0, 1f, Axis.Column);
 
             data.InsertValuesFrom(0, 1, tempSrcData);
 
@@ -173,13 +177,13 @@ namespace SimpleRBM.Cuda
             Matrix2D<double> data = _gpu.AllocateAndSet<double>(numberOfSamples, NumVisibleElements + 1);
             data.Ones();
 
-            Matrix2D<double> uniform = UniformDistribution(_gpu, _rand, 1, NumVisibleElements);
+            Matrix2D<double> uniform = UniformDistributionBool(_gpu, _rand, 1, NumVisibleElements);
 
             data.InsertValuesFrom(0, 1, uniform);
 
             uniform.Dispose();
 
-            data.UpdateValuesAlongAxis(0, 1.0, Axis.Row);
+            //hiddenStates.UpdateValuesAlongAxis(0, 1.0, Axis.Row);
 
 
             for (int i = 0; i < numberOfSamples; i++)
@@ -201,7 +205,7 @@ namespace SimpleRBM.Cuda
                 hiddenProbs.Dispose();
                 uniform2.Dispose();
 
-                hiddenStates.UpdateValuesAlongAxis(0, 0.0, Axis.Column);
+                hiddenStates.UpdateValuesAlongAxis(0, 1.0, Axis.Column);
 
                 Matrix2D<double> weightsTransposed = Weights.Transpose();
 
@@ -237,28 +241,28 @@ namespace SimpleRBM.Cuda
             return localReturn;
         }
 
-        public double Train(double[][] data)
+        public double GreedyTrain(double[][] data)
         {
-            return Train(Matrix2DCudaF.JaggedToMultidimesional(data));
+            return GreedyTrain(Matrix2DCudaF.JaggedToMultidimesional(data));
         }
 
-        public Task<double> AsyncTrain(double[][] data)
+        public Task<double> AsyncGreedyTrain(double[][] data)
         {
-            return AsyncTrain(Matrix2DCudaF.JaggedToMultidimesional(data));
+            return AsyncGreedyTrain(Matrix2DCudaF.JaggedToMultidimesional(data));
         }
 
-        public double Train(double[,] srcData)
+        public double GreedyTrain(double[,] visibleData)
         {
             ExitConditionEvaluator.Reset();
             double error = 0.0;
 
-            int numExamples = srcData.GetLength(0);
-            int numCols = srcData.GetLength(1);
+            int numExamples = visibleData.GetLength(0);
+            int numCols = visibleData.GetLength(1);
             int i;
 
             using (Matrix2D<double> data = _gpu.AllocateAndSet<double>(numExamples, numCols + 1))
             {
-                using (Matrix2D<double> gpu_src = MatrixEx.Upload(_gpu, srcData))
+                using (Matrix2D<double> gpu_src = MatrixEx.Upload(_gpu, visibleData))
                 {
                     data.InsertValuesFrom(0, 1, gpu_src);
                     data.UpdateValuesAlongAxis(0, 1.0, Axis.Column);
@@ -267,7 +271,6 @@ namespace SimpleRBM.Cuda
                 using (Matrix2D<double> dataTransposed = data.Transpose())
                 {
                     var sw = new Stopwatch();
-                    var errors = new List<double>();
 
                     _gpu.Synchronize();
 
@@ -325,7 +328,7 @@ namespace SimpleRBM.Cuda
                         posAssociations.Dispose();
                         negAssociations.Dispose();
 
-                        Matrix2D<double> tmult = posAssocMinusNegAssoc.Multiply(LearningRate / numExamples);
+                        Matrix2D<double> tmult = posAssocMinusNegAssoc.Multiply(LearningRate.CalculateLearningRate(LayerIndex, i) / numExamples);
 
                         posAssocMinusNegAssoc.Dispose();
 
@@ -348,17 +351,16 @@ namespace SimpleRBM.Cuda
                         error = Sum(_gpu, pow, numExamples);
 
                         pow.Dispose();
-                        errors.Add(error);
                         RaiseEpochEnd(i, error);
 
-                        if (i % 20 == 0)
-                            Console.WriteLine("Epoch {0}: error is {1}, computation time (ms): {2}", i, error,
-                                sw.ElapsedMilliseconds);
-                        sw.Reset();
+                        //if (i % 20 == 0)
+                        //    Console.WriteLine("Epoch {0}: error is {1}, computation time (ms): {2}", i, error,
+                        //        sw.ElapsedMilliseconds);
 
-                        if (ExitConditionEvaluator.Exit(i, error))
+
+                        if (ExitConditionEvaluator.Exit(i, error, sw.Elapsed))
                             break;
-
+                        sw.Reset();
                     }
                 }
             }
@@ -369,9 +371,9 @@ namespace SimpleRBM.Cuda
         }
 
 
-        public Task<double> AsyncTrain(double[,] data)
+        public Task<double> AsyncGreedyTrain(double[,] data)
         {
-            return Task.Run(() => Train(data));
+            return Task.Run(() => GreedyTrain(data));
         }
 
         public event EventHandler<EpochEventArgs<double>> EpochEnd;
@@ -469,6 +471,34 @@ namespace SimpleRBM.Cuda
                     gpu.Launch(grid, block, CopyToArrayAtND, array.Matrix, tempUniform.Matrix, i);
                 }
             }
+
+            return array;
+        }
+
+        public static Matrix2D<double> UniformDistributionBool(GPGPU gpu, GPGPURAND rand, int x, int y)
+        {
+
+            Matrix2D<double> array = gpu.AllocateAndSet<double>(x, y);
+            dim3 grid, block;
+            ThreadOptimiser.Instance.GetStrategy(1, y, out grid, out block);
+            int my = (int)Math.Ceiling((double)y / 2) * 2;
+
+            using (Matrix1D<double> tempUniform = gpu.AllocateAndSet<double>(y))
+            {
+                for (int i = 0; i < x; i++)
+                {
+                    rand.GenerateUniform(tempUniform, my);
+
+                    gpu.Launch(grid, block, CopyToArrayAtND, array.Matrix, tempUniform.Matrix, i);
+                }
+            }
+
+
+            ThreadOptimiser.Instance.GetStrategy(array, out grid, out block);
+            gpu.Launch(grid, block, Matrix2DCudaD.ToBinaryD, array.Matrix);
+
+
+
             return array;
         }
 
@@ -491,13 +521,13 @@ namespace SimpleRBM.Cuda
         private void RaiseTrainEnd(int epoch, double error)
         {
             if (TrainEnd != null)
-                TrainEnd(this, new EpochEventArgs<double> { Epoch = epoch, Error = error });
+                TrainEnd(this, new EpochEventArgs<double> { Layer = LayerIndex, Epoch = epoch, Error = error });
         }
 
         private void RaiseEpochEnd(int epoch, double error)
         {
             if (EpochEnd != null)
-                EpochEnd(this, new EpochEventArgs<double> { Epoch = epoch, Error = error });
+                EpochEnd(this, new EpochEventArgs<double> { Layer = LayerIndex, Epoch = epoch, Error = error });
         }
 
         private static IEnumerable<T> EnumerateElements<T>(T[,] matrix)
@@ -540,6 +570,258 @@ namespace SimpleRBM.Cuda
         ~CudaRbmD()
         {
             Dispose(false);
+        }
+
+
+        public double GreedyBatchedTrain(double[][] data, int batchRows)
+        {
+            return GreedyBatchedTrain(Matrix2DCudaF.JaggedToMultidimesional(data), batchRows);
+        }
+
+        public Task<double> AsyncGreedyBatchedTrain(double[][] data, int batchRows)
+        {
+            return AsyncGreedyBatchedTrain(Matrix2DCudaF.JaggedToMultidimesional(data), batchRows);
+        }
+
+        public double GreedyBatchedTrain(double[,] srcData, int batchRows)
+        {
+            ExitConditionEvaluator.Reset();
+            double error = 0f;
+
+            //int numExamples = hiddenStates.GetLength(0);
+            int numCols = srcData.GetLength(1);
+            int i;
+
+            var partitions = new List<Tuple<int, Matrix2D<double>>>();
+            var transposedPartitions = new List<Matrix2D<double>>();
+            using (Matrix2D<double> dataBlock = _gpu.AllocateAndSet<double>(srcData.GetLength(0), numCols + 1))
+            {
+                using (Matrix2D<double> gpu_src = MatrixEx.Upload(_gpu, srcData))
+                {
+                    dataBlock.InsertValuesFrom(0, 1, gpu_src);
+                    dataBlock.UpdateValuesAlongAxis(0, 1.0f, Axis.Column);
+                }
+
+                for (int j = 0; j < srcData.GetLength(0); j += batchRows)
+                {
+                    int endIndex = j + batchRows;
+                    if (endIndex > srcData.GetLength(0) - 1)
+                        endIndex = srcData.GetLength(0) - 1;
+
+                    int examples = endIndex - j;
+                    Matrix2D<double> part = dataBlock.SubMatrix(j, 0, examples);
+
+                    partitions.Add(Tuple.Create(examples, part));
+                    transposedPartitions.Add(part.Transpose());
+                }
+            }
+
+            var sw = new Stopwatch();
+            var errors = new List<double>();
+
+            _gpu.Synchronize();
+
+            for (i = 0; ; i++)
+            {
+                sw.Start();
+                int numExamples = partitions[i % partitions.Count].Item1;
+                Matrix2D<double> data = partitions[i % partitions.Count].Item2;
+                Matrix2D<double> dataTransposed = transposedPartitions[i % partitions.Count];
+
+                Matrix2D<double> posHiddenActivations = data.Multiply(Weights);
+
+                Matrix2D<double> posHiddenProbs = posHiddenActivations.Logistic();
+
+
+                posHiddenActivations.Dispose();
+
+                Matrix2D<double> uniformRandom = UniformDistribution(_gpu, _rand, numExamples,
+                    NumHiddenElements + 1);
+
+                Matrix2D<double> posHiddenStates = posHiddenProbs.GreaterThan(uniformRandom);
+
+                uniformRandom.Dispose();
+
+                Matrix2D<double> posAssociations = dataTransposed.Multiply(posHiddenProbs);
+
+                posHiddenProbs.Dispose();
+
+                Matrix2D<double> weightsTransposed = Weights.Transpose();
+
+                Matrix2D<double> negVisibleActivations = posHiddenStates.Multiply(weightsTransposed);
+
+                posHiddenStates.Dispose();
+                weightsTransposed.Dispose();
+
+                Matrix2D<double> negVisibleProbs = negVisibleActivations.Logistic();
+
+
+                negVisibleActivations.Dispose();
+
+                negVisibleProbs.UpdateValuesAlongAxis(0, 1f, Axis.Column);
+
+                Matrix2D<double> negHiddenActivations = negVisibleProbs.Multiply(Weights);
+
+                Matrix2D<double> negHiddenProbs = negHiddenActivations.Logistic();
+
+                negHiddenActivations.Dispose();
+
+                Matrix2D<double> negVisibleProbsTransposed = negVisibleProbs.Transpose();
+
+                Matrix2D<double> negAssociations = negVisibleProbsTransposed.Multiply(negHiddenProbs);
+
+                negHiddenProbs.Dispose();
+                negVisibleProbsTransposed.Dispose();
+
+                Matrix2D<double> posAssocMinusNegAssoc = posAssociations.Subtract(negAssociations);
+
+                posAssociations.Dispose();
+                negAssociations.Dispose();
+
+                Matrix2D<double> tmult = posAssocMinusNegAssoc.Multiply(LearningRate.CalculateLearningRate(LayerIndex, i) / numExamples);
+
+                posAssocMinusNegAssoc.Dispose();
+
+                Matrix2D<double> tweight = Weights.Add(tmult);
+
+                Weights.Dispose();
+                tmult.Dispose();
+
+                Weights = tweight;
+
+                Matrix2D<double> delta = data.Subtract(negVisibleProbs);
+
+
+                negVisibleProbs.Dispose();
+
+                Matrix2D<double> pow = delta.Pow(2.0f);
+
+                delta.Dispose();
+
+                error = Sum(_gpu, pow, numExamples);
+
+                pow.Dispose();
+                errors.Add(error);
+                RaiseEpochEnd(i, error);
+
+                //if (i % 20 == 0)
+                //    Console.WriteLine("Epoch {0}: partition error is {1}, computation time (ms): {2}", i, error,
+                //        sw.ElapsedMilliseconds);
+               
+
+                if (ExitConditionEvaluator.Exit(i, error, sw.Elapsed))
+                    break; 
+                
+                sw.Reset();
+            }
+
+
+            foreach (var partition in partitions)
+            {
+                partition.Item2.Dispose();
+            }
+            foreach (var transposedPartition in transposedPartitions)
+            {
+                transposedPartition.Dispose();
+            }
+
+            RaiseTrainEnd(i, error);
+
+            return error;
+        }
+
+        public Task<double> AsyncGreedyBatchedTrain(double[,] data, int batchRows)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public double CalculateReconstructionError(double[,] srcData)
+        {
+            double error = 0f;
+
+            int numExamples = srcData.GetLength(0);
+            int numCols = srcData.GetLength(1);
+            int i;
+
+            using (Matrix2D<double> data = _gpu.AllocateAndSet<double>(numExamples, numCols + 1))
+            {
+                using (Matrix2D<double> gpu_src = MatrixEx.Upload(_gpu, srcData))
+                {
+                    data.InsertValuesFrom(0, 1, gpu_src);
+                    data.UpdateValuesAlongAxis(0, 1.0f, Axis.Column);
+                }
+
+                _gpu.Synchronize();
+
+                Matrix2D<double> posHiddenActivations = data.Multiply(Weights);
+
+                Matrix2D<double> posHiddenProbs = posHiddenActivations.Logistic();
+
+
+                posHiddenActivations.Dispose();
+
+                Matrix2D<double> uniformRandom = UniformDistribution(_gpu, _rand, numExamples,
+                    NumHiddenElements + 1);
+
+                Matrix2D<double> posHiddenStates = posHiddenProbs.GreaterThan(uniformRandom);
+
+                uniformRandom.Dispose();
+
+
+                posHiddenProbs.Dispose();
+
+                Matrix2D<double> weightsTransposed = Weights.Transpose();
+
+                Matrix2D<double> negVisibleActivations = posHiddenStates.Multiply(weightsTransposed);
+
+                posHiddenStates.Dispose();
+                weightsTransposed.Dispose();
+
+                Matrix2D<double> negVisibleProbs = negVisibleActivations.Logistic();
+
+
+                negVisibleActivations.Dispose();
+
+                negVisibleProbs.UpdateValuesAlongAxis(0, 1f, Axis.Column);
+
+                Matrix2D<double> delta = data.Subtract(negVisibleProbs);
+
+
+                negVisibleProbs.Dispose();
+
+                Matrix2D<double> pow = delta.Pow(2.0f);
+
+                delta.Dispose();
+
+                error = Sum(_gpu, pow, numExamples);
+
+                pow.Dispose();
+            }
+            return error;
+        }
+
+
+        public double[,] GetSoftmaxLayer(double[,] visibleStates)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public double GreedySupervisedTrain(double[,] data, double[,] labels)
+        {
+            throw new NotImplementedException();
+        }
+
+        public double[,] Classify(double[,] data, out double[,] labels)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public double GreedyBatchedSupervisedTrain(double[,] data, double[,] labels, int batchSize)
+        {
+            throw new NotImplementedException();
         }
     }
 }

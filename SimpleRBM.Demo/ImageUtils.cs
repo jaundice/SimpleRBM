@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
 using System.Threading.Tasks;
 
 namespace SimpleRBM.Demo
@@ -14,14 +15,14 @@ namespace SimpleRBM.Demo
 
         public static unsafe float ConvertRGBToGreyF(IntPtr startAddress, int stride, int x, int y)
         {
-            var data = (byte*) startAddress;
-            int ost = y*stride + (x*3);
+            var data = (byte*)startAddress;
+            int ost = y * stride + (x * 3);
 
             byte B = data[ost];
             byte G = data[ost + 1];
             byte R = data[ost + 2];
 
-            return ((R*0.3f) + (G*0.59f) + (B*0.11f))/255f;
+            return ((R * 0.3f) + (G * 0.59f) + (B * 0.11f)) / 255f;
         }
 
         public static unsafe double ConvertRGBToGreyD(IntPtr startAddress, int stride, int x, int y)
@@ -44,7 +45,7 @@ namespace SimpleRBM.Demo
 
         private static T[] ReadImageFile<T>(FileInfo fileInfo, ConvertPixel<T> pixelConverter)
         {
-            using (var img = (Bitmap) Image.FromFile(fileInfo.FullName))
+            using (var img = (Bitmap)Image.FromFile(fileInfo.FullName))
             {
                 BitmapData data = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.ReadOnly,
                     img.PixelFormat);
@@ -52,7 +53,7 @@ namespace SimpleRBM.Demo
 
                 try
                 {
-                    var bytes = new T[img.Width*img.Height];
+                    var bytes = new T[img.Width * img.Height];
 
                     var w = img.Width;
                     var h = img.Height;
@@ -60,7 +61,7 @@ namespace SimpleRBM.Demo
 
                     Parallel.For(0, w, a => Parallel.For(0, h, b =>
                     {
-                        bytes[b*w + a] = pixelConverter(data.Scan0, data.Stride, a, b);
+                        bytes[b * w + a] = pixelConverter(data.Scan0, data.Stride, a, b);
                     }));
 
                     return bytes;
@@ -72,11 +73,20 @@ namespace SimpleRBM.Demo
             }
         }
 
-        private static void SaveImageData(byte[] data, string path)
+        public static unsafe void SaveImageData<T>(T[,] data, int sourceRow, string path, Func<T, byte> pixelConverter)
         {
-            using (var ms = new MemoryStream(data))
-            using (var bmp = new Bitmap(ms))
+            var dimension = (int)Math.Sqrt(data.GetLength(1));
+            using (var bmp = new Bitmap(dimension, dimension))
             {
+                for (var i = 0; i < dimension; i++)
+                {
+                    for (var j = 0; j < dimension; j++)
+                    {
+                        var intensity = pixelConverter(data[sourceRow, j * dimension + i]);
+                        bmp.SetPixel(i, j, Color.FromArgb(intensity, intensity, intensity));
+                    }
+                }
+
                 bmp.Save(path);
             }
         }

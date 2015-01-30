@@ -13,12 +13,12 @@ namespace SimpleRBM.MultiDim
         private double[,] Weights;
 
         public RestrictedBoltzmannMachineD(int numVisible, int numHidden, IExitConditionEvaluator<double> exitCondition,
-            double learningRate = 0.1)
+            ILearningRateCalculator<double> learningRateCalculator)
         {
             ExitConditionEvaluator = exitCondition;
             NumHiddenElements = numHidden;
             NumVisibleElements = numVisible;
-            LearningRate = learningRate;
+            LearningRate = learningRateCalculator;
 
             Weights = new double[numVisible + 1, numHidden + 1];
             Matrix2D.InsertValuesFrom(
@@ -29,32 +29,32 @@ namespace SimpleRBM.MultiDim
                     Distributions.GaussianMatrix(
                         numVisible,
                         numHidden),
-                    learningRate));
+                    LearningRate.CalculateLearningRate(0,0)));
         }
 
 
         public RestrictedBoltzmannMachineD(int numVisible, int numHidden, double[,] weights,
             IExitConditionEvaluator<double> exitCondition,
-            double learningRate = 0.1)
+            ILearningRateCalculator<double> learningRateCalculator )
         {
             ExitConditionEvaluator = exitCondition;
             NumHiddenElements = numHidden;
             NumVisibleElements = numVisible;
-            LearningRate = learningRate;
+            LearningRate = learningRateCalculator;
             Weights = weights;
         }
 
-        public double LearningRate { get; protected set; }
+        public ILearningRateCalculator<double> LearningRate { get; protected set; }
         public int NumHiddenElements { get; protected set; }
         public int NumVisibleElements { get; protected set; }
 
-        public double[,] GetHiddenLayer(double[,] srcData)
+        public double[,] GetHiddenLayer(double[,] visibleStates)
         {
-            int numExamples = srcData.GetLength(0);
+            int numExamples = visibleStates.GetLength(0);
             double[,] hiddenStates = Matrix2D.OnesD(numExamples, NumHiddenElements + 1);
 
-            var data = new double[numExamples, srcData.GetLength(1) + 1];
-            Matrix2D.InsertValuesFrom(data, 0, 1, srcData);
+            var data = new double[numExamples, visibleStates.GetLength(1) + 1];
+            Matrix2D.InsertValuesFrom(data, 0, 1, visibleStates);
             Matrix2D.UpdateValueAlongAxis(data, 0, 1, Matrix2D.Axis.Vertical);
             double[,] hiddenActivations = Matrix2D.Multiply(data, Weights);
 
@@ -66,11 +66,13 @@ namespace SimpleRBM.MultiDim
             return hiddenStates;
         }
 
-        public double[,] GetVisibleLayer(double[,] srcData)
+        public double[,] GetVisibleLayer(double[,] hiddenStates)
         {
-            int numExamples = srcData.GetLength(0);
-            var data = new double[numExamples, srcData.GetLength(1) + 1];
-            Matrix2D.InsertValuesFrom(data, 0, 1, srcData);
+            int numExamples = hiddenStates.GetLength(0);
+            var data = new double[numExamples, hiddenStates.GetLength(1) + 1];
+
+            Matrix2D.UpdateValueAlongAxis(data, 0, 1, Matrix2D.Axis.Vertical);
+            Matrix2D.InsertValuesFrom(data, 0, 1, hiddenStates);
 
             double[,] visibleActivations = Matrix2D.Multiply(data, Matrix2D.Transpose(Weights));
 
@@ -93,7 +95,7 @@ namespace SimpleRBM.MultiDim
         {
             double[,] data = Matrix2D.OnesD(numberOfSamples, NumVisibleElements + 1);
             Matrix2D.InsertValuesFrom(data, 0, 1, Distributions.UniformRandromMatrixBoolD(1, NumVisibleElements), 1);
-            //data = Matrix2D.Update(data, 0, 1, 1);
+            //hiddenStates = Matrix2D.Update(hiddenStates, 0, 1, 1);
             for (int i = 0; i < numberOfSamples; i++)
             {
                 double[,] visible = Matrix2D.SubMatrix(data, i, 0, 1);
@@ -120,29 +122,28 @@ namespace SimpleRBM.MultiDim
             return Matrix2D.SubMatrix(data, 0, 1);
         }
 
-        public double Train(double[][] data)
+        public double GreedyTrain(double[][] data)
         {
-            return Train(Matrix2D.JaggedToMultidimesional(data));
+            return GreedyTrain(Matrix2D.JaggedToMultidimesional(data));
         }
 
-        public Task<double> AsyncTrain(double[][] data)
+        public Task<double> AsyncGreedyTrain(double[][] data)
         {
-            return AsyncTrain(Matrix2D.JaggedToMultidimesional(data));
+            return AsyncGreedyTrain(Matrix2D.JaggedToMultidimesional(data));
         }
 
-        public double Train(double[,] srcData)
+        public double GreedyTrain(double[,] visibleData)
         {
             ExitConditionEvaluator.Reset();
             double error = 0d;
 
-            int numExamples = srcData.GetLength(0);
-            var data = new double[numExamples, srcData.GetLength(1) + 1];
+            int numExamples = visibleData.GetLength(0);
+            var data = new double[numExamples, visibleData.GetLength(1) + 1];
 
-            Matrix2D.InsertValuesFrom(data, 0, 1, srcData);
+            Matrix2D.InsertValuesFrom(data, 0, 1, visibleData);
             Matrix2D.UpdateValueAlongAxis(data, 0, 1, Matrix2D.Axis.Vertical);
 
             var sw = new Stopwatch();
-            var errors = new List<double>();
             int i;
             for (i = 0;; i++)
             {
@@ -172,20 +173,21 @@ namespace SimpleRBM.MultiDim
                                 posAssociations,
                                 negAssociations),
                             numExamples),
-                        LearningRate));
+                        LearningRate.CalculateLearningRate(0, i)));
 
                 error = Matrix2D.EnumerateElements(Matrix2D.Pow(Matrix2D.Subtract(data, negVisibleProbs), 2)).Sum();
-                errors.Add(error);
                 RaiseEpochEnd(i, error);
 
-                if (i%20 == 0)
-                    Console.WriteLine("Epoch {0}: error is {1}, computation time (ms): {2}", i, error,
-                        sw.ElapsedMilliseconds);
+                //if (i%20 == 0)
+                //    Console.WriteLine("Epoch {0}: error is {1}, computation time (ms): {2}", i, error,
+                //        sw.ElapsedMilliseconds);
+               
+
+
+                if (ExitConditionEvaluator.Exit(i, error, sw.Elapsed))
+                    break; 
+                
                 sw.Reset();
-
-
-                if (ExitConditionEvaluator.Exit(i, error))
-                    break;
             }
 
             RaiseTrainEnd(i, error);
@@ -193,9 +195,9 @@ namespace SimpleRBM.MultiDim
             return error;
         }
 
-        public Task<double> AsyncTrain(double[,] data)
+        public Task<double> AsyncGreedyTrain(double[,] data)
         {
-            return Task.Run(() => Train(data));
+            return Task.Run(() => GreedyTrain(data));
         }
 
         public event EventHandler<EpochEventArgs<double>> EpochEnd;
@@ -222,6 +224,56 @@ namespace SimpleRBM.MultiDim
         {
             if (EpochEnd != null)
                 EpochEnd(this, new EpochEventArgs<double> {Epoch = epoch, Error = error});
+        }
+
+
+        public double GreedyBatchedTrain(double[][] data, int batchRows)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<double> AsyncGreedyBatchedTrain(double[][] data, int batchRows)
+        {
+            throw new NotImplementedException();
+        }
+
+        public double GreedyBatchedTrain(double[,] data, int batchRows)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<double> AsyncGreedyBatchedTrain(double[,] data, int batchRows)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public double CalculateReconstructionError(double[,] data)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public double[,] GetSoftmaxLayer(double[,] visibleStates)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public double GreedySupervisedTrain(double[,] data, double[,] labels)
+        {
+            throw new NotImplementedException();
+        }
+
+        public double[,] Classify(double[,] data, out double[,] labels)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public double GreedyBatchedSupervisedTrain(double[,] data, double[,] labels, int batchSize)
+        {
+            throw new NotImplementedException();
         }
     }
 }

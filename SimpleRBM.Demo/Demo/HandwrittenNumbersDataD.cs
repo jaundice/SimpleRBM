@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using SimpleRBM.Common;
@@ -11,31 +10,33 @@ namespace SimpleRBM.Demo.Demo
     {
         private const int ImgDimension = 32;
 
-        public HandwrittenNumbersDataD(string dataPath) : base(dataPath)
+        public HandwrittenNumbersDataD(string dataPath)
+            : base(dataPath)
         {
         }
 
-        protected override double[,] ReadTrainingData(string filePath, int skipRecords, int count, out int[] labels)
+        protected override double[,] ReadTrainingData(string filePath, int skipRecords, int count, out int[] labels,
+            out double[,] labelsCoded)
         {
             string x = File.ReadAllText(filePath);
 
             x = Regex.Replace(x, @"\s", "");
 
-            int recordlength = (ImgDimension * ImgDimension) + 1;
+            int recordlength = (ImgDimension*ImgDimension) + 1;
             var lbl = new int[count];
-            var data = new double[count, ImgDimension * ImgDimension];
+            var data = new double[count, ImgDimension*ImgDimension];
 
-            Parallel.For(0, count, a => Parallel.For(0, ImgDimension * ImgDimension, b =>
+            Parallel.For(0, count, a => Parallel.For(0, ImgDimension*ImgDimension, b =>
             {
-                data[a, b] = double.Parse(x[((skipRecords + a) * recordlength) + b].ToString(CultureInfo.InvariantCulture));
+                data[a, b] = double.Parse(x[((skipRecords + a)*recordlength) + b].ToString(CultureInfo.InvariantCulture));
                 lbl[a] =
                     int.Parse(
-                        x[((skipRecords + a) * recordlength) + ImgDimension * ImgDimension].ToString(
+                        x[((skipRecords + a)*recordlength) + ImgDimension*ImgDimension].ToString(
                             CultureInfo.InvariantCulture));
             }));
 
             labels = lbl;
-
+            labelsCoded = LabelEncoder.EncodeLabels<int, double>(labels, 10);
             return data;
         }
 
@@ -43,7 +44,8 @@ namespace SimpleRBM.Demo.Demo
         protected override double[,] ReadTestData(string filePath, int skipRecords, int count)
         {
             int[] labels;
-            return ReadTrainingData(filePath, skipRecords, count, out labels);
+            double[,] labelsCoded;
+            return ReadTrainingData(filePath, skipRecords, count, out labels, out labelsCoded);
         }
     }
 }

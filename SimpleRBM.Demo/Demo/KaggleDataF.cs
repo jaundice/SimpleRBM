@@ -5,7 +5,8 @@ namespace SimpleRBM.Demo.Demo
 {
     public class KaggleDataF : DataIOBaseF<int>
     {
-        public KaggleDataF(string trainingDataPath, string testDataPath) : base(trainingDataPath)
+        public KaggleDataF(string trainingDataPath, string testDataPath)
+            : base(trainingDataPath)
         {
             TestDataPath = testDataPath;
         }
@@ -17,7 +18,7 @@ namespace SimpleRBM.Demo.Demo
             return ReadTestData(TestDataPath, skipRecords, count);
         }
 
-        protected override float[,] ReadTrainingData(string filePath, int skipRecords, int count, out int[] labels)
+        protected override float[,] ReadTrainingData(string filePath, int skipRecords, int count, out int[] labels, out float[,] labelsCoded)
         {
             var ret = new float[count, 784];
             labels = new int[count];
@@ -35,10 +36,11 @@ namespace SimpleRBM.Demo.Demo
                     labels[i] = int.Parse(parts[0]);
                     for (int j = 0; j < 784; j++)
                     {
-                        ret[i, j] = float.Parse(parts[j + 1])/255f;
+                        ret[i, j] = float.Parse(parts[j + 1]) / 255f;
                     }
                 }
             }
+            labelsCoded = LabelEncoder.EncodeLabels<int, float>(labels, 10);
             return ret;
         }
 
@@ -58,7 +60,7 @@ namespace SimpleRBM.Demo.Demo
                     string[] parts = line.Split(',');
                     for (int j = 0; j < 784; j++)
                     {
-                        ret[i, j] = float.Parse(parts[j])/255f;
+                        ret[i, j] = float.Parse(parts[j]) / 255f;
                     }
                 }
             }

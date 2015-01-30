@@ -14,9 +14,9 @@ namespace SimpleRBM.Demo.Demo
         }
 
 
-        double[,] IDataIO<double, TLabel>.ReadTrainingData(int skipRecords, int count, out TLabel[] labels)
+        double[,] IDataIO<double, TLabel>.ReadTrainingData(int skipRecords, int count, out TLabel[] labels, out double[,] labelsCoded)
         {
-            return _doubleProvider.ReadTrainingData(skipRecords, count, out labels);
+            return _doubleProvider.ReadTrainingData(skipRecords, count, out labels, out labelsCoded);
         }
 
         double[,] IDataIO<double, TLabel>.ReadTestData(int skipRecords, int count)
@@ -24,9 +24,9 @@ namespace SimpleRBM.Demo.Demo
             return _doubleProvider.ReadTestData(skipRecords, count);
         }
 
-        void IDataIO<double, TLabel>.PrintToScreen(double[,] arr, TLabel[] labels, double[,] reference, ulong[] keys)
+        void IDataIO<double, TLabel>.PrintToScreen(double[,] arr, double[,] reference = null, TLabel[] referenceLabels = null, double[,] referenceLabelsCoded = null, ulong[][] keys = null, double[,] computedLabels = null)
         {
-            _doubleProvider.PrintToScreen(arr, labels, reference, keys);
+            _doubleProvider.PrintToScreen(arr, reference: reference, referenceLabels: referenceLabels, referenceLabelsCoded: referenceLabelsCoded, keys: keys, computedLabels:computedLabels);
         }
 
         void IDataIO<double, TLabel>.PrintMap(double[,] arr)
@@ -34,9 +34,9 @@ namespace SimpleRBM.Demo.Demo
             _doubleProvider.PrintMap(arr);
         }
 
-        float[,] IDataIO<float, TLabel>.ReadTrainingData(int skipRecords, int count, out TLabel[] labels)
+        float[,] IDataIO<float, TLabel>.ReadTrainingData(int skipRecords, int count, out TLabel[] labels, out float[,] labelsCoded)
         {
-            return _floatProvider.ReadTrainingData(skipRecords, count, out labels);
+            return _floatProvider.ReadTrainingData(skipRecords, count, out labels, out labelsCoded);
         }
 
         float[,] IDataIO<float, TLabel>.ReadTestData(int skipRecords, int count)
@@ -44,9 +44,9 @@ namespace SimpleRBM.Demo.Demo
             return _floatProvider.ReadTestData(skipRecords, count);
         }
 
-        void IDataIO<float, TLabel>.PrintToScreen(float[,] arr, TLabel[] labels, float[,] reference, ulong[] keys)
+        void IDataIO<float, TLabel>.PrintToScreen(float[,] arr, float[,] reference = null, TLabel[] referenceLabels = null, float[,] referenceLabelsCoded = null, ulong[][] keys = null, float[,] computedLabels = null)
         {
-            _floatProvider.PrintToScreen(arr, labels, reference, keys);
+            _floatProvider.PrintToScreen(arr, reference: reference, referenceLabels: referenceLabels, referenceLabelsCoded: referenceLabelsCoded, keys: keys, computedLabels:computedLabels);
         }
 
         void IDataIO<float, TLabel>.PrintMap(float[,] arr)

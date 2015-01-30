@@ -1,5 +1,4 @@
-﻿using System;
-using System.Configuration;
+﻿using System.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SimpleRBM.Demo.Demo;
 
@@ -14,9 +13,10 @@ namespace SimpleRBM.Test
             var io = new HandwrittenNumbersDataF("optdigits-tra.txt");
 
             int[] labels;
-            var data = io.ReadTrainingData(0, 10, out labels);
+            float[,] labelsCoded;
+            float[,] data = io.ReadTrainingData(0, 20, out labels, out labelsCoded);
 
-            io.PrintToScreen(data, labels);
+            io.PrintToScreen(data, referenceLabels: labels, referenceLabelsCoded: labelsCoded);
         }
 
         [TestMethod]
@@ -26,19 +26,21 @@ namespace SimpleRBM.Test
                 ConfigurationManager.AppSettings["KaggleTestData"]);
 
             int[] labels;
-            var data = io.ReadTrainingData(0, 10, out labels);
+            float[,] labelsCoded;
+            float[,] data = io.ReadTrainingData(0, 20, out labels, out labelsCoded);
 
-            io.PrintToScreen(data, labels);
+            io.PrintToScreen(data, referenceLabels: labels, referenceLabelsCoded: labelsCoded);
         }
 
         [TestMethod]
         public void TestMNist()
         {
-            var provider = new MNistDataF(ConfigurationManager.AppSettings["FacesDirectory"]);
+            var provider = new FacesDataF(ConfigurationManager.AppSettings["FacesDirectory"]);
             string[] labels;
-            var data = provider.ReadTrainingData(0, 10, out labels);
+            float[,] labelsCoded;
+            float[,] data = provider.ReadTrainingData(0, 20, out labels, out labelsCoded);
 
-            provider.PrintToScreen(data, labels);
+            provider.PrintToScreen(data, referenceLabels: labels, referenceLabelsCoded: labelsCoded);
         }
     }
 }

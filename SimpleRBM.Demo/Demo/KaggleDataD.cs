@@ -18,7 +18,7 @@ namespace SimpleRBM.Demo.Demo
             return ReadTestData(TestDataPath, skipRecords, count);
         }
 
-        protected override double[,] ReadTrainingData(string filePath, int startLine, int count, out int[] labels)
+        protected override double[,] ReadTrainingData(string filePath, int startLine, int count, out int[] labels, out double[,] labelsCoded)
         {
             var ret = new double[count, 784];
             labels = new int[count];
@@ -40,6 +40,7 @@ namespace SimpleRBM.Demo.Demo
                     }
                 }
             }
+            labelsCoded = LabelEncoder.EncodeLabels<int, double>(labels, 10);
             return ret;
         }
 

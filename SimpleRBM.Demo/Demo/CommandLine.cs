@@ -1,10 +1,35 @@
 ﻿using System;
 using System.Linq;
+using System.Text.RegularExpressions;
+using SimpleRBM.Common;
 
 namespace SimpleRBM.Demo.Demo
 {
     public class CommandLine
     {
+        public static bool ParseLayerDefinition(string s, out ILayerDefinition ret)
+        {
+            if (Regex.IsMatch(s, @"\d+x\d+"))
+            {
+
+                string[] parts = s.Split(new[] { 'x', 'X' }, StringSplitOptions.RemoveEmptyEntries);
+                ret = new LayerDefinition()
+                {
+                    VisibleUnits = int.Parse(parts[0]),
+                    HiddenUnits = int.Parse(parts[1])
+                };
+
+                return true;
+            }
+            ret = null;
+            return false;
+        }
+
+        public static bool ParseLayerDefinitionArray(string s, out ILayerDefinition[] ret)
+        {
+            return ParseArray(s, ParseLayerDefinition, out ret);
+        }
+
         public static T ReadCommandLine<T>(string prefix, Parse<T> parser, T defaultVal)
         {
             string s =
@@ -28,7 +53,7 @@ namespace SimpleRBM.Demo.Demo
             T[] arr = string.IsNullOrEmpty(s)
                 ? new T[0]
                 : s
-                    .Split(new[] {","}, StringSplitOptions.RemoveEmptyEntries)
+                    .Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(a =>
                     {
                         T temp;

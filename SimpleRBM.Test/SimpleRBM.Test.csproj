@@ -99,6 +99,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DataSourcesTest.cs" />
     <Compile Include="CompareCudaVsMultidimMatrixOpsD.cs" />
+    <Compile Include="UnitTest1.cs" />
+    <Compile Include="UnitTest2.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SimpleRBM.Common\SimpleRBM.Common.csproj">
