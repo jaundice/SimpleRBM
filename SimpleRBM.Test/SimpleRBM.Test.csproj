@@ -101,6 +101,7 @@
     <Compile Include="CompareCudaVsMultidimMatrixOpsD.cs" />
     <Compile Include="UnitTest1.cs" />
     <Compile Include="UnitTest2.cs" />
+    <Compile Include="UnitTest3.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SimpleRBM.Common\SimpleRBM.Common.csproj">

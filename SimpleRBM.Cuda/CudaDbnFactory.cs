@@ -10,18 +10,17 @@ namespace SimpleRBM.Cuda
 {
     public class CudaDbnFactory : IDeepBeliefNetworkFactory<float>, IDeepBeliefNetworkFactory<double>
     {
-        public IDeepBeliefNetwork<double> Create(DirectoryInfo networkDataDir, ILayerDefinition[] appendLayers,
-            ILearningRateCalculator<double> learningRate , IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory = null)
+        IDeepBeliefNetwork<double> IDeepBeliefNetworkFactory<double>.Create(DirectoryInfo networkDataDir,
+            ILayerDefinition[] appendLayers)
         {
             GPGPU dev;
             GPGPURAND rand;
             CreateDevice(out dev, out rand);
 
-            return new CudaDbnD(dev, rand, networkDataDir, learningRate, exitConditionEvaluatorFactory, appendLayers);
+            return new CudaDbnD(dev, rand, networkDataDir, appendLayers);
         }
 
-        public IDeepBeliefNetwork<double> Create(ILayerDefinition[] layerSizes, ILearningRateCalculator<double> learningRate ,
-            IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory = null)
+        IDeepBeliefNetwork<double> IDeepBeliefNetworkFactory<double>.Create(ILayerDefinition[] layerSizes)
         {
             GPGPU dev;
             GPGPURAND rand;
@@ -30,22 +29,20 @@ namespace SimpleRBM.Cuda
             return new CudaDbnD(
                 dev,
                 rand,
-                layerSizes,
-                learningRate, exitConditionEvaluatorFactory);
+                layerSizes);
         }
 
-        public IDeepBeliefNetwork<float> Create(DirectoryInfo networkDataDir, ILayerDefinition[] appendLayers,
-            ILearningRateCalculator<float> learningRate , IExitConditionEvaluatorFactory<float> exitConditionEvaluatorFactory = null)
+        IDeepBeliefNetwork<float> IDeepBeliefNetworkFactory<float>.Create(DirectoryInfo networkDataDir,
+            ILayerDefinition[] appendLayers)
         {
             GPGPU dev;
             GPGPURAND rand;
             CreateDevice(out dev, out rand);
 
-            return new CudaDbnF(dev, rand, networkDataDir, learningRate, exitConditionEvaluatorFactory, appendLayers);
+            return new CudaDbnF(dev, rand, networkDataDir, appendLayers);
         }
 
-        public IDeepBeliefNetwork<float> Create(ILayerDefinition[] layerSizes, ILearningRateCalculator<float> learningRate ,
-            IExitConditionEvaluatorFactory<float> exitConditionEvaluatorFactory = null)
+        IDeepBeliefNetwork<float> IDeepBeliefNetworkFactory<float>.Create(ILayerDefinition[] layerSizes)
         {
             GPGPU dev;
             GPGPURAND rand;
@@ -54,8 +51,7 @@ namespace SimpleRBM.Cuda
             return new CudaDbnF(
                 dev,
                 rand,
-                layerSizes,
-                learningRate, exitConditionEvaluatorFactory);
+                layerSizes);
         }
 
         private void CreateDevice(out GPGPU dev, out GPGPURAND rand)
@@ -80,11 +76,11 @@ namespace SimpleRBM.Cuda
             CudafyModule mod = CudafyTranslator.Cudafy(
                 plat,
                 arch,
-                typeof(ActivationFunctionsCuda),
-                typeof(Matrix2DCudaF),
-                typeof(Matrix2DCudaD),
-                typeof(CudaRbmF),
-                typeof(CudaRbmD)
+                typeof (ActivationFunctionsCuda),
+                typeof (Matrix2DCuda) //,
+                //typeof (Matrix2DCudaD)
+                //typeof (CudaRbmF),
+                //typeof (CudaRbmD)
                 );
 
 
@@ -102,7 +98,7 @@ namespace SimpleRBM.Cuda
             Console.WriteLine("Initializing Randoms");
             if (rand != null)
             {
-                rand.SetPseudoRandomGeneratorSeed((ulong)DateTime.Now.Ticks);
+                rand.SetPseudoRandomGeneratorSeed((ulong) DateTime.Now.Ticks);
                 rand.GenerateSeeds();
             }
         }

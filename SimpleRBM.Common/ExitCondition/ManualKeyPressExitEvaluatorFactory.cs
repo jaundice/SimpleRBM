@@ -19,9 +19,9 @@ If the pressed key is 'l' it will exit the next time the epoch error falls to it
             _minError = (T) Convert.ChangeType(minError, typeof(T));
         }
 
-        public IExitConditionEvaluator<T> Create(int layerDepth, int inputNodes, int outputNodes)
+        public IExitConditionEvaluator<T> Create(int layerIndex)
         {
-            return new ManualKeyPressEvaluator<T>(layerDepth, _maxEpochs, _minError);
+            return new ManualKeyPressEvaluator<T>(layerIndex, _maxEpochs, _minError);
         }
     }
 }

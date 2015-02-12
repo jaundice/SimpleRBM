@@ -1,289 +1,356 @@
-﻿using Cudafy;
+﻿using System;
+using Cudafy;
 using Cudafy.Host;
-using SimpleRBM.Common;
+using Mono.CSharp;
+using TElement = System.Single;
 
 namespace SimpleRBM.Cuda
 {
     public static partial class MatrixEx
     {
-        public static Matrix2D<float> Multiply(this Matrix2D<float> self, float scalar)
+
+        public static TElement Sum(this Matrix2D<TElement> self)
         {
-            Matrix2D<float> output = self.GPU.AllocateNoSet<float>(self.GetLength(0), self.GetLength(1));
+            using(var cols = self.SumColumns())
+            using (var rows = cols.SumRows())
+            {
+                return rows.CopyLocal()[0, 0];
+            }
+        }
+
+
+        public static Matrix2D<TElement> Multiply(this Matrix2D<TElement> self, TElement scalar)
+        {
+            Matrix2D<TElement> output = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCudaF.MultiplyScalarF, self.Matrix, scalar, output.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCuda.MultiplyScalarF, self.Matrix, scalar, output.Matrix);
             return output;
         }
 
-        public static void MultiplyInPlace(this Matrix2D<float> self, float scalar)
+        public static void MultiplyInPlace(this Matrix2D<TElement> self, TElement scalar)
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCudaF.MultiplyScalarInPlaceF, self.Matrix, scalar);
+            self.GPU.Launch(grid, block, Matrix2DCuda.MultiplyScalarInPlaceF, self.Matrix, scalar);
         }
 
-        public static Matrix2D<float> Multiply(this Matrix2D<float> self, Matrix2D<float> other)
+        public static Matrix2D<TElement> Multiply(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
-            Matrix2D<float> result = self.GPU.AllocateNoSet<float>(self.GetLength(0), other.GetLength(1));
+            Matrix2D<TElement> result = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), other.GetLength(1));
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self.GetLength(0), other.GetLength(1), out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCudaF.MultiplyF, self.Matrix, other.Matrix, result.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCuda.MultiplyF, self.Matrix, other.Matrix, result.Matrix);
             return result;
         }
-        public static void Increment(this Matrix2D<float> self)
+
+        public static void Increment(this Matrix2D<TElement> self)
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCudaF.IncrementF, self.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCuda.IncrementF, self.Matrix);
         }
 
-        public static void Identity(this Matrix2D<float> self)
+        public static void Identity(this Matrix2D<TElement> self)
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCudaF.IdentityF, self.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCuda.IdentityF, self.Matrix);
         }
-        public static void InsertValuesFrom(this Matrix2D<float> self, int mPos, int nPos, Matrix2D<float> source,
+
+        public static void InsertValuesFrom(this Matrix2D<TElement> self, int mPos, int nPos, Matrix2D<TElement> source,
             int mSize = 0, int nSize = 0)
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(source, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCudaF.InsertValuesFromF, self.Matrix, mPos, nPos, source.Matrix, mSize,
+            self.GPU.Launch(grid, block, Matrix2DCuda.InsertValuesFromF, self.Matrix, mPos, nPos, source.Matrix, mSize,
                 nSize);
         }
 
-        public static void UpdateValuesAlongAxis(this Matrix2D<float> self, int index, float value, Axis axis)
+        public static void UpdateValuesAlongAxis(this Matrix2D<TElement> self, int index, TElement value, Axis axis)
         {
             dim3 grid, block;
             if (axis == Axis.Row)
             {
                 ThreadOptimiser.Instance.GetStrategy(self.GetLength(1), 1, out grid, out block);
-
             }
             else
             {
                 ThreadOptimiser.Instance.GetStrategy(1, self.GetLength(0), out grid, out block);
             }
             //ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCudaF.UpdateValueAlongAxisF, self.Matrix, index, value,
-                axis == Axis.Row ? Matrix2DCudaF.TRUE : Matrix2DCudaF.FALSE);
+            self.GPU.Launch(grid, block, Matrix2DCuda.UpdateValueAlongAxisF, self.Matrix, index, value,
+                axis == Axis.Row ? Matrix2DCuda.TRUE : Matrix2DCuda.FALSE);
         }
 
-        public static Matrix2D<float> Logistic(this Matrix2D<float> self)
+        public static Matrix2D<TElement> Logistic(this Matrix2D<TElement> self)
         {
-            var res = self.GPU.AllocateNoSet<float>(self.GetLength(0), self.GetLength(1));
+            Matrix2D<TElement> res = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
             self.GPU.Launch(grid, block, ActivationFunctionsCuda.LogisticF, self.Matrix, res.Matrix);
             return res;
         }
 
-        public static void LogisticInPlace(this Matrix2D<float> self)
+        public static void LogisticInPlace(this Matrix2D<TElement> self)
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
             self.GPU.Launch(grid, block, ActivationFunctionsCuda.LogisticInPlaceF, self.Matrix);
-
         }
 
-
-        public static Matrix2D<float> SoftMax(this Matrix2D<float> self)
+        public static void TanhInPlace(this Matrix2D<TElement> self)
         {
-            using (var exponents = self.GPU.AllocateNoSet<float>(self.GetLength(0), self.GetLength(1)))
+            dim3 grid, block;
+            ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
+            self.GPU.Launch(grid, block, ActivationFunctionsCuda.TanhInPlaceF, self.Matrix);
+        }
+
+        public static void SoftPlusInPlace(this Matrix2D<TElement> self)
+        {
+            dim3 grid, block;
+            ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
+            self.GPU.Launch(grid, block, ActivationFunctionsCuda.SoftPlusInPlaceF, self.Matrix);
+        }
+
+        public static Matrix2D<TElement> SoftMax(this Matrix2D<TElement> self)
+        {
+            using (Matrix2D<TElement> exponents = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1)))
             {
                 dim3 grid, block;
                 ThreadOptimiser.Instance.GetStrategy(self.GetLength(0), 1, out grid, out block);
                 self.GPU.Launch(grid, block, ActivationFunctionsCuda.LogSumOfExponentsF, self.Matrix, exponents.Matrix);
 
-                using (var scales = self.GPU.AllocateNoSet<float>(self.GetLength(0), 1))
+                using (Matrix2D<TElement> scales = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), 1))
                 {
                     ThreadOptimiser.Instance.GetStrategy(self.GetLength(0), 1, out grid, out block);
 
-                    self.GPU.Launch(grid, block, Matrix2DCudaF.SumMatrixRowsF, exponents.Matrix, scales.Matrix);
+                    self.GPU.Launch(grid, block, Matrix2DCuda.SumMatrixRowsF, exponents.Matrix, scales.Matrix);
                     //todo could do this in place and save an allocation
-                    var result = self.GPU.AllocateNoSet<float>(self.GetLength(0), self.GetLength(1));
+                    Matrix2D<TElement> result = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
                     ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-                    self.GPU.Launch(grid, block, Matrix2DCudaF.DivideByF, exponents.Matrix, scales.Matrix, result.Matrix);
+                    self.GPU.Launch(grid, block, Matrix2DCuda.DivideByF, exponents.Matrix, scales.Matrix, result.Matrix);
 
                     return result;
                 }
             }
-
         }
 
 
-        public static Matrix2D<float> GreaterThan(this Matrix2D<float> self, Matrix2D<float> other)
+        public static Matrix2D<TElement> GreaterThan(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
-            var res = self.GPU.AllocateNoSet<float>(self.GetLength(0), self.GetLength(1));
+            Matrix2D<TElement> res = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCudaF.GreaterThanF, self.Matrix, other.Matrix, res.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCuda.GreaterThanF, self.Matrix, other.Matrix, res.Matrix);
 
             return res;
         }
 
-        public static Matrix2D<float> GreaterThanLinear(this Matrix2D<float> self, Matrix2D<float> other)
+        public static Matrix2D<TElement> GreaterThanLinear(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
-            var res = self.GPU.AllocateNoSet<float>(self.GetLength(0), self.GetLength(1));
+            Matrix2D<TElement> res = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCudaF.GreaterThanLinearF, self.Matrix, other.Matrix, res.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCuda.GreaterThanLinearF, self.Matrix, other.Matrix, res.Matrix);
 
             return res;
         }
 
-        public static Matrix2D<float> SubMatrix(this Matrix2D<float> self, int startRow, int startCol, int numRows = 0,
+        public static Matrix2D<TElement> SubMatrix(this Matrix2D<TElement> self, int startRow, int startCol, int numRows = 0,
             int numCols = 0)
         {
             numRows = numRows != 0 ? numRows : self.GetLength(0) - startRow;
             numCols = numCols != 0 ? numCols : self.GetLength(1) - startCol;
 
-            var res = self.GPU.AllocateNoSet<float>(numRows, numCols);
+            Matrix2D<TElement> res = self.GPU.AllocateNoSet<TElement>(numRows, numCols);
 
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(numRows, numCols, out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCudaF.SubMatrixF, self.Matrix, startRow, startCol, numRows, numCols, res.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCuda.SubMatrixF, self.Matrix, startRow, startCol, numRows, numCols,
+                res.Matrix);
 
             return res;
         }
 
-        public static Matrix2D<float> Transpose(this Matrix2D<float> self)
+        public static Matrix2D<TElement> Transpose(this Matrix2D<TElement> self)
         {
-            var res = self.GPU.AllocateNoSet<float>(self.GetLength(1), self.GetLength(0));
+            Matrix2D<TElement> res = self.GPU.AllocateNoSet<TElement>(self.GetLength(1), self.GetLength(0));
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(res, out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCudaF.TransposeF, self.Matrix, res.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCuda.TransposeF, self.Matrix, res.Matrix);
 
             return res;
         }
 
-        public static Matrix2D<float> Subtract(this Matrix2D<float> self, Matrix2D<float> other)
+        public static Matrix2D<TElement> Subtract(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
-            var res = self.GPU.AllocateNoSet<float>(self.GetLength(0), self.GetLength(1));
+            Matrix2D<TElement> res = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCudaF.SubtractF, self.Matrix, other.Matrix, res.Matrix);
-            return res;
-        }
-        public static void SubtractInPlace(this Matrix2D<float> self, Matrix2D<float> other)
-        {
-            dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-
-            self.GPU.Launch(grid, block, Matrix2DCudaF.SubtractInPlaceF, self.Matrix, other.Matrix);
-        }
-        public static Matrix2D<float> Add(this Matrix2D<float> self, Matrix2D<float> other)
-        {
-            var res = self.GPU.AllocateNoSet<float>(self.GetLength(0), self.GetLength(1));
-            dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-
-            self.GPU.Launch(grid, block, Matrix2DCudaF.AddF, self.Matrix, other.Matrix, res.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCuda.SubtractF, self.Matrix, other.Matrix, res.Matrix);
             return res;
         }
 
-        public static void AddInPlace(this Matrix2D<float> self, Matrix2D<float> other)
+        public static void SubtractInPlace(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCudaF.AddInPlaceF, self.Matrix, other.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCuda.SubtractInPlaceF, self.Matrix, other.Matrix);
         }
 
-        public static Matrix2D<float> UpdateWithMomentum(this Matrix2D<float> self, Matrix2D<float> other, float momentum)
+        public static Matrix2D<TElement> Add(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
-            var res = self.GPU.AllocateNoSet<float>(self.GetLength(0), self.GetLength(1));
+            Matrix2D<TElement> res = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCudaF.UpdateWithMomentumF, self.Matrix, other.Matrix, res.Matrix, momentum);
+            self.GPU.Launch(grid, block, Matrix2DCuda.AddF, self.Matrix, other.Matrix, res.Matrix);
             return res;
         }
 
-        public static void UpdateWithMomentumInPlace(this Matrix2D<float> self, Matrix2D<float> other, float momentum)
+        public static void AddInPlace(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCudaF.UpdateWithMomentumInPlaceF, self.Matrix, other.Matrix, momentum);
+            self.GPU.Launch(grid, block, Matrix2DCuda.AddInPlaceF, self.Matrix, other.Matrix);
         }
 
-        public static Matrix2D<float> Pow(this Matrix2D<float> self, float power)
+        public static Matrix2D<TElement> UpdateWithMomentum(this Matrix2D<TElement> self, Matrix2D<TElement> other,
+            TElement momentum)
         {
-            var res = self.GPU.AllocateNoSet<float>(self.GetLength(0), self.GetLength(1));
+            Matrix2D<TElement> res = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCudaF.PowF, self.Matrix, power, res.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCuda.UpdateWithMomentumF, self.Matrix, other.Matrix, res.Matrix,
+                momentum);
             return res;
         }
 
-        public static void PowInPlace(this Matrix2D<float> self, float power)
+        public static void UpdateWithMomentumInPlace(this Matrix2D<TElement> self, Matrix2D<TElement> other, TElement momentum)
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCudaF.PowInPlaceF, self.Matrix, power);
+            self.GPU.Launch(grid, block, Matrix2DCuda.UpdateWithMomentumInPlaceF, self.Matrix, other.Matrix, momentum);
         }
 
-        public static Matrix2D<float> Upload(this GPGPU gpu, float[,] source)
+        public static Matrix2D<TElement> Pow(this Matrix2D<TElement> self, TElement power)
         {
-            Matrix2D<float> tempSrcData = gpu.AllocateNoSet<float>(source.GetLength(0), source.GetLength(1));
+            Matrix2D<TElement> res = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
+            dim3 grid, block;
+            ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
+
+            self.GPU.Launch(grid, block, Matrix2DCuda.PowF, self.Matrix, power, res.Matrix);
+            return res;
+        }
+
+        public static void PowInPlace(this Matrix2D<TElement> self, TElement power)
+        {
+            dim3 grid, block;
+            ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
+
+            self.GPU.Launch(grid, block, Matrix2DCuda.PowInPlaceF, self.Matrix, power);
+        }
+
+        public static Matrix2D<TElement> Upload(this GPGPU gpu, TElement[,] source)
+        {
+            Matrix2D<TElement> tempSrcData = gpu.AllocateNoSet<TElement>(source.GetLength(0), source.GetLength(1));
             gpu.CopyToDevice(source, tempSrcData);
             return tempSrcData;
         }
 
-        public static float[,] CopyLocal(this Matrix2D<float> self)
+        public static TElement[,] CopyLocal(this Matrix2D<TElement> self)
         {
-            var res = new float[self.GetLength(0), self.GetLength(1)];
+            var res = new TElement[self.GetLength(0), self.GetLength(1)];
             self.GPU.CopyFromDevice(self.Matrix, res);
             return res;
         }
 
-        public static void Ones(this Matrix2D<float> self)
+        public static void Ones(this Matrix2D<TElement> self)
         {
             self.Fill(1f);
             //dim3 grid, block;
             //ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-            //self.GPU.Launch(grid, block, Matrix2DCudaF.OnesF, self.Matrix);
+            //self.GPU.Launch(grid, block, Matrix2DCuda.OnesF, self.Matrix);
         }
 
-        public static void Zeros(this Matrix2D<float> self)
+        public static void Zeros(this Matrix2D<TElement> self)
         {
             self.Set();
             //dim3 grid, block;
             //ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-            //self.GPU.Launch(grid, block, Matrix2DCudaF.ZerosF, self.Matrix);
+            //self.GPU.Launch(grid, block, Matrix2DCuda.ZerosF, self.Matrix);
         }
-        public static void Fill(this Matrix2D<float> self, float value)
+
+        public static void Fill(this Matrix2D<TElement> self, TElement value)
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCudaF.FillF, self.Matrix, value);
+            self.GPU.Launch(grid, block, Matrix2DCuda.FillF, self.Matrix, value);
         }
 
-        public static void ToBinaryF(this Matrix2D<float> self)
+        public static void ToBinaryF(this Matrix2D<TElement> self)
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCudaF.ToBinaryF, self.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCuda.ToBinaryF, self.Matrix);
         }
 
-        public static void InsertValuesFromRowOrColumn(this Matrix2D<float> self, Matrix2D<float> source,
+        public static void InsertValuesFromRowOrColumn(this Matrix2D<TElement> self, Matrix2D<TElement> source,
             Axis axis, int mPos, int nPos)
         {
             dim3 grid, block;
-            var length = axis == Axis.Row ? source.GetLength(1) : source.GetLength(0);
+            int length = axis == Axis.Row ? source.GetLength(1) : source.GetLength(0);
 
             ThreadOptimiser.Instance.GetStrategy(length, 1, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCudaF.InsertValuesFromRowOrColumnF, self.Matrix, source.Matrix, length, axis == Axis.Column ? Matrix2DCudaF.TRUE : Matrix2DCudaF.FALSE, mPos, nPos);
+            self.GPU.Launch(grid, block, Matrix2DCuda.InsertValuesFromRowOrColumnF, self.Matrix, source.Matrix, length,
+                axis == Axis.Column ? Matrix2DCuda.TRUE : Matrix2DCuda.FALSE, mPos, nPos);
+        }
 
+        public static Matrix2D<TElement> RepMat(this Matrix2D<TElement> self, int clones)
+        {
+            if (self.GetLength(0) != 1)
+                throw new Exception();
+
+            var ret = self.GPU.AllocateNoSet<TElement>(clones, self.GetLength(1));
+            dim3 grid, block;
+            ThreadOptimiser.Instance.GetStrategy(ret, out grid, out block);
+
+            self.GPU.Launch(grid, block, Matrix2DCuda.RepMatF, self.Matrix, ret.Matrix);
+
+
+
+            return ret;
+        }
+
+        public static Matrix2D<TElement> SumRows(this Matrix2D<TElement> self)
+        {
+            var ret = self.GPU.AllocateAndSet<TElement>(self.GetLength(0), 1);
+            dim3 grid, block;
+            ThreadOptimiser.Instance.GetStrategy(self.GetLength(0), 1, out grid, out block);
+
+            self.GPU.Launch(grid, block, Matrix2DCuda.SumMatrixRowsF, self.Matrix, ret.Matrix);
+            return ret;
+        }
+
+        public static Matrix2D<TElement> SumColumns(this Matrix2D<TElement> self)
+        {
+            var ret = self.GPU.AllocateAndSet<TElement>(1, self.GetLength(1));
+            dim3 grid, block;
+            ThreadOptimiser.Instance.GetStrategy(self.GetLength(1), 1, out grid, out block);
+
+            self.GPU.Launch(grid, block, Matrix2DCuda.SumMatrixColumnsF, self.Matrix, ret.Matrix);
+            return ret;
         }
     }
 

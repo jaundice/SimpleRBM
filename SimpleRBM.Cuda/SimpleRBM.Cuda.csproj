@@ -96,16 +96,20 @@
     <Reference Include="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ActivationFunctionsCuda.cs" />
+    <Compile Include="ActivationFunctionsCudaD.cs" />
+    <Compile Include="ActivationFunctionsCudaF.cs" />
     <Compile Include="CudaDbnD.cs" />
     <Compile Include="CudaDbnFactory.cs" />
     <Compile Include="CudaRbmD.cs" />
     <Compile Include="CudaDbnF.cs" />
     <Compile Include="GPGPUEx.cs" />
+    <Compile Include="GPGPUExD.cs" />
+    <Compile Include="GPGPUExF.cs" />
     <Compile Include="Location.cs" />
     <Compile Include="Matrix.cs" />
     <Compile Include="Matrix1D.cs" />
     <Compile Include="Matrix2D.cs" />
+    <Compile Include="Matrix2DCuda.cs" />
     <Compile Include="Matrix2DCudaD.cs" />
     <Compile Include="Matrix2DCudaF.cs" />
     <Compile Include="MatrixExD.cs" />

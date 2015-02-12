@@ -44,12 +44,12 @@ namespace SimpleRBM.Common.ExitCondition
 
             _factory.MainTracker.LogEpochError(_layer, epochNumber, lastError);
 
-            
+
             if (epochNumber % 20 == 0)
-                if (epochNumber % 20 == 0)
-                    Console.WriteLine("Epoch: {0}\tLayer: {1}\tError: {2}\tElapsed: {3}", epochNumber, _layer, lastError, elapsedTime);
-
-
+                Console.WriteLine("Epoch: {0}\tLayer: {1}\tError: {2}\tElapsed: {3}, delta: {4}", epochNumber,
+                    _layer, lastError, elapsedTime,
+                    (double)Convert.ChangeType(_mainWindow.MinValueSeen, typeof(double)) -
+                    (double)Convert.ChangeType(lastError, typeof(double))); 
       
 
             bool mainDownward = false;
@@ -80,8 +80,13 @@ namespace SimpleRBM.Common.ExitCondition
 
                 _factory.CompanionTracker.LogEpochError(_layer, epochNumber, companionError);
 
-                Console.WriteLine("Epoch: {0} Companion error: {1}\t delta: {2}", epochNumber, companionError,
-                    companionDelta);
+
+                if (epochNumber % 20 == 0)
+                    Console.WriteLine("Epoch: {0}\tLayer: {1}\tCompanion Error: {2}\tElapsed: {3}, delta: {4}", epochNumber,
+                        _layer, lastError, elapsedTime,
+                        (double)Convert.ChangeType(_companionWindow.MinValueSeen, typeof(double)) -
+                        (double)Convert.ChangeType(companionError, typeof(double))); 
+
 
                 if (epochNumber > 0 && mainDownward)
                 {
@@ -164,10 +169,16 @@ namespace SimpleRBM.Common.ExitCondition
             return false;
         }
 
-        public void Reset()
+        public void Start()
         {
             _mainWindow = new CircularBuffer<T>(BUFFERSIZE);
             _companionWindow = new CircularBuffer<T>(BUFFERSIZE);
+        }
+
+
+        public void Stop()
+        {
+         
         }
     }
 

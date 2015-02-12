@@ -1,6 +1,7 @@
 ﻿using System.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SimpleRBM.Demo.Demo;
+using SimpleRBM.Demo.IO;
 
 namespace SimpleRBM.Test
 {
@@ -16,7 +17,7 @@ namespace SimpleRBM.Test
             float[,] labelsCoded;
             float[,] data = io.ReadTrainingData(0, 20, out labels, out labelsCoded);
 
-            io.PrintToScreen(data, referenceLabels: labels, referenceLabelsCoded: labelsCoded);
+            io.PrintToConsole(data, referenceLabels: labels, referenceLabelsCoded: labelsCoded);
         }
 
         [TestMethod]
@@ -29,7 +30,7 @@ namespace SimpleRBM.Test
             float[,] labelsCoded;
             float[,] data = io.ReadTrainingData(0, 20, out labels, out labelsCoded);
 
-            io.PrintToScreen(data, referenceLabels: labels, referenceLabelsCoded: labelsCoded);
+            io.PrintToConsole(data, referenceLabels: labels, referenceLabelsCoded: labelsCoded);
         }
 
         [TestMethod]
@@ -40,7 +41,7 @@ namespace SimpleRBM.Test
             float[,] labelsCoded;
             float[,] data = provider.ReadTrainingData(0, 20, out labels, out labelsCoded);
 
-            provider.PrintToScreen(data, referenceLabels: labels, referenceLabelsCoded: labelsCoded);
+            provider.PrintToConsole(data, referenceLabels: labels, referenceLabelsCoded: labelsCoded);
         }
     }
 }

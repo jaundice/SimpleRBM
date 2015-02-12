@@ -41,10 +41,7 @@ namespace SimpleRBM.Test
                 plat,
                 arch,
                 typeof (ActivationFunctionsCuda),
-                typeof (Matrix2DCudaF),
-                typeof (Matrix2DCudaD),
-                typeof (CudaRbmF),
-                typeof (CudaRbmD)
+                typeof (Matrix2DCuda)
                 );
 
 

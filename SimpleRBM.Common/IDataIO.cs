@@ -9,9 +9,9 @@ namespace SimpleRBM.Common
 
         TDataElement[,] ReadTestData(int skipRecords, int count);
 
-        void PrintToScreen(TDataElement[,] arr, TDataElement[,] reference = null, TLabel[] referenceLabels = null,
+        void PrintToConsole(TDataElement[,] arr, TDataElement[,] reference = null, TLabel[] referenceLabels = null,
             TDataElement[,] referenceLabelsCoded = null, ulong[][] keys = null, TDataElement[,] computedLabels = null);
 
-        void PrintMap(TDataElement[,] arr);
+        void PrintToConsole(TDataElement[,] arr);
     }
 }

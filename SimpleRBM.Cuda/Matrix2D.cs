@@ -17,7 +17,7 @@ namespace SimpleRBM.Cuda
 
         public T[,] Matrix
         {
-            get { return (T[,])base.InnerMatrix; }
+            get { return (T[,]) base.InnerMatrix; }
         }
 
         public static implicit operator T[,](Matrix2D<T> m)

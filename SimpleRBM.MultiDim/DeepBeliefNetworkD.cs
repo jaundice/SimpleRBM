@@ -13,10 +13,8 @@ namespace SimpleRBM.MultiDim
     {
         private readonly RestrictedBoltzmannMachineD[] Machines;
 
-        public DeepBeliefNetworkD(DirectoryInfo network, ILearningRateCalculator<double> learningRateCalculator,
-            IExitConditionEvaluatorFactory<double> exitConditionExitConditionEvaluatorFactory, ILayerDefinition[] appendLayers = null)
+        public DeepBeliefNetworkD(DirectoryInfo network, ILayerDefinition[] appendLayers = null)
         {
-            ExitConditionEvaluatorFactory = exitConditionExitConditionEvaluatorFactory;
             List<LayerSaveInfoD> saveInfos =
                 network.GetFiles("*.bin")
                     .OrderBy(a => int.Parse(Regex.Match(Path.GetFileNameWithoutExtension(a.Name), "[0-9]+").Value))
@@ -33,9 +31,7 @@ namespace SimpleRBM.MultiDim
                 Console.WriteLine("Building Layer {0}: {1}x{2}", i, saveInfos[i].NumVisible, saveInfos[i].NumHidden);
 
                 var rbm = new RestrictedBoltzmannMachineD(saveInfos[i].NumVisible, saveInfos[i].NumHidden,
-                    saveInfos[i].Weights,
-                    ExitConditionEvaluatorFactory.Create(i, saveInfos[i].NumVisible, saveInfos[i].NumHidden),
-                    learningRateCalculator);
+                    saveInfos[i].Weights, saveInfos[i].VisibleActivation, saveInfos[i].HiddenActivation);
                 rbm.EpochEnd += OnRbm_EpochEnd;
                 Machines[i] = rbm;
             }
@@ -48,40 +44,38 @@ namespace SimpleRBM.MultiDim
                         appendLayers[j].VisibleUnits, appendLayers[j].HiddenUnits);
 
                     var rbm = new RestrictedBoltzmannMachineD(
-                        appendLayers[j].VisibleUnits, appendLayers[j].HiddenUnits,
-                        ExitConditionEvaluatorFactory.Create(saveInfos.Count + j,
-                            appendLayers[j].VisibleUnits, appendLayers[j].HiddenUnits), learningRateCalculator);
+                        appendLayers[j].VisibleUnits, appendLayers[j].HiddenUnits, appendLayers[j].VisibleActivation, appendLayers[j].HiddenActivation);
                     rbm.EpochEnd += OnRbm_EpochEnd;
                     Machines[saveInfos.Count + j + 1] = rbm;
                 }
             }
         }
 
-        public DeepBeliefNetworkD(ILayerDefinition[] layerSizes, ILearningRateCalculator<double> learningRateCalculator,
-            IExitConditionEvaluatorFactory<double> exitConditionExitConditionEvaluatorFactory)
+        public DeepBeliefNetworkD(ILayerDefinition[] layerSizes)
         {
-            ExitConditionEvaluatorFactory = exitConditionExitConditionEvaluatorFactory;
             Machines = new RestrictedBoltzmannMachineD[layerSizes.Length];
 
             for (int i = 0; i < layerSizes.Length; i++)
             {
-                Console.WriteLine("Building Layer {0}: {1}x{2}", i, layerSizes[i].VisibleUnits, layerSizes[i].HiddenUnits);
+                Console.WriteLine("Building Layer {0}: {1}x{2}", i, layerSizes[i].VisibleUnits,
+                    layerSizes[i].HiddenUnits);
 
-                var rbm = new RestrictedBoltzmannMachineD(layerSizes[i].VisibleUnits, layerSizes[i].HiddenUnits,
-                    exitConditionExitConditionEvaluatorFactory.Create(i, layerSizes[i].VisibleUnits, layerSizes[i].HiddenUnits), learningRateCalculator);
+                var rbm = new RestrictedBoltzmannMachineD(layerSizes[i].VisibleUnits, layerSizes[i].HiddenUnits, layerSizes[i].VisibleActivation, layerSizes[i].HiddenActivation);
                 rbm.EpochEnd += OnRbm_EpochEnd;
                 Machines[i] = rbm;
             }
         }
 
-        public void GreedyTrainLayersFrom(double[,] visibleData, int startDepth)
+        public void GreedyTrainLayersFrom(double[,] visibleData, int startDepth,
+            IExitConditionEvaluatorFactory<double> exitEvaluatorFactory,
+            ILearningRateCalculatorFactory<double> learningRateCalculatorFactory)
         {
             double error;
             for (int i = 0; i < Machines.Length; i++)
             {
                 visibleData = i < startDepth
                     ? Machines[i].GetHiddenLayer(visibleData)
-                    : GreedyTrain(visibleData, i, out error);
+                    : GreedyTrain(visibleData, i, exitEvaluatorFactory, learningRateCalculatorFactory, out error);
             }
         }
 
@@ -125,35 +119,43 @@ namespace SimpleRBM.MultiDim
             return ret;
         }
 
-        public double[,] GreedyTrain(double[,] data, int layerNumber, out double error)
+        public double[,] GreedyTrain(double[,] data, int layerIndex,
+            IExitConditionEvaluatorFactory<double> exitEvaluatorFactory,
+            ILearningRateCalculatorFactory<double> learningRateCalculatorFactory, out double error)
         {
-            double err = Machines[layerNumber].GreedyTrain(data);
+            double err = Machines[layerIndex].GreedyTrain(data, exitEvaluatorFactory.Create(layerIndex),
+                learningRateCalculatorFactory.Create(layerIndex));
             RaiseTrainEnd(err);
             error = err;
-            return Machines[layerNumber].GetHiddenLayer(data);
+            return Machines[layerIndex].GetHiddenLayer(data);
         }
 
-        public Task AsyncGreedyTrain(double[,] data, int layerPosition)
+        public Task AsyncGreedyTrain(double[,] data, int layerIndex,
+            IExitConditionEvaluatorFactory<double> exitEvaluatorFactory,
+            ILearningRateCalculatorFactory<double> learningRateCalculatorFactory)
         {
             double err;
             return Task.Run(
-                () => GreedyTrain(data, layerPosition, out err));
+                () => GreedyTrain(data, layerIndex, exitEvaluatorFactory, learningRateCalculatorFactory, out err));
         }
 
-        public void GreedyTrainAll(double[,] visibleData)
+        public void GreedyTrainAll(double[,] visibleData, IExitConditionEvaluatorFactory<double> exitEvaluatorFactory,
+            ILearningRateCalculatorFactory<double> learningRateCalculatorFactory)
         {
             double error;
 
             for (int i = 0; i < Machines.Length; i++)
             {
-                visibleData = GreedyTrain(visibleData, i, out error);
+                visibleData = GreedyTrain(visibleData, i, exitEvaluatorFactory, learningRateCalculatorFactory, out error);
                 RaiseTrainEnd(error);
             }
         }
 
-        public Task AsyncGreedyTrainAll(double[,] visibleData)
+        public Task AsyncGreedyTrainAll(double[,] visibleData,
+            IExitConditionEvaluatorFactory<double> exitEvaluatorFactory,
+            ILearningRateCalculatorFactory<double> learningRateCalculatorFactory)
         {
-            return Task.Run(() => GreedyTrainAll(visibleData));
+            return Task.Run(() => GreedyTrainAll(visibleData, exitEvaluatorFactory, learningRateCalculatorFactory));
         }
 
 
@@ -166,11 +168,45 @@ namespace SimpleRBM.MultiDim
             get { return Machines.Length; }
         }
 
-        public IExitConditionEvaluatorFactory<double> ExitConditionEvaluatorFactory { get; protected set; }
-
         public IEnumerable<ILayerSaveInfo<double>> GetLayerSaveInfos()
         {
             return Machines.Select(a => a.GetSaveInfo());
+        }
+
+
+        public double[,] GreedyBatchedTrain(double[,] data, int layerPosition, int batchRows,
+            IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory,
+            ILearningRateCalculatorFactory<double> learningRateFactory, out double error)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task AsyncGreedyBatchedTrain(double[,] data, int layerPosition, int batchRows,
+            IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory,
+            ILearningRateCalculatorFactory<double> learningRateFactory)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void GreedyBatchedTrainAll(double[,] visibleData, int batchRows,
+            IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory,
+            ILearningRateCalculatorFactory<double> learningRateFactory)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task AsyncGreedyBatchedTrainAll(double[,] visibleData, int batchRows,
+            IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory,
+            ILearningRateCalculatorFactory<double> learningRateFactory)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void GreedyBatchedTrainLayersFrom(double[,] visibleData, int startDepth, int batchRows,
+            IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory,
+            ILearningRateCalculatorFactory<double> learningRateFactory)
+        {
+            throw new NotImplementedException();
         }
 
         private void RaiseTrainEnd(double error)
@@ -196,32 +232,6 @@ namespace SimpleRBM.MultiDim
                     Epoch = epoch,
                     Error = error
                 });
-        }
-
-
-        public double[,] GreedyBatchedTrain(double[,] data, int layerPosition, int batchRows, out double error)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task AsyncGreedyBatchedTrain(double[,] data, int layerPosition, int batchRows)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void GreedyBatchedTrainAll(double[,] visibleData, int batchRows)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task AsyncGreedyBatchedTrainAll(double[,] visibleData, int batchRows)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void GreedyBatchedTrainLayersFrom(double[,] visibleData, int startDepth, int batchRows)
-        {
-            throw new NotImplementedException();
         }
     }
 }

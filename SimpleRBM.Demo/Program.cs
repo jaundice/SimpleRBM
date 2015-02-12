@@ -8,6 +8,7 @@ using SimpleRBM.Common.ExitCondition;
 using SimpleRBM.Common.LearningRate;
 using SimpleRBM.Cuda;
 using SimpleRBM.Demo.Demo;
+using SimpleRBM.Demo.IO;
 #if USEFLOAT
 using TElement = System.Single;
 
@@ -21,30 +22,127 @@ namespace SimpleRBM.Demo
     {
         private static readonly ILayerDefinition[] _defaultHandwrittenLayerSizes =
         {
-            new LayerDefinition {VisibleUnits = 1024, HiddenUnits = 500},
-            new LayerDefinition {VisibleUnits = 500, HiddenUnits = 500},
-            new LayerDefinition {VisibleUnits = 510, HiddenUnits = 2000}
+            new LayerDefinition
+            {
+                VisibleUnits = 1024,
+                HiddenUnits = 500,
+                VisibleActivation = ActivationFunction.Sigmoid,
+                HiddenActivation = ActivationFunction.Sigmoid
+            },
+            new LayerDefinition
+            {
+                VisibleUnits = 500,
+                HiddenUnits = 500,
+                VisibleActivation = ActivationFunction.Sigmoid,
+                HiddenActivation = ActivationFunction.Sigmoid
+            },
+            new LayerDefinition
+            {
+                VisibleUnits = 510,
+                HiddenUnits = 2000,
+                VisibleActivation = ActivationFunction.Sigmoid,
+                HiddenActivation = ActivationFunction.Sigmoid
+            }
         };
 
         private static readonly ILayerDefinition[] _defaultKaggleLayerSizes =
         {
-            new LayerDefinition {VisibleUnits = 784, HiddenUnits = 500},
-            new LayerDefinition {VisibleUnits = 500, HiddenUnits = 500},
-            new LayerDefinition {VisibleUnits = 510, HiddenUnits = 2000}
+            new LayerDefinition
+            {
+                VisibleUnits = 784,
+                HiddenUnits = 500,
+                VisibleActivation = ActivationFunction.Sigmoid,
+                HiddenActivation = ActivationFunction.Sigmoid
+            },
+            new LayerDefinition
+            {
+                VisibleUnits = 500,
+                HiddenUnits = 500,
+                VisibleActivation = ActivationFunction.Sigmoid,
+                HiddenActivation = ActivationFunction.Sigmoid
+            },
+            new LayerDefinition
+            {
+                VisibleUnits = 510,
+                HiddenUnits = 2000,
+                VisibleActivation = ActivationFunction.Sigmoid,
+                HiddenActivation = ActivationFunction.Sigmoid
+            }
         };
-
-        //private static readonly ILayerDefinition[] _defaultFacesLayerSizes =
-        //{
-        //    new LayerDefinition {VisibleUnits = 250*250, HiddenUnits = 1800},
-        //    new LayerDefinition {VisibleUnits = 1800, HiddenUnits = 6000},
-        //    new LayerDefinition {VisibleUnits = 6005, HiddenUnits = 6000}
-        //};
 
         private static readonly ILayerDefinition[] _defaultFacesLayerSizes =
         {
-            new LayerDefinition {VisibleUnits = 250*250, HiddenUnits = 1800},
-            new LayerDefinition {VisibleUnits = 1800, HiddenUnits = 1800},
-            new LayerDefinition {VisibleUnits = 1800, HiddenUnits = 1800}
+            new LayerDefinition
+            {
+                VisibleUnits = 250*250,
+                HiddenUnits = 1800,
+                VisibleActivation = ActivationFunction.SoftPlus,
+                HiddenActivation = ActivationFunction.Sigmoid
+            },
+            new LayerDefinition
+            {
+                VisibleUnits = 1800,
+                HiddenUnits = 1800,
+                VisibleActivation = ActivationFunction.Sigmoid,
+                HiddenActivation = ActivationFunction.Sigmoid
+            },
+            new LayerDefinition
+            {
+                VisibleUnits = 1800,
+                HiddenUnits = 1800,
+                VisibleActivation = ActivationFunction.Sigmoid,
+                HiddenActivation = ActivationFunction.Sigmoid
+            }
+        };
+
+        private static readonly ILayerDefinition[] _defaultAudioLayerSizes =
+        {
+            new LayerDefinition
+            {
+                VisibleUnits = 37000,
+                HiddenUnits = 1800,
+                VisibleActivation = ActivationFunction.Sigmoid,
+                HiddenActivation = ActivationFunction.Sigmoid
+            },
+            new LayerDefinition
+            {
+                VisibleUnits = 1800,
+                HiddenUnits = 1800,
+                VisibleActivation = ActivationFunction.Sigmoid,
+                HiddenActivation = ActivationFunction.Sigmoid
+            },
+            new LayerDefinition
+            {
+                VisibleUnits = 1800,
+                HiddenUnits = 1800,
+                VisibleActivation = ActivationFunction.Sigmoid,
+                HiddenActivation = ActivationFunction.Sigmoid
+            }
+        };
+
+        private static readonly ILayerDefinition[] _defaultCsvLayerSizes =
+        {
+            new LayerDefinition
+            {
+                VisibleUnits = 178,
+                HiddenUnits = 128,
+                VisibleActivation = ActivationFunction.Sigmoid,
+                HiddenActivation = ActivationFunction.Sigmoid
+            },
+            new LayerDefinition
+            {
+                VisibleUnits = 128,
+                HiddenUnits = 128,
+                VisibleActivation = ActivationFunction.Sigmoid,
+                HiddenActivation = ActivationFunction.Sigmoid
+            },
+            new LayerDefinition
+            {
+                VisibleUnits = 128,
+                HiddenUnits = 32,
+                VisibleActivation = ActivationFunction.Sigmoid,
+                HiddenActivation = ActivationFunction.Sigmoid
+            }
         };
 
         private static void Main()
@@ -74,7 +172,8 @@ namespace SimpleRBM.Demo
                     new IODataTypeProxy<string>(new FacesDataF(ConfigurationManager.AppSettings["FacesDirectory"]),
                         new FacesDataD(ConfigurationManager.AppSettings["FacesDirectory"])),
                     _defaultFacesLayerSizes,
-                    new ConstantLearningRate<TElement>(learningRate),
+                    new LinearlyDecayingLearningRateFactory<TElement>(learningRate, 0.999999),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.01, 0.99999),
                     trainingSize,
                     skipTrainingRecords, false);
             }
@@ -89,9 +188,37 @@ namespace SimpleRBM.Demo
                         new KaggleDataD(ConfigurationManager.AppSettings["KaggleTrainingData"],
                             ConfigurationManager.AppSettings["KaggleTestData"])),
                     _defaultKaggleLayerSizes,
-                    new ConstantLearningRate<TElement>(learningRate),
+                    new LinearlyDecayingLearningRateFactory<TElement>(learningRate, 0.999999),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.01, 0.99999),
                     trainingSize,
                     skipTrainingRecords, true);
+            }
+            else if (Environment.GetCommandLineArgs().Contains("-data"))
+            {
+                Console.WriteLine("Executing Data demo");
+                Execute<TElement, string>(
+                    new DataDemo(),
+                    factory,
+                    new CsvData(ConfigurationManager.AppSettings["CsvDataTraining"],
+                        ConfigurationManager.AppSettings["CsvDataTest"], true, true),
+                    _defaultCsvLayerSizes,
+                    new LinearlyDecayingLearningRateFactory<TElement>(learningRate, 0.999999),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.01, 0.99999),
+                    trainingSize,
+                    skipTrainingRecords, false);
+            }
+            else if (Environment.GetCommandLineArgs().Contains("-audio"))
+            {
+                Console.WriteLine("Executing Audio demo");
+                Execute<TElement, string>(
+                    new AudioDemoApp(),
+                    factory,
+                    new WavData(ConfigurationManager.AppSettings["WavAudioDirectory"], 18500),
+                    _defaultAudioLayerSizes,
+                    new LinearlyDecayingLearningRateFactory<TElement>(learningRate, 0.999999),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.01, 0.99999),
+                    trainingSize,
+                    skipTrainingRecords, false);
             }
             else
             {
@@ -102,7 +229,8 @@ namespace SimpleRBM.Demo
                     new IODataTypeProxy<int>(new HandwrittenNumbersDataF("optdigits-tra.txt"),
                         new HandwrittenNumbersDataD("optdigits-tra.txt")),
                     _defaultHandwrittenLayerSizes,
-                    new ConstantLearningRate<TElement>(learningRate),
+                    new LinearlyDecayingLearningRateFactory<TElement>(learningRate, 0.999999),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.01, 0.99999),
                     trainingSize,
                     skipTrainingRecords, true);
             }
@@ -112,12 +240,12 @@ namespace SimpleRBM.Demo
             IDeepBeliefNetworkFactory<TDataElementType> dbnFactory,
             IDataIO<TDataElementType, TLabel> data,
             ILayerDefinition[] defaultLayerSizes,
-            ILearningRateCalculator<TDataElementType> learningRate,
+            ILearningRateCalculatorFactory<TDataElementType> preTrainLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TDataElementType> fineTrainLearningRateCalculatorFactory,
             int trainingSize,
             int skipTrainingRecords, bool classify) where TDataElementType : struct, IComparable<TDataElementType>
         {
             demo.Execute(dbnFactory,
-                new ManualKeyPressExitEvaluatorFactory<TDataElementType>(0.0005, 5000),
                 /*new CompanionDatasetExitConditionEvaluatorFactory<TDataElementType>(null, 10000, 20,
                    new EpochErrorFileTracker<TDataElementType>("main.log"),
                     new EpochErrorFileTracker<TDataElementType>("companion.log")),*/
@@ -125,9 +253,11 @@ namespace SimpleRBM.Demo
                     (TDataElementType)Convert.ChangeType(0.0005, typeof(TDataElementType)), 10000),*/
                 defaultLayerSizes,
                 data,
-                learningRate,
-                trainingSize,
-                skipTrainingRecords, classify);
+                preTrainLearningRateCalculatorFactory,
+                new ManualKeyPressExitEvaluatorFactory<TDataElementType>(0.0005, 20000),
+                fineTrainLearningRateCalculatorFactory,
+                new ManualKeyPressExitEvaluatorFactory<TDataElementType>(0.0005, 100),
+                trainingSize, skipTrainingRecords, classify);
         }
     }
 }

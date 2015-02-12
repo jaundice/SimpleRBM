@@ -6,7 +6,7 @@ namespace SimpleRBM.Cuda
     public class Matrix1D<T> : Matrix
     {
         public Matrix1D(GPGPU gpu, Array array, int rows)
-            : base(gpu, array, new[] { rows })
+            : base(gpu, array, new[] {rows})
         {
         }
 
@@ -17,7 +17,7 @@ namespace SimpleRBM.Cuda
 
         public T[] Matrix
         {
-            get { return (T[])base.InnerMatrix; }
+            get { return (T[]) base.InnerMatrix; }
         }
 
         public static implicit operator T[](Matrix1D<T> m)

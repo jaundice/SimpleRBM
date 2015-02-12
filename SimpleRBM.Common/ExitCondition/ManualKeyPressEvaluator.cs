@@ -7,42 +7,14 @@ namespace SimpleRBM.Common.ExitCondition
 {
     public class ManualKeyPressEvaluator<T> : IExitConditionEvaluator<T> where T : struct, IComparable<T>
     {
-        private bool _exit;
-        private readonly CancellationTokenSource src = new CancellationTokenSource();
+        private readonly int _layerDepth;
         private readonly int _maxEpochs;
         private readonly T _minError;
-        private T _lowestErrorSeen;
+        private bool _exit;
         private bool _exitOnNextLowest;
-        private readonly int _layerDepth;
-
-        public bool Exit(int epochNumber, T lastError, TimeSpan elapsedTime)
-        {
-            if (epochNumber % 20 == 0)
-                Console.WriteLine("Epoch: {0}\tLayer: {1}\tError: {2}\tElapsed: {3}", epochNumber, _layerDepth, lastError, elapsedTime);
-
-
-            if (epochNumber > _maxEpochs || Comparer<T>.Default.Compare(lastError, _minError) < 0)
-            {
-                src.Cancel();
-                _exit = true;
-            }
-            if (epochNumber == 0)
-            {
-                _lowestErrorSeen = lastError;
-
-            }
-            else if (Comparer<T>.Default.Compare(lastError, _lowestErrorSeen) < 0)
-            {
-                _lowestErrorSeen = lastError;
-                if (_exitOnNextLowest)
-                {
-                    src.Cancel();
-                    _exit = true;
-                }
-            }
-
-            return _exit;
-        }
+        private T _lowestErrorSeen;
+        private CancellationTokenSource src;
+        private int _epochsSinceLastErrorImprovement = 0;
 
         public ManualKeyPressEvaluator(int layerDepth, int maxEpochs, T minError)
         {
@@ -51,15 +23,62 @@ namespace SimpleRBM.Common.ExitCondition
             _layerDepth = layerDepth;
         }
 
-        public void Reset()
+        public bool Exit(int epochNumber, T lastError, TimeSpan elapsedTime)
+        {
+            T tempLowest = _lowestErrorSeen;
+
+            if ( Comparer<T>.Default.Compare(lastError, _minError) < 0)
+            {
+                src.Cancel();
+                _exit = true;
+            }
+            if (epochNumber == 0)
+            {
+                _lowestErrorSeen = lastError;
+            }
+            else if(epochNumber > _maxEpochs)
+            {
+                _exitOnNextLowest = true;
+                Console.WriteLine("Max epochs passed. Exiting next time error drops below {0:F6}", _lowestErrorSeen);
+            }
+            
+            if (Comparer<T>.Default.Compare(lastError, _lowestErrorSeen) < 0)
+            {
+                _lowestErrorSeen = lastError;
+                _epochsSinceLastErrorImprovement = 0;
+                if (_exitOnNextLowest)
+                {
+                    src.Cancel();
+                    _exit = true;
+                }
+            }
+            else
+            {
+                _epochsSinceLastErrorImprovement++;
+            }
+
+            if (_exit || epochNumber%20 == 0)
+                Console.WriteLine("Epoch: {0}\tLayer: {1}\tError: {2:F6}\tElapsed: {3}\tdelta: {4:F6}\tepochs since improvement: {5}", epochNumber,
+                    _layerDepth, lastError, elapsedTime,
+                    (double) Convert.ChangeType(tempLowest, typeof (double)) -
+                    (double) Convert.ChangeType(lastError, typeof (double)), _epochsSinceLastErrorImprovement);
+
+            return _exit;
+        }
+
+        public void Start()
         {
             _exit = false;
             _exitOnNextLowest = false;
 
+            if (src != null)
+                src.Cancel();
+
+            src = new CancellationTokenSource();
 
             Task.Factory.StartNew(() =>
             {
-                var key = Console.ReadKey();
+                ConsoleKeyInfo key = Console.ReadKey();
                 if (key.KeyChar == 'l' || key.KeyChar == 'L')
                 {
                     _exitOnNextLowest = true;
@@ -71,6 +90,12 @@ namespace SimpleRBM.Common.ExitCondition
                 }
                 src.Cancel();
             }, src.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        }
+
+
+        public void Stop()
+        {
+            src.Cancel();
         }
     }
 }

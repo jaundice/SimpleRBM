@@ -104,6 +104,9 @@
     <Compile Include="IRestrictedBoltzmannMachine.cs" />
     <Compile Include="LayerDefinition.cs" />
     <Compile Include="LearningRate\ConstantLearningRate.cs" />
+    <Compile Include="LearningRate\ConstantLearningRateFactory.cs" />
+    <Compile Include="LearningRate\LinearlyDecayingLearningRate.cs" />
+    <Compile Include="LearningRate\LinearlyDecayingLearningRateFactory.cs" />
     <Compile Include="Save\LayerSaveInfoD.cs" />
     <Compile Include="Save\LayerSaveInfoF.cs" />
     <Compile Include="ExitCondition\ManualKeyPressEvaluator.cs" />

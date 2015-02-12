@@ -30,6 +30,8 @@ namespace SimpleRBM.Cuda
         protected internal GPGPU GPU { get; set; }
 
 
+        public bool Disposed { get; protected set; }
+
         public void Dispose()
         {
             if (!Disposed)
@@ -39,8 +41,6 @@ namespace SimpleRBM.Cuda
                 GC.SuppressFinalize(this);
             }
         }
-
-        public bool Disposed { get; protected set; }
 
         public int GetLength(int dimension)
         {

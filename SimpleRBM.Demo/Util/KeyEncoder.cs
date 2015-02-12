@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Text;
 using System.Threading.Tasks;
 
-namespace SimpleRBM.Demo.Demo
+namespace SimpleRBM.Demo.Util
 {
     public class KeyEncoder
     {
@@ -40,6 +40,33 @@ namespace SimpleRBM.Demo.Demo
             });
             return keys;
         }
+
+        public static string[] CreateBinaryStringKeys<T>(T[,] encoded)
+        {
+            if (encoded == null)
+                return null;
+
+            int width = encoded.GetLength(1);
+            var ret = new string[encoded.GetLength(0)];
+            for (var a = 0; a < encoded.GetLength(0); a++)
+            {
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < width; i++)
+                {
+
+
+                    if (Comparer<T>.Default.Compare(encoded[a, i], default(T)) > 0)
+                        sb.Append("1");
+                    else
+                        sb.Append("0");
+                }
+                ret[a] = sb.ToString();
+
+
+            }
+            return ret;
+        }
+
     }
 
 

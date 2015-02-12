@@ -1,18 +1,73 @@
-﻿using System;
-using Cudafy;
+﻿using Cudafy;
+using TElement =System.Single;
+using math = Cudafy.GMath;
 
 namespace SimpleRBM.Cuda
 {
-    public static class ActivationFunctionsCuda
+    public static partial class ActivationFunctionsCuda
     {
         [Cudafy]
-        public static float LogisticValueF(float x)
+        public static TElement LogisticValueF(TElement x)
         {
-            return 1f / (1f + GMath.Exp(-x));
+            return 1f / (1f + math.Exp(-x));
         }
 
         [Cudafy]
-        public static void LogisticF(GThread thread, float[,] input, float[,] output)
+        public static TElement HyperbolicTanValueF(TElement x)
+        {
+            return math.Tanh(x);
+        }
+
+
+        [Cudafy]
+        public static void TanhInPlaceF(GThread thread, TElement[,] input)
+        {
+            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+
+            int x = input.GetLength(0);
+            int y = input.GetLength(1);
+
+            while (i < x)
+            {
+                int n = j;
+                while (n < y)
+                {
+                    input[i, n] = HyperbolicTanValueF(input[i, n]);
+
+                    n += thread.gridDim.y * thread.blockDim.y;
+                }
+                i += thread.gridDim.x * thread.blockDim.x;
+            }
+            thread.SyncThreads();
+        }
+
+        [Cudafy]
+        public static void SoftPlusInPlaceF(GThread thread, TElement[,] input)
+        {
+            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+
+            int x = input.GetLength(0);
+            int y = input.GetLength(1);
+
+            while (i < x)
+            {
+                int n = j;
+                while (n < y)
+                {
+                    input[i, n] = math.Log(1 + math.Exp(input[i, n]));
+
+                    n += thread.gridDim.y * thread.blockDim.y;
+                }
+                i += thread.gridDim.x * thread.blockDim.x;
+            }
+            thread.SyncThreads();
+        }
+
+
+        [Cudafy]
+        public static void LogisticF(GThread thread, TElement[,] input, TElement[,] output)
         {
             int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
             int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
@@ -35,7 +90,7 @@ namespace SimpleRBM.Cuda
         }
 
         [Cudafy]
-        public static void LogisticInPlaceF(GThread thread, float[,] input)
+        public static void LogisticInPlaceF(GThread thread, TElement[,] input)
         {
             int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
             int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
@@ -59,7 +114,7 @@ namespace SimpleRBM.Cuda
 
 
         [Cudafy]
-        public static void ExponentsF(GThread thread, float[,] input, float[,] output)
+        public static void ExponentsF(GThread thread, TElement[,] input, TElement[,] output)
         {
             int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
             int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
@@ -72,7 +127,7 @@ namespace SimpleRBM.Cuda
                 int n = j;
                 while (n < y)
                 {
-                    output[i, n] = GMath.Exp(input[i, n]);
+                    output[i, n] = math.Exp(input[i, n]);
 
                     n += thread.gridDim.y * thread.blockDim.y;
                 }
@@ -82,7 +137,7 @@ namespace SimpleRBM.Cuda
         }
 
         [Cudafy]
-        public static void LogSumOfExponentsF(GThread thread, float[,] input, float[,] output)
+        public static void LogSumOfExponentsF(GThread thread, TElement[,] input, TElement[,] output)
         {
             int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
             int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
@@ -92,45 +147,16 @@ namespace SimpleRBM.Cuda
 
             while (i < x)
             {
-                float max = 0.0f;
+                TElement max = 0.0f;
 
-                for (var jindex = 0; jindex < y; jindex++)
+                for (int jindex = 0; jindex < y; jindex++)
                 {
-                    max = GMath.Max(max, input[i, jindex]);
+                    max = math.Max(max, input[i, jindex]);
                 }
 
                 for (int k = 0; k < y; k++)
                 {
-                    output[i, k] = GMath.Exp(input[i, k] - max);
-                }
-                i += thread.gridDim.x * thread.blockDim.x;
-            }
-            thread.SyncThreads();
-        }
-
-        [Cudafy]
-        public static double LogisticValueD(double x)
-        {
-            return 1.0 / (1.0 + Math.Exp(-x));
-        } 
-       
-        [Cudafy]
-        public static void LogisticD(GThread thread, double[,] input, double[,] output)
-        {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
-
-            int x = input.GetLength(0);
-            int y = input.GetLength(1);
-
-            while (i < x)
-            {
-                int n = j;
-                while (n < y)
-                {
-                    output[i, n] = LogisticValueD(input[i, n]);
-
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    output[i, k] = math.Exp(input[i, k] - max);
                 }
                 i += thread.gridDim.x * thread.blockDim.x;
             }

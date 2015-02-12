@@ -12,14 +12,12 @@ namespace SimpleRBM.MultiDim
     {
         private double[,] Weights;
 
-        public RestrictedBoltzmannMachineD(int numVisible, int numHidden, IExitConditionEvaluator<double> exitCondition,
-            ILearningRateCalculator<double> learningRateCalculator)
+        public RestrictedBoltzmannMachineD(int numVisible, int numHidden, ActivationFunction visibleActivation, ActivationFunction hiddenActivation)
         {
-            ExitConditionEvaluator = exitCondition;
             NumHiddenElements = numHidden;
             NumVisibleElements = numVisible;
-            LearningRate = learningRateCalculator;
-
+            VisibleActivation = visibleActivation;
+            HiddenActivation = hiddenActivation;
             Weights = new double[numVisible + 1, numHidden + 1];
             Matrix2D.InsertValuesFrom(
                 Weights,
@@ -28,25 +26,45 @@ namespace SimpleRBM.MultiDim
                 Matrix2D.Multiply(
                     Distributions.GaussianMatrix(
                         numVisible,
-                        numHidden),
-                    LearningRate.CalculateLearningRate(0,0)));
+                        numHidden),0.1));
         }
 
+        public ActivationFunction VisibleActivation { get; protected set; }
+        public ActivationFunction HiddenActivation { get; protected set; }
 
-        public RestrictedBoltzmannMachineD(int numVisible, int numHidden, double[,] weights,
-            IExitConditionEvaluator<double> exitCondition,
-            ILearningRateCalculator<double> learningRateCalculator )
+
+        public RestrictedBoltzmannMachineD(int numVisible, int numHidden, double[,] weights, ActivationFunction visibleActivation, ActivationFunction hiddenActivation)
         {
-            ExitConditionEvaluator = exitCondition;
             NumHiddenElements = numHidden;
             NumVisibleElements = numVisible;
-            LearningRate = learningRateCalculator;
             Weights = weights;
+            VisibleActivation = visibleActivation;
+            HiddenActivation = hiddenActivation;
         }
 
-        public ILearningRateCalculator<double> LearningRate { get; protected set; }
         public int NumHiddenElements { get; protected set; }
         public int NumVisibleElements { get; protected set; }
+
+        public double[,] Activate(double[,] matrix)
+        {
+            switch (VisibleActivation)
+            {
+                case ActivationFunction.Sigmoid:
+                {
+                    return ActivationFunctions.LogisticD(matrix);
+                }
+                case ActivationFunction.Tanh:
+                {
+                    return ActivationFunctions.TanhD(matrix);
+                }
+                case ActivationFunction.SoftPlus:
+                {
+                    return matrix;
+                }
+                default:
+                    throw new NotImplementedException();
+            }
+        }
 
         public double[,] GetHiddenLayer(double[,] visibleStates)
         {
@@ -58,7 +76,7 @@ namespace SimpleRBM.MultiDim
             Matrix2D.UpdateValueAlongAxis(data, 0, 1, Matrix2D.Axis.Vertical);
             double[,] hiddenActivations = Matrix2D.Multiply(data, Weights);
 
-            double[,] hiddenProbs = ActivationFunctions.LogisticD(hiddenActivations);
+            double[,] hiddenProbs = Activate(hiddenActivations);
             hiddenStates = Matrix2D.GreaterThan(hiddenProbs,
                 Distributions.UniformRandromMatrixD(numExamples, NumHiddenElements + 1));
             hiddenStates = Matrix2D.SubMatrix(hiddenStates, 0, 1);
@@ -76,7 +94,7 @@ namespace SimpleRBM.MultiDim
 
             double[,] visibleActivations = Matrix2D.Multiply(data, Matrix2D.Transpose(Weights));
 
-            double[,] visibleProbs = ActivationFunctions.LogisticD(visibleActivations);
+            double[,] visibleProbs = Activate(visibleActivations);
 
             double[,] visibleStates = Matrix2D.GreaterThan(
                 visibleProbs, Distributions.UniformRandromMatrixD(numExamples, NumVisibleElements + 1));
@@ -102,7 +120,7 @@ namespace SimpleRBM.MultiDim
                 double[,] hiddenActivations = Matrix2D.ToVector(Matrix2D.Multiply(
                     visible, Weights));
 
-                double[,] hiddenProbs = ActivationFunctions.LogisticD(hiddenActivations);
+                double[,] hiddenProbs = Activate(hiddenActivations);
                 double[,] hiddenStates = Matrix2D.GreaterThan(hiddenProbs,
                     Distributions.UniformRandromVectorD(NumHiddenElements + 1));
 
@@ -111,7 +129,7 @@ namespace SimpleRBM.MultiDim
                 double[,] visibleActivations = Matrix2D.ToVector(Matrix2D.Multiply(hiddenStates, Matrix2D.Transpose(
                     Weights)));
 
-                double[,] visibleProbs = ActivationFunctions.LogisticD(visibleActivations);
+                double[,] visibleProbs = Activate(visibleActivations);
 
                 double[,] visibleStates = Matrix2D.GreaterThan(visibleProbs,
                     Distributions.UniformRandromVectorD(NumVisibleElements + 1));
@@ -122,19 +140,22 @@ namespace SimpleRBM.MultiDim
             return Matrix2D.SubMatrix(data, 0, 1);
         }
 
-        public double GreedyTrain(double[][] data)
+        public double GreedyTrain(double[][] data, IExitConditionEvaluator<double> exitEvaluator,
+            ILearningRateCalculator<double> learningRateCalculator)
         {
-            return GreedyTrain(Matrix2D.JaggedToMultidimesional(data));
+            return GreedyTrain(Matrix2D.JaggedToMultidimesional(data), exitEvaluator, learningRateCalculator);
         }
 
-        public Task<double> AsyncGreedyTrain(double[][] data)
+        public Task<double> AsyncGreedyTrain(double[][] data, IExitConditionEvaluator<double> exitEvaluator,
+            ILearningRateCalculator<double> learningRateCalculator)
         {
-            return AsyncGreedyTrain(Matrix2D.JaggedToMultidimesional(data));
+            return AsyncGreedyTrain(Matrix2D.JaggedToMultidimesional(data), exitEvaluator, learningRateCalculator);
         }
 
-        public double GreedyTrain(double[,] visibleData)
+        public double GreedyTrain(double[,] visibleData, IExitConditionEvaluator<double> exitEvaluator,
+            ILearningRateCalculator<double> learningRateCalculator)
         {
-            ExitConditionEvaluator.Reset();
+            exitEvaluator.Start();
             double error = 0d;
 
             int numExamples = visibleData.GetLength(0);
@@ -150,18 +171,18 @@ namespace SimpleRBM.MultiDim
                 sw.Start();
 
                 double[,] posHiddenActivations = Matrix2D.Multiply(data, Weights);
-                double[,] posHiddenProbs = ActivationFunctions.LogisticD(posHiddenActivations);
+                double[,] posHiddenProbs = Activate(posHiddenActivations);
                 double[,] posHiddenStates = Matrix2D.GreaterThan(posHiddenProbs,
                     Distributions.UniformRandromMatrixD(numExamples, NumHiddenElements + 1));
                 double[,] posAssociations = Matrix2D.Multiply(Matrix2D.Transpose(data), posHiddenProbs);
 
                 double[,] negVisibleActivations = Matrix2D.Multiply(posHiddenStates, Matrix2D.Transpose(Weights));
-                double[,] negVisibleProbs = ActivationFunctions.LogisticD(negVisibleActivations);
+                double[,] negVisibleProbs = Activate(negVisibleActivations);
 
                 Matrix2D.UpdateValueAlongAxis(negVisibleProbs, 0, 1, Matrix2D.Axis.Vertical);
 
                 double[,] negHiddenActivations = Matrix2D.Multiply(negVisibleProbs, Weights);
-                double[,] negHiddenProbs = ActivationFunctions.LogisticD(negHiddenActivations);
+                double[,] negHiddenProbs = Activate(negHiddenActivations);
 
                 double[,] negAssociations = Matrix2D.Multiply(Matrix2D.Transpose(negVisibleProbs), negHiddenProbs);
 
@@ -173,7 +194,7 @@ namespace SimpleRBM.MultiDim
                                 posAssociations,
                                 negAssociations),
                             numExamples),
-                        LearningRate.CalculateLearningRate(0, i)));
+                        learningRateCalculator.CalculateLearningRate(0, i)));
 
                 error = Matrix2D.EnumerateElements(Matrix2D.Pow(Matrix2D.Subtract(data, negVisibleProbs), 2)).Sum();
                 RaiseEpochEnd(i, error);
@@ -184,20 +205,21 @@ namespace SimpleRBM.MultiDim
                
 
 
-                if (ExitConditionEvaluator.Exit(i, error, sw.Elapsed))
+                if (exitEvaluator.Exit(i, error, sw.Elapsed))
                     break; 
                 
                 sw.Reset();
             }
 
             RaiseTrainEnd(i, error);
-
+            exitEvaluator.Stop();
             return error;
         }
 
-        public Task<double> AsyncGreedyTrain(double[,] data)
+        public Task<double> AsyncGreedyTrain(double[,] data, IExitConditionEvaluator<double> exitEvaluator,
+            ILearningRateCalculator<double> learningRateCalculator)
         {
-            return Task.Run(() => GreedyTrain(data));
+            return Task.Run(() => GreedyTrain(data, exitEvaluator, learningRateCalculator));
         }
 
         public event EventHandler<EpochEventArgs<double>> EpochEnd;
@@ -208,11 +230,10 @@ namespace SimpleRBM.MultiDim
         public ILayerSaveInfo<double> GetSaveInfo()
         {
             return new LayerSaveInfoD(NumVisibleElements, NumHiddenElements,
-                Matrix2D.Duplicate(Weights, sizeof (double)));
+                Matrix2D.Duplicate(Weights, sizeof (double)), VisibleActivation, HiddenActivation);
         }
 
 
-        public IExitConditionEvaluator<double> ExitConditionEvaluator { get; protected set; }
 
         private void RaiseTrainEnd(int epoch, double error)
         {
@@ -227,40 +248,18 @@ namespace SimpleRBM.MultiDim
         }
 
 
-        public double GreedyBatchedTrain(double[][] data, int batchRows)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<double> AsyncGreedyBatchedTrain(double[][] data, int batchRows)
-        {
-            throw new NotImplementedException();
-        }
-
-        public double GreedyBatchedTrain(double[,] data, int batchRows)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<double> AsyncGreedyBatchedTrain(double[,] data, int batchRows)
-        {
-            throw new NotImplementedException();
-        }
-
-
-        public double CalculateReconstructionError(double[,] data)
-        {
-            throw new NotImplementedException();
-        }
-
 
         public double[,] GetSoftmaxLayer(double[,] visibleStates)
         {
             throw new NotImplementedException();
         }
 
+        public double GreedySupervisedTrain(double[,] data, double[,] labels, IExitConditionEvaluator<double> exitEvaluator, ILearningRateCalculator<double> learningRateCalculator)
+        {
+            throw new NotImplementedException();
+        }
 
-        public double GreedySupervisedTrain(double[,] data, double[,] labels)
+        public double GreedyBatchedSupervisedTrain(double[,] data, double[,] labels, int batchSize, IExitConditionEvaluator<double> exitEvaluator, ILearningRateCalculator<double> learningRateCalculator)
         {
             throw new NotImplementedException();
         }
@@ -270,8 +269,27 @@ namespace SimpleRBM.MultiDim
             throw new NotImplementedException();
         }
 
+        public double GreedyBatchedTrain(double[][] data, int batchRows, IExitConditionEvaluator<double> exitEvaluator, ILearningRateCalculator<double> learningRateCalculator)
+        {
+            throw new NotImplementedException();
+        }
 
-        public double GreedyBatchedSupervisedTrain(double[,] data, double[,] labels, int batchSize)
+        public Task<double> AsyncGreedyBatchedTrain(double[][] data, int batchRows, IExitConditionEvaluator<double> exitEvaluator, ILearningRateCalculator<double> learningRateCalculator)
+        {
+            throw new NotImplementedException();
+        }
+
+        public double GreedyBatchedTrain(double[,] data, int batchRows, IExitConditionEvaluator<double> exitEvaluator, ILearningRateCalculator<double> learningRateCalculator)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<double> AsyncGreedyBatchedTrain(double[,] data, int batchRows, IExitConditionEvaluator<double> exitEvaluator, ILearningRateCalculator<double> learningRateCalculator)
+        {
+            throw new NotImplementedException();
+        }
+
+        public double CalculateReconstructionError(double[,] data)
         {
             throw new NotImplementedException();
         }

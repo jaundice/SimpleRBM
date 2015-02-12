@@ -3,8 +3,10 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using SimpleRBM.Common;
+using SimpleRBM.Demo.Demo;
+using SimpleRBM.Demo.Util;
 
-namespace SimpleRBM.Demo.Demo
+namespace SimpleRBM.Demo.IO
 {
     public class HandwrittenNumbersDataF : DataIOBaseF<int>
     {

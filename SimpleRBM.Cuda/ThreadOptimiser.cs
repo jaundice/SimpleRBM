@@ -98,8 +98,8 @@ namespace SimpleRBM.Cuda
                     y = 256;
                 }
                 block = new dim3(x, y);
-                grid = new dim3(Math.Max(1, (int)Math.Floor((double)rows / x)),
-                    x == 1 ? (int)Math.Max(1, Math.Floor((double)cols / y)) : 1);
+                grid = new dim3(Math.Max(1, (int) Math.Floor((double) rows/x)),
+                    x == 1 ? (int) Math.Max(1, Math.Floor((double) cols/y)) : 1);
             }
             else
             {
@@ -121,8 +121,8 @@ namespace SimpleRBM.Cuda
                     x = 256;
                 }
                 block = new dim3(x, y);
-                grid = new dim3(y == 1 ? Math.Max(1, (int)Math.Floor((double)rows / x)) : 1,
-                    Math.Max(1, (int)Math.Floor((double)cols / y)));
+                grid = new dim3(y == 1 ? Math.Max(1, (int) Math.Floor((double) rows/x)) : 1,
+                    Math.Max(1, (int) Math.Floor((double) cols/y)));
             }
 #if DEBUG
             Trace.TraceInformation("Generating Strategy for {{ rows:{0}, cols:{1} }}", rows, cols);
@@ -211,7 +211,7 @@ namespace SimpleRBM.Cuda
 
         private static int GetGrid(int input)
         {
-            return Math.Max(1, (int)Math.Floor(input / 2f));
+            return Math.Max(1, (int) Math.Floor(input/2f));
         }
 
         private static void GetDimension(int width, out int small, out int big)

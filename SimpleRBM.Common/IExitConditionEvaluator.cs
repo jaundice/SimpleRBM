@@ -5,6 +5,7 @@ namespace SimpleRBM.Common
     public interface IExitConditionEvaluator<T> where T : struct, IComparable<T>
     {
         bool Exit(int epochNumber, T lastError, TimeSpan elapsedTime);
-        void Reset();
+        void Start();
+        void Stop();
     }
 }

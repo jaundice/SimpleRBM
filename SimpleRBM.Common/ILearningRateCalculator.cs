@@ -10,4 +10,10 @@ namespace SimpleRBM.Common
     {
         T CalculateLearningRate(int layer, int epoch);
     }
+
+
+    public interface ILearningRateCalculatorFactory<T>
+    {
+        ILearningRateCalculator<T> Create(int layer);
+    }
 }

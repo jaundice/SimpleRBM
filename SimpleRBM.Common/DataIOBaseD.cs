@@ -13,7 +13,7 @@ namespace SimpleRBM.Common
 
         public string DataPath { get; protected set; }
 
-        public void PrintToScreen(double[,] arr, double[,] reference = null, TLabel[] referenceLabels = null,
+        public virtual void PrintToConsole(double[,] arr, double[,] reference = null, TLabel[] referenceLabels = null,
             double[,] referenceLabelsCoded = null, ulong[][] keys = null, double[,] computedLabels = null)
         {
             var dataWidth = (int) Math.Sqrt(arr.GetLength(1));
@@ -90,7 +90,7 @@ namespace SimpleRBM.Common
             }
         }
 
-        public void PrintMap(double[,] arr)
+        public virtual void PrintToConsole(double[,] arr)
         {
             var dataWidth = (int) Math.Sqrt(arr.GetLength(1));
             for (int i = 0; i < arr.GetLength(0); i++)

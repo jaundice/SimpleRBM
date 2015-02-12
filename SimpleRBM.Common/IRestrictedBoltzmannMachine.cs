@@ -7,30 +7,49 @@ namespace SimpleRBM.Common
     {
         int NumHiddenElements { get; }
         int NumVisibleElements { get; }
-        ILearningRateCalculator<T> LearningRate { get; }
-        IExitConditionEvaluator<T> ExitConditionEvaluator { get; }
+        //ILearningRateCalculator<T> LearningRate { get; }
+        //IExitConditionEvaluator<T> ExitConditionEvaluator { get; }
         T[,] GetHiddenLayer(T[,] visibleStates);
-        T[,] GetSoftmaxLayer(T[,] visibleStates);
+        //T[,] GetSoftmaxLayer(T[,] visibleStates);
 
         T[,] GetVisibleLayer(T[,] hiddenStates);
         T[,] Reconstruct(T[,] data);
         T[,] DayDream(int numberOfSamples);
 
-        T GreedyTrain(T[][] data);
-        Task<T> AsyncGreedyTrain(T[][] data);
-        T GreedyTrain(T[,] visibleData);
+        ActivationFunction VisibleActivation { get; }
+        ActivationFunction HiddenActivation { get; }
 
-        T GreedySupervisedTrain(T[,] data, T[,] labels);
-        T GreedyBatchedSupervisedTrain(T[,] data, T[,] labels, int batchSize);
+        T GreedyTrain(T[][] data, IExitConditionEvaluator<T> exitEvaluator,
+            ILearningRateCalculator<T> learningRateCalculator);
+
+        Task<T> AsyncGreedyTrain(T[][] data, IExitConditionEvaluator<T> exitEvaluator,
+            ILearningRateCalculator<T> learningRateCalculator);
+
+        T GreedyTrain(T[,] visibleData, IExitConditionEvaluator<T> exitEvaluator,
+            ILearningRateCalculator<T> learningRateCalculator);
+
+        T GreedySupervisedTrain(T[,] data, T[,] labels, IExitConditionEvaluator<T> exitEvaluator,
+            ILearningRateCalculator<T> learningRateCalculator);
+
+        T GreedyBatchedSupervisedTrain(T[,] data, T[,] labels, int batchSize, IExitConditionEvaluator<T> exitEvaluator,
+            ILearningRateCalculator<T> learningRateCalculator);
 
         T[,] Classify(T[,] data, out T[,] labels);
 
-        Task<T> AsyncGreedyTrain(T[,] data);
+        Task<T> AsyncGreedyTrain(T[,] data, IExitConditionEvaluator<T> exitEvaluator,
+            ILearningRateCalculator<T> learningRateCalculator);
 
-        T GreedyBatchedTrain(T[][] data, int batchRows);
-        Task<T> AsyncGreedyBatchedTrain(T[][] data, int batchRows);
-        T GreedyBatchedTrain(T[,] data, int batchRows);
-        Task<T> AsyncGreedyBatchedTrain(T[,] data, int batchRows);
+        T GreedyBatchedTrain(T[][] data, int batchRows, IExitConditionEvaluator<T> exitEvaluator,
+            ILearningRateCalculator<T> learningRateCalculator);
+
+        Task<T> AsyncGreedyBatchedTrain(T[][] data, int batchRows, IExitConditionEvaluator<T> exitEvaluator,
+            ILearningRateCalculator<T> learningRateCalculator);
+
+        T GreedyBatchedTrain(T[,] data, int batchRows, IExitConditionEvaluator<T> exitEvaluator,
+            ILearningRateCalculator<T> learningRateCalculator);
+
+        Task<T> AsyncGreedyBatchedTrain(T[,] data, int batchRows, IExitConditionEvaluator<T> exitEvaluator,
+            ILearningRateCalculator<T> learningRateCalculator);
 
         ILayerSaveInfo<T> GetSaveInfo();
 

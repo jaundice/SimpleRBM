@@ -10,12 +10,17 @@ namespace SimpleRBM.Common.Save
         public int NumHidden { get; protected set; }
         public float[,] Weights { get; protected set; }
 
-        public LayerSaveInfoF(int numVisible, int numHidden, float[,] weights)
+        public LayerSaveInfoF(int numVisible, int numHidden, float[,] weights, ActivationFunction visibleActivation, ActivationFunction hiddenActivation)
         {
             NumVisible = numVisible;
             NumHidden = numHidden;
             Weights = weights;
+            VisibleActivation = visibleActivation;
+            HiddenActivation = hiddenActivation;
         }
+
+        public ActivationFunction VisibleActivation { get; protected set; }
+        public ActivationFunction HiddenActivation { get; protected set; }
 
         public unsafe LayerSaveInfoF(string filePath)
         {
@@ -24,6 +29,8 @@ namespace SimpleRBM.Common.Save
             {
                 NumVisible = sr.ReadInt32();
                 NumHidden = sr.ReadInt32();
+                VisibleActivation = (ActivationFunction)sr.ReadInt32();
+                HiddenActivation= (ActivationFunction)sr.ReadInt32();
                 var arr = new float[(NumVisible + 1), (NumHidden + 1)];
                 var handle = GCHandle.Alloc(arr, GCHandleType.Pinned);
                 var buf = (float*)handle.AddrOfPinnedObject();
@@ -43,6 +50,8 @@ namespace SimpleRBM.Common.Save
             {
                 sw.Write(NumVisible);
                 sw.Write(NumHidden);
+                sw.Write((int)VisibleActivation);
+                sw.Write((int)HiddenActivation);
                 var arr = new float[Weights.Length];
                 Buffer.BlockCopy(Weights, 0, arr, 0, arr.Length * sizeof(float));
                 for (var i = 0; i < arr.Length; i++)

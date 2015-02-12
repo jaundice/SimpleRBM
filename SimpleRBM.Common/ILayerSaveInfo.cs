@@ -5,6 +5,8 @@ namespace SimpleRBM.Common
         int NumVisible { get; }
         int NumHidden { get; }
         T[,] Weights { get; }
+        ActivationFunction VisibleActivation { get; }
+        ActivationFunction HiddenActivation { get; }
         void Save(string filePath);
     }
 }

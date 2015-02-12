@@ -12,11 +12,11 @@ namespace SimpleRBM.Common.ExitCondition
             _maxEpochs = maxEpochs;
         }
 
-        public IExitConditionEvaluator<T> Create(int layerDepth, int inputNodes, int outputNodes)
+        public IExitConditionEvaluator<T> Create(int layerIndex)
         {
             return new EpochCountExitCondition<T>()
             {
-                LayerDepth = layerDepth,
+                LayerDepth = layerIndex,
                 MaxEpoch = _maxEpochs
             };
         }

@@ -11,6 +11,11 @@ namespace SimpleRBM.Common.LearningRate
             _rate = (T)Convert.ChangeType(rate, typeof(T));
         }
 
+        public ConstantLearningRate(T rate)
+        {
+            _rate = rate;
+        }
+
         public T CalculateLearningRate(int layer, int epoch)
         {
             return _rate ;

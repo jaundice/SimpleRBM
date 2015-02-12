@@ -22,9 +22,9 @@ namespace SimpleRBM.Common.ExitCondition
 
         public IEpochErrorTracker<T> MainTracker { get; protected set; }
 
-        public IExitConditionEvaluator<T> Create(int layerDepth, int inputNodes, int outputNodes)
+        public IExitConditionEvaluator<T> Create(int layerIndex)
         {
-            return new CompanionDatasetExitConditionEvaluator<T>(this, layerDepth, _updateEpochs, _maxEpochs);
+            return new CompanionDatasetExitConditionEvaluator<T>(this, layerIndex, _updateEpochs, _maxEpochs);
         }
     }
 }

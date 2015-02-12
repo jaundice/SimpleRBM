@@ -89,20 +89,25 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Demo\CommandLine.cs" />
-    <Compile Include="Demo\DataTypeProxy.cs" />
-    <Compile Include="Demo\HandwrittenNumbersDataF.cs" />
-    <Compile Include="Demo\HandwrittenNumbersDataD.cs" />
+    <Compile Include="IO\CsvData.cs" />
+    <Compile Include="IO\DataTypeProxy.cs" />
+    <Compile Include="Demo\AudioDemo.cs" />
+    <Compile Include="Demo\DataDemo.cs" />
+    <Compile Include="IO\HandwrittenNumbersDataF.cs" />
+    <Compile Include="IO\HandwrittenNumbersDataD.cs" />
     <Compile Include="Demo\DemoApp.cs" />
-    <Compile Include="Demo\KaggleDataD.cs" />
-    <Compile Include="Demo\KaggleDataF.cs" />
-    <Compile Include="Demo\KeyEncoder.cs" />
-    <Compile Include="Demo\LabelEncoder.cs" />
-    <Compile Include="Demo\FacesDataD.cs" />
-    <Compile Include="Demo\FacesDataF.cs" />
+    <Compile Include="IO\KaggleDataD.cs" />
+    <Compile Include="IO\KaggleDataF.cs" />
+    <Compile Include="Util\KeyEncoder.cs" />
+    <Compile Include="Util\LabelEncoder.cs" />
+    <Compile Include="IO\FacesDataD.cs" />
+    <Compile Include="IO\FacesDataF.cs" />
+    <Compile Include="IO\WavData.cs" />
     <Compile Include="IDemo.cs" />
     <Compile Include="ImageUtils.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WavUtil\WavUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="optdigits-tra.txt">
@@ -120,7 +125,9 @@
     <Content Include="Tools\place_these_executables_in_same_folder_as_Cudafy.NET.dll.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

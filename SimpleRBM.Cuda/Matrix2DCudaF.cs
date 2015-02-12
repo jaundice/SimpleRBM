@@ -1,16 +1,16 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Cudafy;
+using TElementType = System.Single;
+using math = Cudafy.GMath;
 
 namespace SimpleRBM.Cuda
 {
-    public static class Matrix2DCudaF
+    public static partial class Matrix2DCuda
     {
-        public const uint TRUE = 1u;
-        public const uint FALSE = 0u;
-
         [Cudafy]
-        public static void TransposeF(GThread thread, float[,] input, float[,] output)
+        public static void TransposeF(GThread thread, TElementType[,] input, TElementType[,] output)
         {
             int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
             int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
@@ -30,10 +30,10 @@ namespace SimpleRBM.Cuda
         }
 
         [Cudafy]
-        public static void MultiplyScalarF(GThread thread, float[,] input, float factor, float[,] output)
+        public static void MultiplyScalarF(GThread thread, TElementType[,] input, TElementType factor, TElementType[,] output)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             while (i < input.GetLength(0))
             {
@@ -41,21 +41,21 @@ namespace SimpleRBM.Cuda
 
                 while (n < input.GetLength(1))
                 {
-                    output[i, n] = input[i, n] * factor;
+                    output[i, n] = input[i, n]*factor;
 
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    n += thread.gridDim.y*thread.blockDim.y;
                 }
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
 
             thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void MultiplyScalarInPlaceF(GThread thread, float[,] input, float factor)
+        public static void MultiplyScalarInPlaceF(GThread thread, TElementType[,] input, TElementType factor)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             while (i < input.GetLength(0))
             {
@@ -63,33 +63,33 @@ namespace SimpleRBM.Cuda
 
                 while (n < input.GetLength(1))
                 {
-                    input[i, n] = input[i, n] * factor;
+                    input[i, n] = input[i, n]*factor;
 
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    n += thread.gridDim.y*thread.blockDim.y;
                 }
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
 
             thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void DivideF(GThread thread, float[,] input, float denominator, float[,] output)
+        public static void DivideF(GThread thread, TElementType[,] input, TElementType denominator, TElementType[,] output)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
-            float factor = 1.0f / denominator;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
+            TElementType factor = 1.0f/denominator;
 
             while (i < input.GetLength(0))
             {
                 int n = j;
                 while (n < input.GetLength(1))
                 {
-                    output[i, n] = input[i, n] * factor;
+                    output[i, n] = input[i, n]*factor;
 
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    n += thread.gridDim.y*thread.blockDim.y;
                 }
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
             thread.SyncThreads();
         }
@@ -102,30 +102,30 @@ namespace SimpleRBM.Cuda
         /// <param name="denominator"></param>
         /// <param name="output"></param>
         [Cudafy]
-        public static void DivideByF(GThread thread, float[,] input, float[,] denominator, float[,] output)
+        public static void DivideByF(GThread thread, TElementType[,] input, TElementType[,] denominator, TElementType[,] output)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             while (i < input.GetLength(0))
             {
                 int n = j;
                 while (n < input.GetLength(1))
                 {
-                    output[i, n] = input[i, n] / denominator[i, 0];
+                    output[i, n] = input[i, n]/denominator[i, 0];
 
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    n += thread.gridDim.y*thread.blockDim.y;
                 }
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
             thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void MultiplyF(GThread thread, float[,] input1, float[,] input2, float[,] output)
+        public static void MultiplyF(GThread thread, TElementType[,] input1, TElementType[,] input2, TElementType[,] output)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             while (i < input1.GetLength(0))
             {
@@ -133,18 +133,18 @@ namespace SimpleRBM.Cuda
                 while (n < input2.GetLength(1))
                 {
                     output[i, n] = MultiplyElementF(input1, input2, i, n);
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    n += thread.gridDim.y*thread.blockDim.y;
                 }
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
             thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void IncrementF(GThread thread, float[,] input)
+        public static void IncrementF(GThread thread, TElementType[,] input)
         {
-            int rowIdx = thread.threadIdx.x + (thread.blockIdx.x * thread.blockDim.x);
-            int colIdx = thread.threadIdx.y + (thread.blockIdx.y * thread.blockDim.y);
+            int rowIdx = thread.threadIdx.x + (thread.blockIdx.x*thread.blockDim.x);
+            int colIdx = thread.threadIdx.y + (thread.blockIdx.y*thread.blockDim.y);
 
 
             int row = rowIdx;
@@ -154,31 +154,31 @@ namespace SimpleRBM.Cuda
                 while (col < input.GetLength(1))
                 {
                     input[row, col] = input[row, col] + 1.0f;
-                    col += thread.gridDim.y * thread.blockDim.y;
+                    col += thread.gridDim.y*thread.blockDim.y;
                 }
-                row += thread.gridDim.x * thread.blockDim.x;
+                row += thread.gridDim.x*thread.blockDim.x;
             }
             thread.SyncThreads();
         }
 
         [Cudafy]
-        private static float MultiplyElementF(float[,] A, float[,] B, int y, int x)
+        private static TElementType MultiplyElementF(TElementType[,] A, TElementType[,] B, int y, int x)
         {
             int aCols = A.GetLength(1);
-            float accumulate = 0;
+            TElementType accumulate = 0;
             for (int xx = 0; xx < aCols; xx++)
             {
-                accumulate += A[y, xx] * B[xx, x];
+                accumulate += A[y, xx]*B[xx, x];
             }
 
             return accumulate;
         }
 
         [Cudafy]
-        public static void FillF(GThread thread, float[,] matrix, float value)
+        public static void FillF(GThread thread, TElementType[,] matrix, TElementType value)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             while (i < matrix.GetLength(0))
             {
@@ -187,19 +187,19 @@ namespace SimpleRBM.Cuda
                 {
                     matrix[i, n] = value;
 
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    n += thread.gridDim.y*thread.blockDim.y;
                 }
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
 
             thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void OnesF(GThread thread, float[,] matrix)
+        public static void OnesF(GThread thread, TElementType[,] matrix)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             while (i < matrix.GetLength(0))
             {
@@ -208,18 +208,18 @@ namespace SimpleRBM.Cuda
                 {
                     matrix[i, n] = 1.0f;
 
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    n += thread.gridDim.y*thread.blockDim.y;
                 }
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
             thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void ZerosF(GThread thread, float[,] matrix)
+        public static void ZerosF(GThread thread, TElementType[,] matrix)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             while (i < matrix.GetLength(0))
             {
@@ -227,23 +227,23 @@ namespace SimpleRBM.Cuda
                 while (n < matrix.GetLength(1))
                 {
                     matrix[i, n] = 0.0f;
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    n += thread.gridDim.y*thread.blockDim.y;
                 }
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
             thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void InsertValuesFromF(GThread thread, float[,] target, int mPos, int nPos, float[,] src,
+        public static void InsertValuesFromF(GThread thread, TElementType[,] target, int mPos, int nPos, TElementType[,] src,
             int mSize, int nSize)
         {
             mSize = mSize == 0 ? target.GetLength(0) - mPos : mSize;
             nSize = nSize == 0 ? target.GetLength(1) - nPos : nSize;
 
 
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             while (i < mSize)
             {
@@ -251,18 +251,18 @@ namespace SimpleRBM.Cuda
                 while (n < nSize)
                 {
                     target[i + mPos, n + nPos] = src[i, n];
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    n += thread.gridDim.y*thread.blockDim.y;
                 }
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
             thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void GreaterThanF(GThread thread, float[,] matrix1, float[,] matrix2, float[,] output)
+        public static void GreaterThanF(GThread thread, TElementType[,] matrix1, TElementType[,] matrix2, TElementType[,] output)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             while (i < matrix1.GetLength(0))
             {
@@ -271,19 +271,19 @@ namespace SimpleRBM.Cuda
                 {
                     output[i, n] = matrix1[i, n] > matrix2[i, n] ? 1.0f : 0.0f;
 
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    n += thread.gridDim.y*thread.blockDim.y;
                 }
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
 
             thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void GreaterThanLinearF(GThread thread, float[,] matrix1, float[,] matrix2, float[,] output)
+        public static void GreaterThanLinearF(GThread thread, TElementType[,] matrix1, TElementType[,] matrix2, TElementType[,] output)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             while (i < matrix1.GetLength(0))
             {
@@ -292,19 +292,19 @@ namespace SimpleRBM.Cuda
                 {
                     output[i, n] = matrix1[i, n] > matrix2[i, n] ? matrix1[i, n] : 0.0f;
 
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    n += thread.gridDim.y*thread.blockDim.y;
                 }
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
 
             thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void LessThanF(GThread thread, float[,] matrix1, float[,] matrix2, float[,] output)
+        public static void LessThanF(GThread thread, TElementType[,] matrix1, TElementType[,] matrix2, TElementType[,] output)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             while (i < matrix1.GetLength(0))
             {
@@ -312,22 +312,22 @@ namespace SimpleRBM.Cuda
                 while (n < matrix1.GetLength(1))
                 {
                     output[i, n] = matrix1[i, n] < matrix2[i, n] ? 1.0f : 0.0f;
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    n += thread.gridDim.y*thread.blockDim.y;
                 }
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
             thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void SubMatrixF(GThread thread, float[,] matrix, int startRow, int startCol, int numRows,
-            int numCols, float[,] target)
+        public static void SubMatrixF(GThread thread, TElementType[,] matrix, int startRow, int startCol, int numRows,
+            int numCols, TElementType[,] target)
         {
             numRows = numRows != 0 ? numRows : matrix.GetLength(0) - startRow;
             numCols = numCols != 0 ? numCols : matrix.GetLength(1) - startCol;
 
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             while (i < numRows)
             {
@@ -335,23 +335,23 @@ namespace SimpleRBM.Cuda
                 while (n < numCols)
                 {
                     target[i, n] = matrix[i + startRow, n + startCol];
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    n += thread.gridDim.y*thread.blockDim.y;
                 }
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
             thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void ToVectorF(GThread thread, float[,] matrix, float[,] target)
+        public static void ToVectorF(GThread thread, TElementType[,] matrix, TElementType[,] target)
         {
             if (matrix.GetLength(1) == 1)
             {
                 int numRows = matrix.GetLength(0);
                 int numCols = 1;
 
-                int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-                int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+                int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+                int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
                 while (i < numRows)
                 {
@@ -360,9 +360,9 @@ namespace SimpleRBM.Cuda
                     {
                         target[i, n] = matrix[i, n];
 
-                        n += thread.gridDim.y * thread.blockDim.y;
+                        n += thread.gridDim.y*thread.blockDim.y;
                     }
-                    i += thread.gridDim.x * thread.blockDim.x;
+                    i += thread.gridDim.x*thread.blockDim.x;
                 }
             }
             if (matrix.GetLength(0) == 1)
@@ -370,8 +370,8 @@ namespace SimpleRBM.Cuda
                 int numRows = 1;
                 int numCols = matrix.GetLength(1);
 
-                int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-                int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+                int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+                int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
                 while (i < numRows)
                 {
@@ -380,23 +380,23 @@ namespace SimpleRBM.Cuda
                     {
                         target[i, n] = matrix[i, n];
 
-                        n += thread.gridDim.y * thread.blockDim.y;
+                        n += thread.gridDim.y*thread.blockDim.y;
                     }
-                    i += thread.gridDim.x * thread.blockDim.x;
+                    i += thread.gridDim.x*thread.blockDim.x;
                 }
             }
             thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void InsertValuesFromRowOrColumnF(GThread thread, float[,] target, float[,] source, int length,
+        public static void InsertValuesFromRowOrColumnF(GThread thread, TElementType[,] target, TElementType[,] source, int length,
             uint fromColumn, int mPos, int nPos)
         {
             length = length == 0 ? Math.Max(source.GetLength(0), source.GetLength(1)) : length;
 
 
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
             if (j == nPos)
             {
                 if (fromColumn == TRUE)
@@ -405,7 +405,7 @@ namespace SimpleRBM.Cuda
                     {
                         target[i + mPos, nPos] = source[i, 0];
 
-                        i += thread.gridDim.x * thread.blockDim.x;
+                        i += thread.gridDim.x*thread.blockDim.x;
                     }
                 }
                 else
@@ -414,7 +414,7 @@ namespace SimpleRBM.Cuda
                     {
                         target[mPos, nPos + i] = source[0, i];
 
-                        i += thread.gridDim.x * thread.blockDim.x;
+                        i += thread.gridDim.x*thread.blockDim.x;
                     }
                 }
             }
@@ -422,10 +422,10 @@ namespace SimpleRBM.Cuda
         }
 
         [Cudafy]
-        public static void UpdateValueAlongAxisF(GThread thread, float[,] matrix, int index, float value, uint isRow)
+        public static void UpdateValueAlongAxisF(GThread thread, TElementType[,] matrix, int index, TElementType value, uint isRow)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             if (isRow == TRUE)
             {
@@ -435,7 +435,7 @@ namespace SimpleRBM.Cuda
                 {
                     matrix[index, i] = value;
 
-                    i += thread.gridDim.x * thread.blockDim.x;
+                    i += thread.gridDim.x*thread.blockDim.x;
                 }
                 //}
             }
@@ -447,7 +447,7 @@ namespace SimpleRBM.Cuda
                 {
                     matrix[j, index] = value;
 
-                    j += thread.gridDim.y * thread.blockDim.y;
+                    j += thread.gridDim.y*thread.blockDim.y;
                 }
                 //}
             }
@@ -455,10 +455,10 @@ namespace SimpleRBM.Cuda
         }
 
         [Cudafy]
-        public static void AddF(GThread thread, float[,] matrix1, float[,] matrix2, float[,] target)
+        public static void AddF(GThread thread, TElementType[,] matrix1, TElementType[,] matrix2, TElementType[,] target)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             while (i < matrix1.GetLength(0))
             {
@@ -467,18 +467,18 @@ namespace SimpleRBM.Cuda
                 {
                     target[i, n] = matrix1[i, n] + matrix2[i, n];
 
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    n += thread.gridDim.y*thread.blockDim.y;
                 }
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
             thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void AddInPlaceF(GThread thread, float[,] matrix1, float[,] matrix2)
+        public static void AddInPlaceF(GThread thread, TElementType[,] matrix1, TElementType[,] matrix2)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             while (i < matrix1.GetLength(0))
             {
@@ -487,60 +487,60 @@ namespace SimpleRBM.Cuda
                 {
                     matrix1[i, n] = matrix1[i, n] + matrix2[i, n];
 
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    n += thread.gridDim.y*thread.blockDim.y;
                 }
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
             thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void UpdateWithMomentumF(GThread thread, float[,] oldValues, float[,] newValues, float[,] target,
-            float momentum)
+        public static void UpdateWithMomentumF(GThread thread, TElementType[,] oldValues, TElementType[,] newValues, TElementType[,] target,
+            TElementType momentum)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             while (i < oldValues.GetLength(0))
             {
                 int n = j;
                 while (n < oldValues.GetLength(1))
                 {
-                    target[i, n] = oldValues[i, n] + (momentum * (newValues[i, n] - oldValues[i, n]));
+                    target[i, n] = oldValues[i, n] + (momentum*(newValues[i, n] - oldValues[i, n]));
 
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    n += thread.gridDim.y*thread.blockDim.y;
                 }
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
             thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void UpdateWithMomentumInPlaceF(GThread thread, float[,] oldValues, float[,] newValues,
-            float momentum)
+        public static void UpdateWithMomentumInPlaceF(GThread thread, TElementType[,] oldValues, TElementType[,] newValues,
+            TElementType momentum)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             while (i < oldValues.GetLength(0))
             {
                 int n = j;
                 while (n < oldValues.GetLength(1))
                 {
-                    oldValues[i, n] = oldValues[i, n] + (momentum * (newValues[i, n] - oldValues[i, n]));
+                    oldValues[i, n] = oldValues[i, n] + (momentum*(newValues[i, n] - oldValues[i, n]));
 
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    n += thread.gridDim.y*thread.blockDim.y;
                 }
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
             thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void SubtractF(GThread thread, float[,] matrix1, float[,] matrix2, float[,] target)
+        public static void SubtractF(GThread thread, TElementType[,] matrix1, TElementType[,] matrix2, TElementType[,] target)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             while (i < matrix1.GetLength(0))
             {
@@ -549,18 +549,18 @@ namespace SimpleRBM.Cuda
                 {
                     target[i, n] = matrix1[i, n] - matrix2[i, n];
 
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    n += thread.gridDim.y*thread.blockDim.y;
                 }
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
             thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void SubtractInPlaceF(GThread thread, float[,] matrix1, float[,] matrix2)
+        public static void SubtractInPlaceF(GThread thread, TElementType[,] matrix1, TElementType[,] matrix2)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             while (i < matrix1.GetLength(0))
             {
@@ -569,18 +569,18 @@ namespace SimpleRBM.Cuda
                 {
                     matrix1[i, n] = matrix1[i, n] - matrix2[i, n];
 
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    n += thread.gridDim.y*thread.blockDim.y;
                 }
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
             thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void PowF(GThread thread, float[,] matrix1, float power, float[,] target)
+        public static void PowF(GThread thread, TElementType[,] matrix1, TElementType power, TElementType[,] target)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             if (power == 2)
             {
@@ -589,11 +589,11 @@ namespace SimpleRBM.Cuda
                     int n = j;
                     while (n < matrix1.GetLength(1))
                     {
-                        target[i, n] = matrix1[i, n] * matrix1[i, n];
+                        target[i, n] = matrix1[i, n]*matrix1[i, n];
 
-                        n += thread.gridDim.y * thread.blockDim.y;
+                        n += thread.gridDim.y*thread.blockDim.y;
                     }
-                    i += thread.gridDim.x * thread.blockDim.x;
+                    i += thread.gridDim.x*thread.blockDim.x;
                 }
                 thread.SyncThreads();
             }
@@ -604,21 +604,21 @@ namespace SimpleRBM.Cuda
                     int n = j;
                     while (n < matrix1.GetLength(1))
                     {
-                        target[i, n] = GMath.Pow(matrix1[i, n], power);
+                        target[i, n] = math.Pow(matrix1[i, n], power);
 
-                        n += thread.gridDim.y * thread.blockDim.y;
+                        n += thread.gridDim.y*thread.blockDim.y;
                     }
-                    i += thread.gridDim.x * thread.blockDim.x;
+                    i += thread.gridDim.x*thread.blockDim.x;
                 }
                 thread.SyncThreads();
             }
         }
 
         [Cudafy]
-        public static void PowInPlaceF(GThread thread, float[,] matrix1, float power)
+        public static void PowInPlaceF(GThread thread, TElementType[,] matrix1, TElementType power)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             if (power == 2)
             {
@@ -627,11 +627,11 @@ namespace SimpleRBM.Cuda
                     int n = j;
                     while (n < matrix1.GetLength(1))
                     {
-                        matrix1[i, n] = matrix1[i, n] * matrix1[i, n];
+                        matrix1[i, n] = matrix1[i, n]*matrix1[i, n];
 
-                        n += thread.gridDim.y * thread.blockDim.y;
+                        n += thread.gridDim.y*thread.blockDim.y;
                     }
-                    i += thread.gridDim.x * thread.blockDim.x;
+                    i += thread.gridDim.x*thread.blockDim.x;
                 }
                 thread.SyncThreads();
             }
@@ -642,48 +642,37 @@ namespace SimpleRBM.Cuda
                     int n = j;
                     while (n < matrix1.GetLength(1))
                     {
-                        matrix1[i, n] = GMath.Pow(matrix1[i, n], power);
+                        matrix1[i, n] = math.Pow(matrix1[i, n], power);
 
-                        n += thread.gridDim.y * thread.blockDim.y;
+                        n += thread.gridDim.y*thread.blockDim.y;
                     }
-                    i += thread.gridDim.x * thread.blockDim.x;
+                    i += thread.gridDim.x*thread.blockDim.x;
                 }
                 thread.SyncThreads();
             }
         }
 
-        public static T[,] JaggedToMultidimesional<T>(T[][] source)
+         [Cudafy]
+        public static void IdentityF(GThread thread, TElementType[,] matrix1)
         {
-            int rows = source.GetLength(0);
-            int cols = source[0].GetLength(0);
-
-            var res = new T[rows, cols];
-            Parallel.For(0, rows, i => Parallel.For(
-                0, cols, j => { res[i, j] = source[i][j]; }));
-
-            return res;
-        }
-
-        [Cudafy]
-        public static void IdentityF(GThread thread, float[,] matrix1)
-        {
-            int rowidx = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int colidx = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
-            for (int row = rowidx; row < matrix1.GetLength(0); row += thread.gridDim.x * thread.blockDim.x)
+            int rowidx = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int colidx = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
+            for (int row = rowidx; row < matrix1.GetLength(0); row += thread.gridDim.x*thread.blockDim.x)
             {
-                for (int col = colidx; col < matrix1.GetLength(1); col += thread.gridDim.y * thread.blockDim.y)
+                for (int col = colidx; col < matrix1.GetLength(1); col += thread.gridDim.y*thread.blockDim.y)
                 {
-                    float d = (row == col) ? 1.0f : 0.0f;
+                    TElementType d = (row == col) ? 1.0f : 0.0f;
                     matrix1[row, col] = d;
                 }
             }
+            thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void ToBinaryF(GThread thread, float[,] matrix)
+        public static void ToBinaryF(GThread thread, TElementType[,] matrix)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
-            int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
 
             while (i < matrix.GetLength(0))
             {
@@ -692,55 +681,71 @@ namespace SimpleRBM.Cuda
                 {
                     matrix[i, n] = matrix[i, n] < 0.5f ? 0f : 1f;
 
-                    n += thread.gridDim.y * thread.blockDim.y;
+                    n += thread.gridDim.y*thread.blockDim.y;
                 }
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
+            thread.SyncThreads();
         }
 
+        /// <summary>
+        /// Fills a column vector, reduced, with the sum of each element in the corresponding row of matrix
+        /// </summary>
+        /// <param name="thread"></param>
+        /// <param name="matrix"></param>
+        /// <param name="reduced"></param>
         [Cudafy]
-        public static void SumMatrixRowsF(GThread thread, float[,] matrix, float[,] reduced)
+        public static void SumMatrixRowsF(GThread thread, TElementType[,] matrix, TElementType[,] reduced)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
 
             while (i < matrix.GetLength(0))
             {
-                float sum = 0f;
+                TElementType sum = 0f;
                 for (int j = 0; j < matrix.GetLength(1); j++)
                 {
                     sum += matrix[i, j];
                 }
                 reduced[i, 0] = sum;
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
+            thread.SyncThreads();
         }
 
+
+        /// <summary>
+        /// Fills a row vector, reduced, with the sum of each element in the corresponding column or matrix
+        /// </summary>
+        /// <param name="thread"></param>
+        /// <param name="matrix"></param>
+        /// <param name="reduced"></param>
         [Cudafy]
-        public static void SumMatrixColumnsF(GThread thread, float[,] matrix, float[,] reduced)
+        public static void SumMatrixColumnsF(GThread thread, TElementType[,] matrix, TElementType[,] reduced)
         {
-            int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
 
             while (i < matrix.GetLength(1))
             {
-                float sum = 0f;
+                TElementType sum = 0f;
                 for (int j = 0; j < matrix.GetLength(0); j++)
                 {
-                    sum += matrix[i, j];
+                    sum += matrix[j, i];
                 }
                 reduced[0, i] = sum;
-                i += thread.gridDim.x * thread.blockDim.x;
+                i += thread.gridDim.x*thread.blockDim.x;
             }
+            thread.SyncThreads();
         }
 
         [Cudafy]
-        public static void CopyToArrayAtNF(GThread thread, float[,] target, float[] source, int x)
+        public static void CopyToArrayAtNF(GThread thread, TElementType[,] target, TElementType[] source, int x)
         {
-            int id = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
+            int id = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
 
             while (id < source.GetLength(0))
             {
                 target[x, id] = source[id];
-                id += thread.blockDim.x * thread.gridDim.x;
+                id += thread.blockDim.x*thread.gridDim.x;
             }
 
             thread.SyncThreads();
@@ -748,7 +753,26 @@ namespace SimpleRBM.Cuda
 
 
         [Cudafy]
-        public static void CopyToArrayAtNF2(GThread thread, float[,] target, float[] source, float scale)
+        public static void CopyToArrayAtNF2(GThread thread, TElementType[,] target, TElementType[] source, TElementType scale)
+        {
+            int i = thread.threadIdx.x + thread.blockIdx.x*thread.blockDim.x;
+            int j = thread.threadIdx.y + thread.blockIdx.y*thread.blockDim.y;
+
+            while (i < target.GetLength(0))
+            {
+                int n = j;
+                while (n < target.GetLength(1))
+                {
+                    target[i, n] = scale*source[i*target.GetLength(1) + n];
+
+                    n += thread.gridDim.y*thread.blockDim.y;
+                }
+                i += thread.gridDim.x*thread.blockDim.x;
+            }
+            thread.SyncThreads();
+        }
+        [Cudafy]
+        public static void RepMatF(GThread thread, TElementType[,] source, TElementType[,] target)
         {
             int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
             int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
@@ -758,12 +782,13 @@ namespace SimpleRBM.Cuda
                 int n = j;
                 while (n < target.GetLength(1))
                 {
-                    target[i, n] = scale * source[i * target.GetLength(1) + n];
+                    target[i, n] = source[0,n];
 
                     n += thread.gridDim.y * thread.blockDim.y;
                 }
                 i += thread.gridDim.x * thread.blockDim.x;
             }
+            thread.SyncThreads();
         }
     }
 }

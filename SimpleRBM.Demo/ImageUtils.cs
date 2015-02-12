@@ -75,19 +75,21 @@ namespace SimpleRBM.Demo
 
         public static unsafe void SaveImageData<T>(T[,] data, int sourceRow, string path, Func<T, byte> pixelConverter)
         {
-            var dimension = (int)Math.Sqrt(data.GetLength(1));
+            var dimension = (int)Math.Ceiling(Math.Sqrt(data.GetLength(1)));
+            var rowLength = data.GetLength(1);
             using (var bmp = new Bitmap(dimension, dimension))
             {
                 for (var i = 0; i < dimension; i++)
                 {
                     for (var j = 0; j < dimension; j++)
                     {
-                        var intensity = pixelConverter(data[sourceRow, j * dimension + i]);
+                        var idx = j * dimension + i;
+                        var intensity = idx < rowLength ? pixelConverter(data[sourceRow, idx]) : 0;
                         bmp.SetPixel(i, j, Color.FromArgb(intensity, intensity, intensity));
                     }
                 }
 
-                bmp.Save(path);
+                bmp.Save(path, ImageFormat.Jpeg);
             }
         }
     }

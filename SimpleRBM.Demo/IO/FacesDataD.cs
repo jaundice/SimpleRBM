@@ -3,8 +3,10 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using SimpleRBM.Common;
+using SimpleRBM.Demo.Demo;
+using SimpleRBM.Demo.Util;
 
-namespace SimpleRBM.Demo.Demo
+namespace SimpleRBM.Demo.IO
 {
     public class FacesDataD : DataIOBaseD<string>
     {

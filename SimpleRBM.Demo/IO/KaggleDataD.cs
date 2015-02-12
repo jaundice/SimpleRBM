@@ -1,7 +1,9 @@
 using System.IO;
 using SimpleRBM.Common;
+using SimpleRBM.Demo.Demo;
+using SimpleRBM.Demo.Util;
 
-namespace SimpleRBM.Demo.Demo
+namespace SimpleRBM.Demo.IO
 {
     public class KaggleDataD : DataIOBaseD<int>
     {

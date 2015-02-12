@@ -1,6 +1,6 @@
 ﻿using SimpleRBM.Common;
 
-namespace SimpleRBM.Demo.Demo
+namespace SimpleRBM.Demo.IO
 {
     public class IODataTypeProxy<TLabel> : IDataIO<float, TLabel>, IDataIO<double, TLabel>
     {
@@ -24,14 +24,14 @@ namespace SimpleRBM.Demo.Demo
             return _doubleProvider.ReadTestData(skipRecords, count);
         }
 
-        void IDataIO<double, TLabel>.PrintToScreen(double[,] arr, double[,] reference = null, TLabel[] referenceLabels = null, double[,] referenceLabelsCoded = null, ulong[][] keys = null, double[,] computedLabels = null)
+        void IDataIO<double, TLabel>.PrintToConsole(double[,] arr, double[,] reference = null, TLabel[] referenceLabels = null, double[,] referenceLabelsCoded = null, ulong[][] keys = null, double[,] computedLabels = null)
         {
-            _doubleProvider.PrintToScreen(arr, reference: reference, referenceLabels: referenceLabels, referenceLabelsCoded: referenceLabelsCoded, keys: keys, computedLabels:computedLabels);
+            _doubleProvider.PrintToConsole(arr, reference: reference, referenceLabels: referenceLabels, referenceLabelsCoded: referenceLabelsCoded, keys: keys, computedLabels:computedLabels);
         }
 
-        void IDataIO<double, TLabel>.PrintMap(double[,] arr)
+        void IDataIO<double, TLabel>.PrintToConsole(double[,] arr)
         {
-            _doubleProvider.PrintMap(arr);
+            _doubleProvider.PrintToConsole(arr);
         }
 
         float[,] IDataIO<float, TLabel>.ReadTrainingData(int skipRecords, int count, out TLabel[] labels, out float[,] labelsCoded)
@@ -44,14 +44,14 @@ namespace SimpleRBM.Demo.Demo
             return _floatProvider.ReadTestData(skipRecords, count);
         }
 
-        void IDataIO<float, TLabel>.PrintToScreen(float[,] arr, float[,] reference = null, TLabel[] referenceLabels = null, float[,] referenceLabelsCoded = null, ulong[][] keys = null, float[,] computedLabels = null)
+        void IDataIO<float, TLabel>.PrintToConsole(float[,] arr, float[,] reference = null, TLabel[] referenceLabels = null, float[,] referenceLabelsCoded = null, ulong[][] keys = null, float[,] computedLabels = null)
         {
-            _floatProvider.PrintToScreen(arr, reference: reference, referenceLabels: referenceLabels, referenceLabelsCoded: referenceLabelsCoded, keys: keys, computedLabels:computedLabels);
+            _floatProvider.PrintToConsole(arr, reference: reference, referenceLabels: referenceLabels, referenceLabelsCoded: referenceLabelsCoded, keys: keys, computedLabels:computedLabels);
         }
 
-        void IDataIO<float, TLabel>.PrintMap(float[,] arr)
+        void IDataIO<float, TLabel>.PrintToConsole(float[,] arr)
         {
-            _floatProvider.PrintMap(arr);
+            _floatProvider.PrintToConsole(arr);
         }
     }
 }

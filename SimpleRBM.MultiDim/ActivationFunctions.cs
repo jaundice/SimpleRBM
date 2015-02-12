@@ -38,6 +38,24 @@ namespace SimpleRBM.MultiDim
             return result;
         }
 
+        public static double[,] TanhD(double[,] matrix)
+        {
+            var result = new double[matrix.GetLength(0), matrix.GetLength(1)];
+
+            Parallel.For(0, matrix.GetLength(0),
+                i => Parallel.For(0, matrix.GetLength(1), j => { result[i, j] = Math.Tanh(matrix[i, j]); }));
+            return result;
+        }
+
+        public static float[,] TanhF(float[,] matrix)
+        {
+            var result = new float[matrix.GetLength(0), matrix.GetLength(1)];
+
+            Parallel.For(0, matrix.GetLength(0),
+                i => Parallel.For(0, matrix.GetLength(1), j => { result[i, j] = (float)Math.Tanh(matrix[i, j]); }));
+            return result;
+        }
+
         //public static RVector LogisticD(RVector vector)
         //{
         //    var result = new RVector(vector.Length);
