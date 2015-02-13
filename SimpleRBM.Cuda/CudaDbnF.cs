@@ -14,19 +14,31 @@ using RBM = SimpleRBM.Cuda.CudaRbmF;
 
 namespace SimpleRBM.Cuda
 {
-    public class CudaDbnF : IDeepBeliefNetworkExtended<TElement>, IDisposable
+    public class CudaDbnF : IBasicNetworkCuda<TElement>
     {
-        private readonly RBM[] Machines;
+        private readonly IList<IBasicRbmCuda<TElement>> Machines;
 
         private readonly GPGPU _gpu;
         private readonly GPGPURAND _rand;
 
 
+        public CudaDbnF(GPGPU gpu, GPGPURAND rand, IEnumerable<IBasicRbmCuda<TElement>> machines)
+        {
+            _gpu = gpu;
+            _rand = rand;
+            Machines = new List<IBasicRbmCuda<TElement>>();
+            foreach (var rbm in machines)
+            {
+                rbm.EpochEnd += (a, b) => RaiseEpochEnd(b);
+                rbm.TrainEnd += (a, b) => RaiseTrainEnd(b);
+                Machines.Add(rbm);
+            }
+        }
+
         public CudaDbnF(GPGPU gpu, GPGPURAND rand, DirectoryInfo network, ILayerDefinition[] appendLayers = null)
         {
             _gpu = gpu;
             _rand = rand;
-            //ExitConditionEvaluatorFactory = exitConditionExitConditionEvaluatorFactory;
             List<LSI> saveInfos =
                 network.GetFiles("*.bin")
                     .OrderBy(a => int.Parse(Regex.Match(Path.GetFileNameWithoutExtension(a.Name), "[0-9]+").Value))
@@ -34,7 +46,7 @@ namespace SimpleRBM.Cuda
 
             appendLayers = appendLayers ?? new ILayerDefinition[0];
             Machines =
-                new RBM[saveInfos.Count() + appendLayers.Length];
+                new List<IBasicRbmCuda<TElement>>(saveInfos.Count() + appendLayers.Length);
 
 
             for (int i = 0; i < saveInfos.Count; i++)
@@ -43,8 +55,9 @@ namespace SimpleRBM.Cuda
 
                 var rbm = new RBM(gpu, rand, saveInfos[i].NumVisible, saveInfos[i].NumHidden,
                     i, saveInfos[i].Weights, saveInfos[i].VisibleActivation, saveInfos[i].HiddenActivation);
-                rbm.EpochEnd += OnRbm_EpochEnd;
-                Machines[i] = rbm;
+                rbm.EpochEnd += (a, b) => RaiseEpochEnd(b);
+                rbm.TrainEnd += (a, b) => RaiseTrainEnd(b);
+                Machines.Add(rbm);
             }
 
             if (appendLayers.Length > 0)
@@ -57,22 +70,20 @@ namespace SimpleRBM.Cuda
                     var rbm = new RBM(gpu, rand,
                         appendLayers[j].VisibleUnits, appendLayers[j + 1].HiddenUnits,
                         saveInfos.Count + j, appendLayers[j].VisibleActivation, saveInfos[j].HiddenActivation);
-                    rbm.EpochEnd += OnRbm_EpochEnd;
-                    Machines[saveInfos.Count + j + 1] = rbm;
+                    rbm.EpochEnd += (a, b) => RaiseEpochEnd(b);
+                    rbm.TrainEnd += (a, b) => RaiseTrainEnd(b);
+                    Machines.Add(rbm);
                 }
             }
 
-            _gpu.Synchronize();
         }
 
         public CudaDbnF(GPGPU gpu, GPGPURAND rand, ILayerDefinition[] layerSizes)
         {
             _gpu = gpu;
             _rand = rand;
-            // ExitConditionEvaluatorFactory = exitConditionExitConditionEvaluatorFactory;
 
-
-            Machines = new RBM[layerSizes.Length];
+            Machines = new List<IBasicRbmCuda<TElement>>(layerSizes.Length);
 
             for (int i = 0; i < layerSizes.Length; i++)
             {
@@ -81,8 +92,9 @@ namespace SimpleRBM.Cuda
 
                 var rbm = new RBM(gpu, rand, layerSizes[i].VisibleUnits, layerSizes[i].HiddenUnits,
                     i, layerSizes[i].VisibleActivation, layerSizes[i].HiddenActivation);
-                rbm.EpochEnd += OnRbm_EpochEnd;
-                Machines[i] = rbm;
+                rbm.EpochEnd += (a, b) => RaiseEpochEnd(b);
+                rbm.TrainEnd += (a, b) => RaiseTrainEnd(b);
+                Machines.Add(rbm);
             }
         }
 
@@ -90,384 +102,170 @@ namespace SimpleRBM.Cuda
 
         public int NumMachines
         {
-            get { return Machines.Length; }
+            get { return Machines.Count; }
         }
 
         public TElement[,] Encode(TElement[,] data)
         {
-            return Encode(data, Machines.Length - 1);
-        }
-
-        public TElement[,] Encode(TElement[,] data, int maxDepth)
-        {
-            if (maxDepth < 0)
-                return data;
-
-            data = Machines[0].GetHiddenLayer(data);
-
-            for (int i = 0; i < maxDepth; i++)
-            {
-                data = Machines[i + 1].GetHiddenLayer(data);
-            }
-
-            return data;
-        }
-
-        public TElement[,] Classify(TElement[,] data, int maxDepth)
-        {
-            throw new NotImplementedException();
-            //if (maxDepth < 0)
-            //    return data;
-
-            //data = Machines[0].GetHiddenLayer(data);
-
-            //for (int i = 0; i < maxDepth; i++)
-            //{
-            //    var m = Machines[i + 1];
-            //    data = i + 1 == maxDepth ? m.GetSoftmaxLayer(data) : m.GetHiddenLayer(data);
-            //}
-            //return data;
-            //return  Machines[maxDepth].GetSoftmaxLayer(data);
+            using (var d = _gpu.Upload(data))
+            using (var ret = ((IBasicNetworkCuda<TElement>)this).Encode(d))
+                return ret.CopyLocal();
         }
 
         public TElement[,] Decode(TElement[,] data)
         {
-            return Decode(data, Machines.Length - 1);
+            return Decode(data, Machines.Count - 1);
         }
 
         public TElement[,] Decode(TElement[,] data, int maxDepth)
         {
-            //data = Machines[maxDepth].GetVisibleLayer(data);
-
-            for (int i = maxDepth; i > -1; i--)
-            {
-                data = Machines[i].GetVisibleLayer(data);
-            }
-
-            //data = Machines[0].GetVisibleLayerLinear(data);
-
-            return data;
+            using (var d = _gpu.Upload(data))
+            using (var ret = ((IBasicNetworkCuda<TElement>)this).Decode(d, maxDepth))
+                return ret.CopyLocal();
         }
 
         public TElement[,] Reconstruct(TElement[,] data)
         {
-            return Reconstruct(data, Machines.Length - 1);
+            return Reconstruct(data, Machines.Count - 1);
         }
 
         public TElement[,] Reconstruct(TElement[,] data, int maxDepth)
         {
-            TElement[,] hl = Encode(data, maxDepth);
-            return Decode(hl, maxDepth);
+            using (var d = _gpu.Upload(data))
+            using (var res = ((IBasicNetworkCuda<TElement>)this).Reconstruct(d, maxDepth))
+                return res.CopyLocal();
         }
 
-        public TElement[,] Classify(TElement[,] data, out TElement[,] labels)
+        public TElement[,] ReconstructWithLabels(TElement[,] data, out TElement[,] labels)
         {
-            TElement[,] hl = Encode(data, Machines.Length - 2);
-            hl = Machines[Machines.Length - 1].Classify(hl, out labels);
-            return Decode(hl, Machines.Length - 2);
+            Matrix2D<TElement> lbl;
+            using (var d = _gpu.Upload(data))
+            using (var ret = ((IBasicNetworkCuda<TElement>)this).ReconstructWithLabels(d, out lbl))
+            using (lbl)
+            {
+                labels = lbl.CopyLocal();
+                return ret.CopyLocal();
+            }
         }
 
         public TElement[,] DayDream(int numberOfDreams)
         {
-            return DayDream(numberOfDreams, Machines.Length - 1);
+            return DayDream(numberOfDreams, Machines.Count - 1);
         }
 
         public TElement[,] DayDream(int numberOfDreams, int maxDepth)
         {
-            int elems = Machines[0].NumVisibleElements;
-
-            Matrix2D<TElement> dreamRawData;
-            _gpu.UniformDistributionBool(_rand, numberOfDreams, elems, out dreamRawData);
-            using (dreamRawData)
-            {
-                //dim3 grid, block;
-                //ThreadOptimiser.Instance.GetStrategy(numberOfDreams, elems, out grid, out block);
-
-                //_gpu.Launch(grid, block, Matrix2DCudaF.ToBinaryF, dreamRawData.Matrix);
-
-                //var localRaw = new TElement[numberOfDreams, elems];
-                //_gpu.CopyFromDevice(dreamRawData, localRaw);
-                TElement[,] ret = Reconstruct(dreamRawData.CopyLocal(), maxDepth);
-                return ret;
-            }
-        }
-
-        /// <summary>
-        ///     returns hidden states
-        /// </summary>
-        /// <param name="data"></param>
-        /// <param name="layerIndex"></param>
-        /// <param name="error"></param>
-        /// <returns></returns>
-        public TElement[,] GreedyTrain(TElement[,] data, int layerIndex,
-            IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory, out TElement error)
-        {
-            TElement err = Machines[layerIndex].GreedyTrain(data, exitConditionEvaluatorFactory.Create(layerIndex),
-                learningRateFactory.Create(layerIndex));
-            RaiseTrainEnd(layerIndex, err);
-            error = err;
-            return Machines[layerIndex].GetHiddenLayer(data);
+            using (var res = ((IBasicNetworkCuda<TElement>)this).DayDream(numberOfDreams, maxDepth))
+                return res.CopyLocal();
         }
 
         public event EventHandler<EpochEventArgs<TElement>> EpochEnd;
 
         public event EventHandler<EpochEventArgs<TElement>> TrainEnd;
-        //public IExitConditionEvaluatorFactory<TElement> ExitConditionEvaluatorFactory { get; protected set; }
 
         public IEnumerable<ILayerSaveInfo<TElement>> GetLayerSaveInfos()
         {
             return Machines.Select(restrictedBoltzmannMachineF => restrictedBoltzmannMachineF.GetSaveInfo());
         }
 
-        public TElement GetReconstructionError(TElement[,] srcData, int depth)
-        {
-            TElement[,] data = Encode(srcData, depth - 1);
-            return Machines[depth].CalculateReconstructionError(data);
-        }
-
-        /// <summary>
-        ///     returns the visible states and labels as out param
-        /// </summary>
-        /// <param name="data"></param>
-        /// <param name="labels"></param>
-        /// <param name="layerPosition"></param>
-        /// <param name="error"></param>
-        /// <param name="labelsPredicted"></param>
-        /// <returns></returns>
-        public TElement[,] GreedySupervisedTrain(TElement[,] data, TElement[,] labels, int layerPosition,
-            IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory, out TElement error,
-            out TElement[,] labelsPredicted)
-        {
-            TElement err = Machines[layerPosition].GreedySupervisedTrain(data, labels,
-                exitConditionEvaluatorFactory.Create(layerPosition), learningRateFactory.Create(layerPosition));
-            RaiseTrainEnd(layerPosition, err);
-            error = err;
-            return Machines[layerPosition].Classify(data, out labelsPredicted);
-        }
-
-        public Task AsyncGreedyTrain(TElement[,] data, int layerIndex,
-            IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory)
-        {
-            TElement err;
-            return Task.Run(
-                () => GreedyTrain(data, layerIndex, exitConditionEvaluatorFactory, learningRateFactory, out err));
-        }
 
         public void GreedyTrainAll(TElement[,] visibleData,
             IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
             ILearningRateCalculatorFactory<TElement> learningRateFactory)
         {
-            //visibleData = FixInputData(visibleData);
-
-            TElement error;
-
-            for (int i = 0; i < Machines.Length; i++)
+            using (var d = _gpu.Upload(visibleData))
             {
-                visibleData = GreedyTrain(visibleData, i, exitConditionEvaluatorFactory, learningRateFactory, out error);
-                RaiseTrainEnd(i, error);
+                ((IBasicNetworkCuda<TElement>)this).GreedyTrainAll(d, exitConditionEvaluatorFactory,
+                    learningRateFactory);
             }
         }
 
 
-        public void UpDownTrainAll(TElement[,] visibleData, int iterations,
+        void IBasicNetworkCuda<TElement>.UpDownTrainAll(Matrix2D<TElement> visibleData, int iterations,
             IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
             ILearningRateCalculatorFactory<TElement> learningRateFactory)
         {
             TElement error;
+
             for (int i = 0; i < iterations; i++)
             {
-                TElement[,] encodedPenultimate = Encode(visibleData, Machines.Length - 2);
-                TElement[,] visible = GreedyTrain(encodedPenultimate, Machines.Length - 1, exitConditionEvaluatorFactory,
-                    learningRateFactory, out error);
+                Matrix2D<TElement> penultimateActivations = ((IBasicNetworkCuda<TElement>)this).Encode(visibleData, Machines.Count - 2);
 
-                visible = Machines[Machines.Length - 1].GetVisibleLayer(visible);
+                Machines[Machines.Count - 1].GreedyTrain(penultimateActivations, exitConditionEvaluatorFactory.Create(Machines.Count - 1),
+                    learningRateFactory.Create(Machines.Count - 1));
 
-                for (int j = Machines.Length - 2; j > -1; j--)
+
+
+                var visible = Machines[Machines.Count - 1].Reconstruct(penultimateActivations);
+                penultimateActivations.Dispose();
+
+                for (int j = Machines.Count - 2; j > -1; j--)
                 {
                     Machines[j].DownPass(visible, exitConditionEvaluatorFactory.Create(j), learningRateFactory.Create(j),
                         out error);
-                    visible = Machines[j].GetVisibleLayer(visible);
-                    //visible = Machines[j].GetVisibleLayer(visible);
+
+                    var visible2 = Machines[j].Decode(visible);
+                    visible.Dispose();
+                    visible = visible2;
                 }
+                visible.Dispose();
             }
         }
 
-        public void UpDownTrainSupervisedAll(TElement[,] visibleData, TElement[,] labels, int iterations,
+        void IBasicNetworkCuda<TElement>.UpDownSupervisedTrainAll(Matrix2D<TElement> visibleData, Matrix2D<TElement> labels, int iterations,
             IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
             ILearningRateCalculatorFactory<TElement> learningRateFactory)
         {
             TElement error;
+
             for (int i = 0; i < iterations; i++)
             {
-                TElement[,] encodedPenultimate = Encode(visibleData, Machines.Length - 2);
-                TElement[,] labelsPredicted;
-                TElement[,] visible = GreedySupervisedTrain(encodedPenultimate, labels, Machines.Length - 1,
-                    exitConditionEvaluatorFactory, learningRateFactory, out error,
-                    out labelsPredicted);
+                Matrix2D<TElement> penultimateActivations = ((IBasicNetworkCuda<TElement>)this).Encode(visibleData, Machines.Count - 2);
 
-                for (int j = Machines.Length - 2; j > -1; j--)
+                var combined = Machines[0].GPU.AllocateNoSet<TElement>(penultimateActivations.GetLength(0),
+                    penultimateActivations.GetLength(1) + labels.GetLength(1));
+
+                combined.InsertValuesFrom(0, 0, penultimateActivations);
+                combined.InsertValuesFrom(0, penultimateActivations.GetLength(1), labels);
+                penultimateActivations.Dispose();
+                penultimateActivations = combined;
+
+
+                Machines[Machines.Count - 1].GreedyTrain(penultimateActivations, exitConditionEvaluatorFactory.Create(Machines.Count - 1),
+                    learningRateFactory.Create(Machines.Count - 1));
+
+
+
+                var visible = Machines[Machines.Count - 1].Reconstruct(penultimateActivations);
+                penultimateActivations.Dispose();
+                //labels = visible.SubMatrix(0, Machines[Machines.Count - 2].NumHiddenNeurons);
+                var c = visible.SubMatrix(0, 0, 0, Machines[Machines.Count - 2].NumHiddenNeurons);
+                visible.Dispose();
+                visible = c;
+
+                for (int j = Machines.Count - 2; j > -1; j--)
                 {
                     Machines[j].DownPass(visible, exitConditionEvaluatorFactory.Create(j), learningRateFactory.Create(j),
                         out error);
-                    visible = Machines[j].GetVisibleLayer(visible);
-                    //visible = Machines[j].GetVisibleLayer(visible);
+
+                    var visible2 = Machines[j].Decode(visible);
+                    visible.Dispose();
+                    visible = visible2;
                 }
+                visible.Dispose();
             }
         }
 
-        public TElement GreedySupervisedTrainAll(TElement[,] visibleData, TElement[,] labels,
-            IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory)
-        {
-            TElement error;
 
-            for (int i = 0; i < Machines.Length - 1; i++)
+        public TElement[,] DaydreamByClass(TElement[,] labels)
+        {
+            Matrix2D<TElement> lbl;
+            using (var d = _gpu.Upload(labels))
+
+            using (var ret = ((IBasicNetworkCuda<TElement>)this).DaydreamByClass(d, out lbl, true, false))
             {
-                visibleData = GreedyTrain(visibleData, i, exitConditionEvaluatorFactory, learningRateFactory, out error);
-                RaiseTrainEnd(i, error);
+                return ret.CopyLocal();
             }
-            TElement[,] labelsPredicted;
-            GreedySupervisedTrain(visibleData, labels, Machines.Length - 1, exitConditionEvaluatorFactory,
-                learningRateFactory, out error, out labelsPredicted);
-            RaiseTrainEnd(Machines.Length - 1, error);
-            return error;
-        }
-
-        public TElement GreedyBatchedSupervisedTrainAll(TElement[,] visibleData, TElement[,] labels, int batchSize,
-            IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory)
-        {
-            TElement error;
-
-            for (int i = 0; i < Machines.Length - 1; i++)
-            {
-                visibleData = GreedyBatchedTrain(visibleData, i, batchSize, exitConditionEvaluatorFactory,
-                    learningRateFactory, out error);
-                RaiseTrainEnd(i, error);
-            }
-            TElement[,] labelsPredicted;
-            //try training supervised layer in one batch
-            BatchedSupervisedTrain(visibleData, labels, Machines.Length - 1, batchSize, exitConditionEvaluatorFactory,
-                learningRateFactory, out error, out labelsPredicted);
-            RaiseTrainEnd(Machines.Length - 1, error);
-            return error;
-        }
-
-        public Task AsyncGreedyTrainAll(TElement[,] visibleData,
-            IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory)
-        {
-            return Task.Run(() => GreedyTrainAll(visibleData, exitConditionEvaluatorFactory, learningRateFactory));
-        }
-
-
-        public void GreedyTrainLayersFrom(TElement[,] visibleData, int startDepth,
-            IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory)
-        {
-            TElement error;
-            for (int i = 0; i < Machines.Length; i++)
-            {
-                visibleData = i < startDepth
-                    ? Machines[i].GetHiddenLayer(visibleData)
-                    : GreedyTrain(visibleData, i, exitConditionEvaluatorFactory, learningRateFactory, out error);
-            }
-        }
-
-
-        public TElement[,] GreedyBatchedTrain(TElement[,] data, int layerPosition, int batchRows,
-            IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory, out TElement error)
-        {
-            TElement err = Machines[layerPosition].GreedyBatchedTrain(data, batchRows,
-                exitConditionEvaluatorFactory.Create(layerPosition), learningRateFactory.Create(layerPosition));
-            RaiseTrainEnd(layerPosition, err);
-            error = err;
-            return Machines[layerPosition].GetHiddenLayer(data);
-        }
-
-        public Task AsyncGreedyBatchedTrain(TElement[,] data, int layerPosition, int batchRows,
-            IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory)
-        {
-            TElement err;
-            return Task.Run(
-                () =>
-                    GreedyBatchedTrain(data, layerPosition, batchRows, exitConditionEvaluatorFactory,
-                        learningRateFactory, out err));
-        }
-
-        public void GreedyBatchedTrainAll(TElement[,] visibleData, int batchRows,
-            IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory)
-        {
-            TElement error;
-
-            for (int i = 0; i < Machines.Length; i++)
-            {
-                visibleData = GreedyBatchedTrain(visibleData, i, batchRows, exitConditionEvaluatorFactory,
-                    learningRateFactory, out error);
-                RaiseTrainEnd(i, error);
-            }
-        }
-
-        public Task AsyncGreedyBatchedTrainAll(TElement[,] visibleData, int batchRows,
-            IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory)
-        {
-            return
-                Task.Run(
-                    () =>
-                        GreedyBatchedTrainAll(visibleData, batchRows, exitConditionEvaluatorFactory, learningRateFactory));
-        }
-
-        public void GreedyBatchedTrainLayersFrom(TElement[,] visibleData, int startDepth, int batchRows,
-            IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory)
-        {
-            TElement error;
-            for (int i = 0; i < Machines.Length; i++)
-            {
-                visibleData = i < startDepth
-                    ? Machines[i].GetHiddenLayer(visibleData)
-                    : GreedyBatchedTrain(visibleData, i, batchRows, exitConditionEvaluatorFactory, learningRateFactory,
-                        out error);
-            }
-        }
-
-        public TElement[,] GenerateExamplesByLabel(TElement[,] labels)
-        {
-            TElement[,] visStates;
-            using (
-                Matrix2D<TElement> vis = _gpu.AllocateAndSet<TElement>(labels.GetLength(0),
-                    Machines[Machines.Length - 1].NumVisibleElements))
-            using (Matrix2D<TElement> tmp = _gpu.Upload(labels))
-            {
-                vis.InsertValuesFrom(0, vis.GetLength(1) - labels.GetLength(1), tmp);
-                visStates = vis.CopyLocal();
-            }
-
-            TElement[,] data = Machines[Machines.Length - 1].GetHiddenLayer(visStates);
-            data = Machines[Machines.Length - 1].GetVisibleLayer(data);
-
-            using (Matrix2D<TElement> m = _gpu.Upload(data))
-            using (Matrix2D<TElement> m1 = m.SubMatrix(0, 0, 0, Machines[Machines.Length - 2].NumHiddenElements))
-            {
-                m.Dispose();
-                data = m1.CopyLocal();
-                m1.Dispose();
-
-            }
-
-            for (int i = Machines.Length - 2; i > -1; i--)
-            {
-                data = Machines[i].GetVisibleLayer(data);
-            }
-
-            return data;
         }
 
         public void Dispose()
@@ -480,33 +278,13 @@ namespace SimpleRBM.Cuda
             }
         }
 
-        public TElement[,] BatchedSupervisedTrain(TElement[,] data, TElement[,] labels, int layerPosition, int batchSize,
-            IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory,
-            out TElement error, out TElement[,] labelsPredicted)
-        {
-            TElement err = Machines[layerPosition].GreedyBatchedSupervisedTrain(data, labels, batchSize,
-                exitConditionEvaluatorFactory.Create(layerPosition), learningRateFactory.Create(layerPosition));
-            RaiseTrainEnd(layerPosition, err);
-            error = err;
-            return Machines[layerPosition].Classify(data, out labelsPredicted);
-        }
 
-        private void RaiseTrainEnd(int layer, TElement error)
+        private void RaiseTrainEnd(EpochEventArgs<TElement> args)
         {
             if (TrainEnd != null)
-                TrainEnd(this, new EpochEventArgs<TElement>
-                {
-                    Layer = layer,
-                    Epoch = -1,
-                    Error = error
-                });
+                TrainEnd(this, args);
         }
 
-        private void OnRbm_EpochEnd(object sender, EpochEventArgs<TElement> e)
-        {
-            RaiseEpochEnd(e);
-        }
 
         private void RaiseEpochEnd(EpochEventArgs<TElement> e)
         {
@@ -518,7 +296,7 @@ namespace SimpleRBM.Cuda
         {
             if (disposing)
             {
-                foreach (RBM restrictedBoltzmannMachineF in Machines)
+                foreach (IBasicRbmCuda<TElement> restrictedBoltzmannMachineF in Machines)
                 {
                     restrictedBoltzmannMachineF.Dispose();
                 }
@@ -532,6 +310,329 @@ namespace SimpleRBM.Cuda
         ~CudaDbnF()
         {
             Dispose(false);
+        }
+
+        IList<IBasicRbmCuda<TElement>> IBasicNetworkCuda<TElement>.Machines
+        {
+            get { return Machines; }
+        }
+
+        Matrix2D<TElement> IBasicNetworkCuda<TElement>.Encode(Matrix2D<TElement> data, int maxDepth = -1)
+        {
+            var d = data;
+            var depth = maxDepth == -1 ? Machines.Count - 1 : maxDepth;
+            for (var i = 0; i < depth + 1; i++)
+            {
+                var encoded = Machines[i].Encode(d);
+                if (!ReferenceEquals(d, data))
+                {
+                    d.Dispose();
+                }
+                d = encoded;
+            }
+            return d;
+        }
+
+        Matrix2D<TElement> IBasicNetworkCuda<TElement>.Decode(Matrix2D<TElement> activations, int maxDepth = -1)
+        {
+            var depth = maxDepth == -1 ? Machines.Count - 1 : maxDepth;
+
+            var d = activations;
+
+            for (var i = depth; i > -1; i--)
+            {
+                var constructed = Machines[i].Decode(d);
+                if (!ReferenceEquals(d, activations))
+                    d.Dispose();
+                d = constructed;
+            }
+            return d;
+        }
+
+        Matrix2D<TElement> IBasicNetworkCuda<TElement>.Reconstruct(Matrix2D<TElement> data, int maxDepth = -1)
+        {
+            var depth = maxDepth == -1 ? Machines.Count - 1 : maxDepth;
+
+            using (var encoded = ((IBasicNetworkCuda<TElement>)this).Encode(data, depth))
+                return ((IBasicNetworkCuda<TElement>)this).Decode(encoded, depth);
+        }
+
+        Matrix2D<TElement> IBasicNetworkCuda<TElement>.DayDream(int numberOfDreams, int maxDepth = -1,
+            bool guassian = true)
+        {
+            using (
+                var rand = guassian
+                    ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, numberOfDreams,
+                        Machines[0].NumVisibleNeurons, (TElement)0.5, (TElement)0.2)
+                    : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, numberOfDreams,
+                        Machines[0].NumVisibleNeurons, (TElement)1))
+            {
+                return ((IBasicNetworkCuda<TElement>)this).Reconstruct(rand, maxDepth);
+            }
+        }
+
+
+        void IBasicNetworkCuda<TElement>.GreedyTrainAll(Matrix2D<TElement> visibleData,
+            IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
+            ILearningRateCalculatorFactory<TElement> learningRateFactory)
+        {
+            ((IBasicNetworkCuda<TElement>)this).GreedyTrainLayersFrom(visibleData, -1, exitConditionEvaluatorFactory,
+                learningRateFactory);
+        }
+
+        void IBasicNetworkCuda<TElement>.GreedyTrainLayersFrom(Matrix2D<TElement> visibleData, int startDepth,
+            IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
+            ILearningRateCalculatorFactory<TElement> learningRateFactory)
+        {
+            var layerTrainData = visibleData;
+            for (var i = 0; i < Machines.Count; i++)
+            {
+                if (i >= startDepth)
+                {
+                    Machines[i].GreedyTrain(layerTrainData, exitConditionEvaluatorFactory.Create(i),
+                        learningRateFactory.Create(i));
+                }
+                var encoded = Machines[i].Encode(layerTrainData);
+                if (!ReferenceEquals(layerTrainData, visibleData))
+                {
+                    layerTrainData.Dispose();
+                }
+                layerTrainData = encoded;
+            }
+        }
+
+        Matrix2D<TElement> IBasicNetworkCuda<TElement>.DaydreamByClass(Matrix2D<TElement> modelLabels,
+            out Matrix2D<TElement> generatedLabels, bool guassian, bool softmaxLabels)
+        {
+            var highest = Machines.Count - 1;
+            using (
+                var rand = guassian
+                    ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, modelLabels.GetLength(0),
+                        Machines[highest].NumVisibleNeurons, (TElement)0.5, (TElement)0.2)
+                    : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, modelLabels.GetLength(0),
+                        Machines[highest].NumVisibleNeurons, (TElement)1))
+            //using (var rand = Machines[0].GPU.AllocateAndSet<TElementType>(modelLabels.GetLength(0),
+            //            Machines[highest].NumVisibleNeurons))
+            {
+                rand.InsertValuesFrom(0, Machines[highest - 1].NumHiddenNeurons, modelLabels);
+                using (var encoded = Machines[highest].Encode(rand))
+                {
+                    return ((IBasicNetworkCuda<TElement>)this).DecodeWithLabels(encoded, out generatedLabels,
+                        softmaxLabels);
+                }
+            }
+        }
+
+        Matrix2D<TElement> IBasicNetworkCuda<TElement>.DecodeWithLabels(Matrix2D<TElement> activations,
+            out Matrix2D<TElement> labels, bool softmaxLabels)
+        {
+            var depth = Machines.Count - 1;
+
+            labels = null;
+            var d = activations;
+            for (var i = depth; i > -1; i--)
+            {
+                var constructed = Machines[i].Decode(d);
+
+                if (i == depth)
+                {
+                    labels = constructed.SubMatrix(0, Machines[i - 1].NumHiddenNeurons);
+                    if (softmaxLabels)
+                    {
+                        using (labels)
+                        {
+                            var sm = labels.SoftMax();
+                            //sm.ToBinary();
+                            labels = sm;
+                        }
+                    }
+                    var c = constructed.SubMatrix(0, 0, 0, Machines[i - 2].NumHiddenNeurons);
+                    constructed.Dispose();
+                    constructed = c;
+                }
+                if (!ReferenceEquals(d, activations))
+                    d.Dispose();
+                d = constructed;
+            }
+            return d;
+        }
+
+        Matrix2D<TElement> IBasicNetworkCuda<TElement>.EncodeWithLabelExpansion(Matrix2D<TElement> data)
+        {
+            var d = data;
+            var depth = Machines.Count - 1;
+            for (var i = 0; i < depth + 1; i++)
+            {
+                if (i == Machines.Count - 1)
+                {
+                    var expanded = Machines[0].GPU.AllocateAndSet<TElement>(data.GetLength(0),
+                        Machines[i].NumVisibleNeurons);
+                    expanded.InsertValuesFrom(0, 0, d);
+
+                    if (!ReferenceEquals(d, data))
+                        d.Dispose();
+
+                    d = expanded;
+                }
+
+                var encoded = Machines[i].Encode(d);
+                if (!ReferenceEquals(d, data))
+                {
+                    d.Dispose();
+                }
+                d = encoded;
+            }
+            return d;
+        }
+
+        Matrix2D<TElement> IBasicNetworkCuda<TElement>.ReconstructWithLabels(Matrix2D<TElement> data,
+            out Matrix2D<TElement> labels, bool softmaxLabels)
+        {
+            var depth = Machines.Count - 1;
+
+            using (var d = ((IBasicNetworkCuda<TElement>)this).EncodeWithLabelExpansion(data))
+                return ((IBasicNetworkCuda<TElement>)this).DecodeWithLabels(d, out labels, softmaxLabels);
+        }
+
+        void IBasicNetworkCuda<TElement>.GreedyBatchedTrainAll(Matrix2D<TElement> data,
+            int batchRows, IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
+            ILearningRateCalculatorFactory<TElement> learningRateFactory, out TElement error)
+        {
+            error = 0;
+            var layerTrainData = data;
+            for (var i = 0; i < Machines.Count; i++)
+            {
+
+                error = Machines[i].GreedyBatchedTrain(layerTrainData, batchRows, exitConditionEvaluatorFactory.Create(i),
+                     learningRateFactory.Create(i));
+
+                var encoded = Machines[i].Encode(layerTrainData);
+                if (!ReferenceEquals(layerTrainData, data))
+                {
+                    layerTrainData.Dispose();
+                }
+                layerTrainData = encoded;
+            }
+            layerTrainData.Dispose();
+        }
+
+        void IBasicNetworkCuda<TElement>.GreedySupervisedTrain(Matrix2D<TElement> data, Matrix2D<TElement> labels, IExitConditionEvaluatorFactory<TElement> exitConditionFactory, ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory)
+        {
+            var layerTrainData = data;
+            for (var i = 0; i < Machines.Count; i++)
+            {
+                if (i == Machines.Count - 1)
+                {
+                    var combined = Machines[0].GPU.AllocateNoSet<TElement>(data.GetLength(0),
+                        layerTrainData.GetLength(1) + labels.GetLength(1));
+
+                    combined.InsertValuesFrom(0, 0, layerTrainData);
+                    combined.InsertValuesFrom(0, layerTrainData.GetLength(1), labels);
+                    layerTrainData.Dispose();
+                    layerTrainData = combined;
+                }
+
+
+                Machines[i].GreedyTrain(layerTrainData, exitConditionFactory.Create(i),
+                    weightLearningRateCalculatorFactory.Create(i));
+
+
+                var encoded = Machines[i].Encode(layerTrainData);
+                if (!ReferenceEquals(layerTrainData, data))
+                {
+                    layerTrainData.Dispose();
+                }
+                layerTrainData = encoded;
+            }
+            layerTrainData.Dispose();
+
+        }
+
+        void IBasicNetworkCuda<TElement>.GreedyBatchedSupervisedTrain(Matrix2D<TElement> data, Matrix2D<TElement> labels, int batchRows, IExitConditionEvaluatorFactory<TElement> exitConditionFactory, ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory)
+        {
+            var layerTrainData = data;
+            for (var i = 0; i < Machines.Count; i++)
+            {
+                if (i == Machines.Count - 1)
+                {
+                    var combined = Machines[0].GPU.AllocateNoSet<TElement>(data.GetLength(0),
+                        layerTrainData.GetLength(1) + labels.GetLength(1));
+
+                    combined.InsertValuesFrom(0, 0, layerTrainData);
+                    combined.InsertValuesFrom(0, layerTrainData.GetLength(1), labels);
+                    layerTrainData.Dispose();
+                    layerTrainData = combined;
+                }
+
+
+                Machines[i].GreedyBatchedTrain(layerTrainData,batchRows, exitConditionFactory.Create(i),
+                    weightLearningRateCalculatorFactory.Create(i));
+
+
+                var encoded = Machines[i].Encode(layerTrainData);
+                if (!ReferenceEquals(layerTrainData, data))
+                {
+                    layerTrainData.Dispose();
+                }
+                layerTrainData = encoded;
+            }
+            layerTrainData.Dispose();
+
+        }
+
+        public TElement[,] Encode(TElement[,] data, int maxDepth)
+        {
+            using (var d = _gpu.Upload(data))
+            using (var ret = ((IBasicNetworkCuda<TElement>)this).Encode(d, maxDepth))
+                return ret.CopyLocal();
+        }
+
+        public void GreedySupervisedTrainAll(TElement[,] srcData, TElement[,] labels, IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory, ILearningRateCalculatorFactory<TElement> learningRateFactory)
+        {
+            using (var d = _gpu.Upload(srcData))
+            using (var l = _gpu.Upload(labels))
+            {
+                ((IBasicNetworkCuda<TElement>)this).GreedySupervisedTrain(d, l, exitConditionEvaluatorFactory,
+                    learningRateFactory);
+            }
+        }
+
+
+        public void UpDownTrainAll(TElement[,] visibleData, int iterations, IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory, ILearningRateCalculatorFactory<TElement> learningRateFactory)
+        {
+            using (var d = _gpu.Upload(visibleData))
+            {
+                ((IBasicNetworkCuda<TElement>)this).UpDownTrainAll(d, iterations, exitConditionEvaluatorFactory, learningRateFactory);
+            }
+        }
+
+        public void UpDownTrainSupervisedAll(TElement[,] visibleData, TElement[,] labels, int iterations, IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory, ILearningRateCalculatorFactory<TElement> learningRateFactory)
+        {
+            using (var d = _gpu.Upload(visibleData))
+            using (var l = _gpu.Upload(labels))
+            {
+                ((IBasicNetworkCuda<TElement>)this).UpDownSupervisedTrainAll(d, l, iterations, exitConditionEvaluatorFactory, learningRateFactory);
+            }
+        }
+
+
+        public void GreedyBatchedSupervisedTrainAll(TElement[,] visibleData, TElement[,] labels, int batchSize, IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory, ILearningRateCalculatorFactory<TElement> learningRateFactory)
+        {
+            using (var d = _gpu.Upload(visibleData))
+            using (var l = _gpu.Upload(labels))
+            {
+                ((IBasicNetworkCuda<TElement>)this).GreedyBatchedSupervisedTrain(d, l, batchSize, exitConditionEvaluatorFactory, learningRateFactory);
+            }
+        }
+
+
+        public void GreedyBatchedTrainAll(TElement[,] visibleData, int batchRows, IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory, ILearningRateCalculatorFactory<TElement> learningRateFactory)
+        {
+            using (var d = _gpu.Upload(visibleData))
+            {
+                TElement error;
+                ((IBasicNetworkCuda<TElement>)this).GreedyBatchedTrainAll(d, batchRows, exitConditionEvaluatorFactory, learningRateFactory, out error);
+            }
         }
     }
 }

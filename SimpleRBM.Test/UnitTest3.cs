@@ -65,7 +65,7 @@ namespace SimpleRBM.Test
             float[,] res;
 
             using (var data = _dev.Upload(source))
-            using (var repl = data.RepMat(4))
+            using (var repl = data.RepMatRows(4))
             {
                 res = repl.CopyLocal();
             }

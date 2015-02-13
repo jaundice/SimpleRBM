@@ -114,27 +114,74 @@ namespace SimpleRBM.Cuda
             self.GPU.Launch(grid, block, ActivationFunctionsCuda.SoftPlusInPlaceF, self.Matrix);
         }
 
+        public static Matrix2D<TElement> Exponents(this Matrix2D<TElement> self)
+        {
+           var res =  self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
+            dim3 grid, block;
+            ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
+
+            self.GPU.Launch(grid, block, ActivationFunctionsCuda.ExponentsF, self.Matrix, res.Matrix);
+
+            return res;
+        }
+
+        public static Matrix2D<TElement> MaxRowValues(this Matrix2D<TElement> self)
+        {
+            var res = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), 1);
+            dim3 grid, block;
+            ThreadOptimiser.Instance.GetStrategy(self.GetLength(0), 1, out grid, out block);
+            self.GPU.Launch(grid, block, Matrix2DCuda.MaximumElementValueRowWiseF, self.Matrix, res.Matrix);
+            return res;
+        }
+
+        public static Matrix2D<TElement> DivideElements(this Matrix2D<TElement> self, Matrix2D<TElement> denominator)
+        {
+            var res = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
+            dim3 grid, block;
+            ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
+
+            self.GPU.Launch(grid, block, Matrix2DCuda.DivideByF, self.Matrix, denominator.Matrix, res.Matrix);
+
+            return res;
+
+        }
+        
         public static Matrix2D<TElement> SoftMax(this Matrix2D<TElement> self)
         {
-            using (Matrix2D<TElement> exponents = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1)))
+            using (var max = self.MaxRowValues())
+            using (var neg = max.RepMatCols(self.GetLength(1)))
+            using (var delta = self.Subtract(neg))
+            using (var exp = delta.Exponents())
+            using(var summedExp = exp.SumRows())
+            using (var tiledSummed = summedExp.RepMatCols(self.GetLength(1)))
+
             {
-                dim3 grid, block;
-                ThreadOptimiser.Instance.GetStrategy(self.GetLength(0), 1, out grid, out block);
-                self.GPU.Launch(grid, block, ActivationFunctionsCuda.LogSumOfExponentsF, self.Matrix, exponents.Matrix);
-
-                using (Matrix2D<TElement> scales = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), 1))
-                {
-                    ThreadOptimiser.Instance.GetStrategy(self.GetLength(0), 1, out grid, out block);
-
-                    self.GPU.Launch(grid, block, Matrix2DCuda.SumMatrixRowsF, exponents.Matrix, scales.Matrix);
-                    //todo could do this in place and save an allocation
-                    Matrix2D<TElement> result = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
-                    ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-                    self.GPU.Launch(grid, block, Matrix2DCuda.DivideByF, exponents.Matrix, scales.Matrix, result.Matrix);
-
-                    return result;
-                }
+                var res= exp.DivideElements(tiledSummed);
+                return res;
             }
+
+
+
+            //using (Matrix2D<TElement> exponents = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1)))
+            //{
+            //    dim3 grid, block;
+            //    ThreadOptimiser.Instance.GetStrategy(self.GetLength(0), 1, out grid, out block);
+            //    self.GPU.Launch(grid, block, ActivationFunctionsCuda.ExponentsF, self.Matrix, exponents.Matrix);
+
+            //    using (Matrix2D<TElement> scales = exponents.SumRows())
+            //    {
+            //        //ThreadOptimiser.Instance.GetStrategy(self.GetLength(0), 1, out grid, out block);
+
+            //        //self.GPU.Launch(grid, block, Matrix2DCuda.SumMatrixRowsF, exponents.Matrix, scales.Matrix);
+            //        ////todo could do this in place and save an allocation
+
+            //        Matrix2D<TElement> result = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
+            //        ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
+            //        self.GPU.Launch(grid, block, Matrix2DCuda.DivideByF, exponents.Matrix, scales.Matrix, result.Matrix);
+
+            //        return result;
+            //    }
+            //}
         }
 
 
@@ -299,7 +346,7 @@ namespace SimpleRBM.Cuda
             self.GPU.Launch(grid, block, Matrix2DCuda.FillF, self.Matrix, value);
         }
 
-        public static void ToBinaryF(this Matrix2D<TElement> self)
+        public static void ToBinary(this Matrix2D<TElement> self)
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
@@ -317,7 +364,7 @@ namespace SimpleRBM.Cuda
                 axis == Axis.Column ? Matrix2DCuda.TRUE : Matrix2DCuda.FALSE, mPos, nPos);
         }
 
-        public static Matrix2D<TElement> RepMat(this Matrix2D<TElement> self, int clones)
+        public static Matrix2D<TElement> RepMatRows(this Matrix2D<TElement> self, int clones)
         {
             if (self.GetLength(0) != 1)
                 throw new Exception();
@@ -326,7 +373,24 @@ namespace SimpleRBM.Cuda
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(ret, out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCuda.RepMatF, self.Matrix, ret.Matrix);
+            self.GPU.Launch(grid, block, Matrix2DCuda.RepMatRowsF, self.Matrix, ret.Matrix);
+
+
+
+            return ret;
+        }
+
+
+        public static Matrix2D<TElement> RepMatCols(this Matrix2D<TElement> self, int clones)
+        {
+            if (self.GetLength(1) != 1)
+                throw new Exception();
+
+            var ret = self.GPU.AllocateNoSet<TElement>( self.GetLength(0), clones);
+            dim3 grid, block;
+            ThreadOptimiser.Instance.GetStrategy(ret, out grid, out block);
+
+            self.GPU.Launch(grid, block, Matrix2DCuda.RepMatColsF, self.Matrix, ret.Matrix);
 
 
 

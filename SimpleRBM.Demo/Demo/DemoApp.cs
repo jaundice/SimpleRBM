@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using SimpleRBM.Common;
 using SimpleRBM.Common.ExitCondition;
+using SimpleRBM.Cuda;
 using SimpleRBM.Demo.Util;
 
 namespace SimpleRBM.Demo.Demo
@@ -87,7 +88,7 @@ namespace SimpleRBM.Demo.Demo
                             if (args.Layer == dbn.NumMachines - 1)
                             {
                                 reconstructedRunningTestData = classify
-                                    ? ddd.Classify(runningtestData, out calculatedLabels)
+                                    ? ddd.ReconstructWithLabels(runningtestData, out calculatedLabels)
                                     : ddd.Reconstruct(runningtestData);
                                 runningKeys = KeyEncoder.GenerateKeys(calculatedLabels);
                             }
@@ -133,16 +134,17 @@ namespace SimpleRBM.Demo.Demo
 
                     if (trainFrom > -1)
                     {
-                        if (batchSize == -1)
-                        {
-                            dbn.GreedyTrainLayersFrom(trainingData, trainFrom, preTrainExitConditionEvaluatorFactory,
-                                preTrainLearningRateCalculatorFactory);
-                        }
-                        else
-                        {
-                            dbn.GreedyBatchedTrainLayersFrom(trainingData, trainFrom, batchSize,
-                                preTrainExitConditionEvaluatorFactory, preTrainLearningRateCalculatorFactory);
-                        }
+                        throw new NotImplementedException();
+                        //if (batchSize == -1)
+                        //{
+                        //    dbn.GreedyTrainLayersFrom(trainingData, trainFrom, preTrainExitConditionEvaluatorFactory,
+                        //        preTrainLearningRateCalculatorFactory);
+                        //}
+                        //else
+                        //{
+                        //    dbn.GreedyBatchedTrainLayersFrom(trainingData, trainFrom, batchSize,
+                        //        preTrainExitConditionEvaluatorFactory, preTrainLearningRateCalculatorFactory);
+                        //}
                     }
                     else
                     {
@@ -150,7 +152,7 @@ namespace SimpleRBM.Demo.Demo
                         {
                             //classifier
                             if (classify)
-                                ((IDeepBeliefNetworkExtended<TDataElement>)dbn).GreedySupervisedTrainAll(trainingData,
+                                ((IBasicNetworkCuda<TDataElement>)dbn).GreedySupervisedTrainAll(trainingData,
                                     referenceLabelsCoded, preTrainExitConditionEvaluatorFactory,
                                     preTrainLearningRateCalculatorFactory);
                             else
@@ -178,13 +180,13 @@ namespace SimpleRBM.Demo.Demo
                     Console.WriteLine("Fine train");
                     if (!classify)
                     {
-                        ((IDeepBeliefNetworkExtended<TDataElement>)dbn).UpDownTrainAll(trainingData, 5,
+                        ((IDeepBeliefNetworkExtended<TDataElement>)dbn).UpDownTrainAll(trainingData, 2,
                             fineTrainExitConditionEvaluatorFactory, fineTrainLearningRateCalculatorFactory);
                     }
                     else
                     {
                         ((IDeepBeliefNetworkExtended<TDataElement>)dbn).UpDownTrainSupervisedAll(trainingData,
-                            referenceLabelsCoded, 5, fineTrainExitConditionEvaluatorFactory,
+                            referenceLabelsCoded, 2, fineTrainExitConditionEvaluatorFactory,
                             fineTrainLearningRateCalculatorFactory);
                     }
 
@@ -209,7 +211,7 @@ namespace SimpleRBM.Demo.Demo
 
                 TDataElement[,] labelsComputed = null;
                 TDataElement[,] reconstructedItems = classify
-                    ? ((IDeepBeliefNetworkExtended<TDataElement>)dbn).Classify(tdata,
+                    ? ((IDeepBeliefNetworkExtended<TDataElement>)dbn).ReconstructWithLabels(tdata,
                         out labelsComputed)
                     : dbn.Reconstruct(tdata);
 
@@ -237,7 +239,7 @@ namespace SimpleRBM.Demo.Demo
 
                 //c
                 TDataElement[,] reconstructedTestData = classify
-                    ? ((IDeepBeliefNetworkExtended<TDataElement>)dbn).Classify(testData, out computedLabels2)
+                    ? ((IDeepBeliefNetworkExtended<TDataElement>)dbn).ReconstructWithLabels(testData, out computedLabels2)
                     : dbn.Reconstruct(testData);
                 ulong[][] featKeys2 =
                     KeyEncoder.GenerateKeys(computedLabels2);
@@ -271,7 +273,7 @@ namespace SimpleRBM.Demo.Demo
                     }
 
                     TDataElement[,] generated =
-                        ((IDeepBeliefNetworkExtended<TDataElement>)dbn).GenerateExamplesByLabel(labels);
+                        ((IDeepBeliefNetworkExtended<TDataElement>)dbn).DaydreamByClass(labels);
 
                     dataProvider.PrintToConsole(generated, computedLabels: labels);
                 }

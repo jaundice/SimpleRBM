@@ -18,6 +18,7 @@ using TElementType = System.Single;
 using xxx = SimpleRBM.Cuda.CudaRbmF;
 using faces = SimpleRBM.Demo.IO.FacesDataF;
 using kaggle = SimpleRBM.Demo.IO.KaggleDataF;
+
 #else
 using TElementType = System.Double;
 using xxx = SimpleRBM.Cuda.CudaRbmD;
@@ -38,10 +39,10 @@ namespace CudaNN
 
         private static void Main(string[] args)
         {
-            string demo = Demos.Data;
+            string demo = Demos.Kaggle;
             //int numTrainingExamples = 185946;
-
             int numTrainingExamples = 1000;
+            //int numTrainingExamples = 10;
 
 
             GPGPU dev;
@@ -57,20 +58,20 @@ namespace CudaNN
             switch (demo)
             {
                 case "Faces":
-                    {
-                        FacesDemo(dev, rand, numTrainingExamples, pathBase);
-                        break;
-                    }
+                {
+                    FacesDemo(dev, rand, numTrainingExamples, pathBase);
+                    break;
+                }
                 case "Data":
-                    {
-                        CsvDemo(dev, rand, numTrainingExamples, pathBase);
-                        break;
-                    }
+                {
+                    CsvDemo(dev, rand, numTrainingExamples, pathBase);
+                    break;
+                }
                 case "Kaggle":
-                    {
-                        KaggleDemo(dev, rand, numTrainingExamples, pathBase);
-                        break;
-                    }
+                {
+                    KaggleDemo(dev, rand, numTrainingExamples, pathBase);
+                    break;
+                }
             }
         }
 
@@ -80,11 +81,11 @@ namespace CudaNN
                 ConfigurationManager.AppSettings["CsvDataTest"], true, true);
 
 
-            using (var net = new Network(new RbmBase[]
+            using (var net = new CudaAdvancedNetwork(new CudaAdvancedRbmBase[]
             {
-                new RbmBinary(dev, rand, 0, 178, 120), 
-                new RbmBinary(dev, rand, 1, 120, 150),
-                new RbmBinary(dev, rand, 2, 150, 32)
+                new CudaAdvancedRbmBinary(dev, rand, 0, 178, 120, false, encodingNoiseLevel:(TElementType)0.5),
+                new CudaAdvancedRbmBinary(dev, rand, 1, 120, 150, true),
+                new CudaAdvancedRbmBinary(dev, rand, 2, 150, 32, true)
             }))
             {
                 string[] lbl;
@@ -96,12 +97,13 @@ namespace CudaNN
 
                 net.EpochComplete += (a, b) =>
                 {
-                    if (b.Epoch % 500 == 0)
+                    if (b.Epoch%500 == 0)
                     {
-                        var recon = ((Network)a).Reconstruct(tdata, b.Layer);
+                        var recon = ((CudaAdvancedNetwork) a).Reconstruct(tdata, b.Layer);
                         SaveImages(pathBase, string.Format("{0}_{1}_{{0}}_Reconstruction.jpg", b.Layer, b.Epoch), recon);
                     }
                 };
+
 
                 net.GreedyTrain(d.ReadTestData(0, numTrainingExamples),
                     new ManualKeyPressExitEvaluatorFactory<TElementType>(0.0005f, 10000),
@@ -116,7 +118,7 @@ namespace CudaNN
                 DisplayResults(pathBase, d, reconstructions, testData, lbl);
 
                 IDataIO<TElementType, string> d2 = new CsvData(ConfigurationManager.AppSettings["CsvDataTest"],
-               ConfigurationManager.AppSettings["CsvDataTest"], true, true);
+                    ConfigurationManager.AppSettings["CsvDataTest"], true, true);
 
                 string[] labels;
                 TElementType[,] lcoded;
@@ -133,7 +135,6 @@ namespace CudaNN
                         tw.WriteLine("{0},\"{1}\"", labels[i], kkey[i]);
                     }
                 }
-
             }
         }
 
@@ -143,30 +144,31 @@ namespace CudaNN
             IDataIO<TElementType, string> dataProvider =
                 new faces(ConfigurationManager.AppSettings["FacesDirectory"]);
 
-            using (var net = new Network(new RbmBase[]
+            using (var net = new CudaAdvancedNetwork(new CudaAdvancedRbmBase[]
             {
-                new RbmBinary(dev, rand, 0, 250*250, 1000), 
-                new RbmBinary(dev, rand, 1, 1000, 4000),
-                new RbmBinary(dev, rand, 2, 4000, 4000)
+                new CudaAdvancedRbmBinary(dev, rand, 0, 250*250, 1000, false, encodingNoiseLevel:(TElementType)0.9),
+                new CudaAdvancedRbmBinary(dev, rand, 1, 1000, 4000, true),
+                new CudaAdvancedRbmBinary(dev, rand, 2, 4000, 4000, true)
             }))
             {
                 string[] lbl;
                 TElementType[,] coded;
 
-                net.EpochComplete+= (a, b) =>
+                net.EpochComplete += (a, b) =>
                 {
                     if (b.Epoch%100 == 0)
                     {
-                        var dreams = ((Network) a).DaydreamM(10, b.Layer);
+                        var dreams = ((CudaAdvancedNetwork) a).Daydream(10, b.Layer);
                         SaveImages(pathBase, string.Format("{0}_{1}_{{0}}_Daydream.jpg", b.Layer, b.Epoch), dreams);
                     }
                 };
-
-                net.GreedyTrain(dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded),
+                var training = dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded);
+                SaveImages(pathBase, "TrainingData_{0}.jpg", training);
+                net.GreedyTrain(training,
                     new ManualKeyPressExitEvaluatorFactory<TElementType>(0.0005f, 10000),
-                    new LinearlyDecayingLearningRateFactory<TElementType>(0.001, 0.999),
-                    new LinearlyDecayingLearningRateFactory<TElementType>(0.001, 0.999),
-                    new LinearlyDecayingLearningRateFactory<TElementType>(0.001, 0.999));
+                    new LinearlyDecayingLearningRateFactory<TElementType>(0.003, 0.9999),
+                    new LinearlyDecayingLearningRateFactory<TElementType>(0.003, 0.9999),
+                    new LinearlyDecayingLearningRateFactory<TElementType>(0.003, 0.9999));
 
                 var testData = dataProvider.ReadTrainingData(numTrainingExamples, 200, out lbl, out coded);
 
@@ -184,11 +186,12 @@ namespace CudaNN
                 new kaggle(ConfigurationManager.AppSettings["KaggleTrainingData"],
                     ConfigurationManager.AppSettings["KaggleTestData"]);
 
-            using (var net = new Network(new RbmBase[]
+            using (var net = new CudaAdvancedNetwork(new CudaAdvancedRbmBase[]
             {
-                new RbmBinary(dev, rand, 0, 784, 500), 
-                new RbmBinary(dev, rand, 1, 500, 500),
-                new RbmBinary(dev, rand, 2, 510, 2000)//visible buffer expanded by 10 for labeling
+                new CudaAdvancedRbmBinary(dev, rand, 0, 784, 500, false, encodingNoiseLevel:(TElementType)0.5),
+                new CudaAdvancedRbmBinary(dev, rand, 1, 500, 500, true),
+                new CudaAdvancedRbmBinary(dev, rand, 2, 510, 2000, true)
+                //visible buffer expanded by 10 for labeling
             }))
             {
                 int[] lbl;
@@ -196,49 +199,57 @@ namespace CudaNN
 
                 net.EpochComplete += (a, b) =>
                 {
-                    if (b.Epoch % 100 == 0)
+                    if (b.Epoch%100 == 0)
                     {
+                        TElementType[,] daydream;
                         if (b.Layer == net.Machines.Count - 1)
                         {
                             TElementType[,] labels;
-                            dataProvider.PrintToConsole(((Network)a).DaydreamWithLabels(10, out labels),
+                            daydream = ((CudaAdvancedNetwork) a).DaydreamWithLabels(10, out labels, true, true);
+
+                            dataProvider.PrintToConsole(daydream,
                                 computedLabels: labels);
                         }
                         else
                         {
-                            dataProvider.PrintToConsole(((Network)a).DaydreamM(10, b.Layer));
+                            daydream = ((CudaAdvancedNetwork) a).Daydream(10, b.Layer);
+                            //dataProvider.PrintToConsole(daydream);
                         }
+                        SaveImages(pathBase, string.Format("{0}_{1}_DayDream_{{0}}.jpg", b.Layer, b.Epoch), daydream);
                     }
                 };
 
                 net.GreedySupervisedTrain(dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded),
                     coded,
                     new ManualKeyPressExitEvaluatorFactory<TElementType>(0.0005f, 3920),
-                    new LinearlyDecayingLearningRateFactory<TElementType>(0.001, 0.999),
-                    new LinearlyDecayingLearningRateFactory<TElementType>(0.001, 0.999),
-                    new LinearlyDecayingLearningRateFactory<TElementType>(0.001, 0.999));
+                    new LinearlyDecayingLearningRateFactory<TElementType>(0.03, 0.9999),
+                    new LinearlyDecayingLearningRateFactory<TElementType>(0.03, 0.9999),
+                    new LinearlyDecayingLearningRateFactory<TElementType>(0.03, 0.9999));
 
                 int[] testSrcLabels;
                 TElementType[,] testSourceCoded;
-                var testData = dataProvider.ReadTrainingData(numTrainingExamples, 500, out testSrcLabels, out testSourceCoded);
+                var testData = dataProvider.ReadTrainingData(numTrainingExamples, 500, out testSrcLabels,
+                    out testSourceCoded);
 
                 TElementType[,] computedLabels;
-                var reconstructions = net.ReconstructWithLabels(testData, out computedLabels);
+                var reconstructions = net.ReconstructWithLabels(testData, out computedLabels, softmaxLabels:true);
                 Console.WriteLine("Reconstructions");
-                DisplayResults(pathBase, dataProvider, reconstructions, testData, testSrcLabels, testSourceCoded, computedLabels);
+                DisplayResults(pathBase, dataProvider, reconstructions, testData, testSrcLabels, testSourceCoded,
+                    computedLabels);
                 Console.WriteLine("Daydream by class");
-                TElementType[,] generatedLabels;
-                var dd = net.DaydreamByClass(testSourceCoded, out generatedLabels);
-                dataProvider.PrintToConsole(dd, referenceLabelsCoded: testSourceCoded, computedLabels: generatedLabels);
 
-
+                //TElementType[,] generatedLabels;
+                //var dd = net.DaydreamByClass(testSourceCoded, out generatedLabels);
+                //dataProvider.PrintToConsole(dd, referenceLabelsCoded: testSourceCoded, computedLabels: generatedLabels);
             }
         }
 
         private static void DisplayResults<TLabel>(string pathBase, IDataIO<TElementType, TLabel> dataProvider,
-            TElementType[,] reconstructions, TElementType[,] referenceData, TLabel[] labels, TElementType[,] referenceCode = null, TElementType[,] computedCode = null)
+            TElementType[,] reconstructions, TElementType[,] referenceData, TLabel[] labels,
+            TElementType[,] referenceCode = null, TElementType[,] computedCode = null)
         {
-            dataProvider.PrintToConsole(reconstructions, referenceData, labels, referenceCode, computedLabels: computedCode);
+            dataProvider.PrintToConsole(reconstructions, referenceData, labels, referenceCode,
+                computedLabels: computedCode);
             SaveImages(pathBase, "testData_{0}.jpg", referenceData);
             SaveImages(pathBase, "reconstructions_{0}.jpg", reconstructions);
         }
@@ -249,7 +260,7 @@ namespace CudaNN
                 a =>
                     ImageUtils.SaveImageData(data, a,
                         Path.Combine(pathBase, string.Format(nameFormatString, a)),
-                        b => (byte)(b * 255f)));
+                        b => (byte) (b*255f)));
         }
 
 
@@ -275,8 +286,8 @@ namespace CudaNN
             CudafyModule mod = CudafyTranslator.Cudafy(
                 plat,
                 arch,
-                typeof(ActivationFunctionsCuda),
-                typeof(Matrix2DCuda)
+                typeof (ActivationFunctionsCuda),
+                typeof (Matrix2DCuda)
                 );
 
 
@@ -286,7 +297,7 @@ namespace CudaNN
 
             rand = GPGPURAND.Create(dev, curandRngType.CURAND_RNG_PSEUDO_DEFAULT);
 
-            rand.SetPseudoRandomGeneratorSeed((ulong)DateTime.Now.Ticks);
+            rand.SetPseudoRandomGeneratorSeed((ulong) DateTime.Now.Ticks);
             rand.GenerateSeeds();
 
             Console.WriteLine("Loading Module");

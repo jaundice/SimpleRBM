@@ -14,8 +14,8 @@ namespace SimpleRBM.MultiDim
 
         public RestrictedBoltzmannMachineD(int numVisible, int numHidden, ActivationFunction visibleActivation, ActivationFunction hiddenActivation)
         {
-            NumHiddenElements = numHidden;
-            NumVisibleElements = numVisible;
+            NumHiddenNeurons = numHidden;
+            NumVisibleNeurons = numVisible;
             VisibleActivation = visibleActivation;
             HiddenActivation = hiddenActivation;
             Weights = new double[numVisible + 1, numHidden + 1];
@@ -35,15 +35,15 @@ namespace SimpleRBM.MultiDim
 
         public RestrictedBoltzmannMachineD(int numVisible, int numHidden, double[,] weights, ActivationFunction visibleActivation, ActivationFunction hiddenActivation)
         {
-            NumHiddenElements = numHidden;
-            NumVisibleElements = numVisible;
+            NumHiddenNeurons = numHidden;
+            NumVisibleNeurons = numVisible;
             Weights = weights;
             VisibleActivation = visibleActivation;
             HiddenActivation = hiddenActivation;
         }
 
-        public int NumHiddenElements { get; protected set; }
-        public int NumVisibleElements { get; protected set; }
+        public int NumHiddenNeurons { get; protected set; }
+        public int NumVisibleNeurons { get; protected set; }
 
         public double[,] Activate(double[,] matrix)
         {
@@ -66,10 +66,10 @@ namespace SimpleRBM.MultiDim
             }
         }
 
-        public double[,] GetHiddenLayer(double[,] visibleStates)
+        public double[,] Encode(double[,] visibleStates)
         {
             int numExamples = visibleStates.GetLength(0);
-            double[,] hiddenStates = Matrix2D.OnesD(numExamples, NumHiddenElements + 1);
+            double[,] hiddenStates = Matrix2D.OnesD(numExamples, NumHiddenNeurons + 1);
 
             var data = new double[numExamples, visibleStates.GetLength(1) + 1];
             Matrix2D.InsertValuesFrom(data, 0, 1, visibleStates);
@@ -78,13 +78,13 @@ namespace SimpleRBM.MultiDim
 
             double[,] hiddenProbs = Activate(hiddenActivations);
             hiddenStates = Matrix2D.GreaterThan(hiddenProbs,
-                Distributions.UniformRandromMatrixD(numExamples, NumHiddenElements + 1));
+                Distributions.UniformRandromMatrixD(numExamples, NumHiddenNeurons + 1));
             hiddenStates = Matrix2D.SubMatrix(hiddenStates, 0, 1);
 
             return hiddenStates;
         }
 
-        public double[,] GetVisibleLayer(double[,] hiddenStates)
+        public double[,] Decode(double[,] hiddenStates)
         {
             int numExamples = hiddenStates.GetLength(0);
             var data = new double[numExamples, hiddenStates.GetLength(1) + 1];
@@ -97,7 +97,7 @@ namespace SimpleRBM.MultiDim
             double[,] visibleProbs = Activate(visibleActivations);
 
             double[,] visibleStates = Matrix2D.GreaterThan(
-                visibleProbs, Distributions.UniformRandromMatrixD(numExamples, NumVisibleElements + 1));
+                visibleProbs, Distributions.UniformRandromMatrixD(numExamples, NumVisibleNeurons + 1));
 
             visibleStates = Matrix2D.SubMatrix(visibleStates, 0, 1);
             return visibleStates;
@@ -105,14 +105,14 @@ namespace SimpleRBM.MultiDim
 
         public double[,] Reconstruct(double[,] data)
         {
-            double[,] hidden = GetHiddenLayer(data);
-            return GetVisibleLayer(hidden);
+            double[,] hidden = Encode(data);
+            return Decode(hidden);
         }
 
         public double[,] DayDream(int numberOfSamples)
         {
-            double[,] data = Matrix2D.OnesD(numberOfSamples, NumVisibleElements + 1);
-            Matrix2D.InsertValuesFrom(data, 0, 1, Distributions.UniformRandromMatrixBoolD(1, NumVisibleElements), 1);
+            double[,] data = Matrix2D.OnesD(numberOfSamples, NumVisibleNeurons + 1);
+            Matrix2D.InsertValuesFrom(data, 0, 1, Distributions.UniformRandromMatrixBoolD(1, NumVisibleNeurons), 1);
             //hiddenStates = Matrix2D.Update(hiddenStates, 0, 1, 1);
             for (int i = 0; i < numberOfSamples; i++)
             {
@@ -122,7 +122,7 @@ namespace SimpleRBM.MultiDim
 
                 double[,] hiddenProbs = Activate(hiddenActivations);
                 double[,] hiddenStates = Matrix2D.GreaterThan(hiddenProbs,
-                    Distributions.UniformRandromVectorD(NumHiddenElements + 1));
+                    Distributions.UniformRandromVectorD(NumHiddenNeurons + 1));
 
                 hiddenStates[0, 0] = 1;
 
@@ -132,7 +132,7 @@ namespace SimpleRBM.MultiDim
                 double[,] visibleProbs = Activate(visibleActivations);
 
                 double[,] visibleStates = Matrix2D.GreaterThan(visibleProbs,
-                    Distributions.UniformRandromVectorD(NumVisibleElements + 1));
+                    Distributions.UniformRandromVectorD(NumVisibleNeurons + 1));
 
                 Matrix2D.InsertValuesFromRowOrColumn(data, visibleStates, 0, false, i, 0);
             }
@@ -173,7 +173,7 @@ namespace SimpleRBM.MultiDim
                 double[,] posHiddenActivations = Matrix2D.Multiply(data, Weights);
                 double[,] posHiddenProbs = Activate(posHiddenActivations);
                 double[,] posHiddenStates = Matrix2D.GreaterThan(posHiddenProbs,
-                    Distributions.UniformRandromMatrixD(numExamples, NumHiddenElements + 1));
+                    Distributions.UniformRandromMatrixD(numExamples, NumHiddenNeurons + 1));
                 double[,] posAssociations = Matrix2D.Multiply(Matrix2D.Transpose(data), posHiddenProbs);
 
                 double[,] negVisibleActivations = Matrix2D.Multiply(posHiddenStates, Matrix2D.Transpose(Weights));
@@ -229,7 +229,7 @@ namespace SimpleRBM.MultiDim
 
         public ILayerSaveInfo<double> GetSaveInfo()
         {
-            return new LayerSaveInfoD(NumVisibleElements, NumHiddenElements,
+            return new LayerSaveInfoD(NumVisibleNeurons, NumHiddenNeurons,
                 Matrix2D.Duplicate(Weights, sizeof (double)), VisibleActivation, HiddenActivation);
         }
 

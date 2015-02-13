@@ -13,6 +13,8 @@ namespace SimpleRBM.Common
 
         public string DataPath { get; protected set; }
 
+
+
         public virtual void PrintToConsole(float[,] arr, float[,] reference = null, TLabel[] referenceLabels = null, float[,] referenceLabelsCoded = null, ulong[][] keys = null, float[,] computedLabels = null)
         {
             var dataWidth = (int)Math.Sqrt(arr.GetLength(1));
@@ -29,31 +31,14 @@ namespace SimpleRBM.Common
 
                 if (referenceLabelsCoded != null)
                 {
-                    StringBuilder sb = new StringBuilder();
-                    sb.Append("Reference Label:\t");
-                    for (var q = 0; q < referenceLabelsCoded.GetLength(1); q++)
-                    {
-                        float f = referenceLabelsCoded[i, q];
-
-                        sb.Append(float.IsNaN(f) ? "N" : f == 0f ? "." : f < 0.5f ? "-" : "+");
-                    }
-
-                    Console.WriteLine(sb.ToString());
+                    Console.WriteLine("Reference Label:\t{0}", FormatLabel(referenceLabelsCoded, i));
                 }
 
                 if (computedLabels != null)
                 {
-                    StringBuilder sb = new StringBuilder();
-                    sb.Append("Computed Label:\t\t");
-                    for (var q = 0; q < computedLabels.GetLength(1); q++)
-                    {
-                        float f = computedLabels[i, q];
-                        
-                        sb.Append( float.IsNaN(f)? "N": f == 0f ? "." : f < 0.5f ? "-" : "+");
-                    }
-
-                    Console.WriteLine(sb.ToString());
+                    Console.WriteLine("Computed Label:\t\t{0}", FormatLabel(computedLabels, i));
                 }
+
                 Console.WriteLine();
                 var builder1 = new StringBuilder();
                 var builder2 = new StringBuilder();
@@ -87,6 +72,25 @@ namespace SimpleRBM.Common
 
                 Console.WriteLine();
             }
+        }
+
+        private static string FormatLabel(float[,] labels, int rowIndex)
+        {
+            StringBuilder sb = new StringBuilder();
+            float max = 0;
+
+            for (var j = 0; j < labels.GetLength(1); j++)
+            {
+                max = Math.Max(max, labels[rowIndex, j]);
+            }
+
+            for (var q = 0; q < labels.GetLength(1); q++)
+            {
+                float f = labels[rowIndex, q];
+
+                sb.Append(float.IsNaN(f) ? "N" : f == 0f ? "." : f == max || f > 0.5f ? "+" : "-");
+            }
+            return sb.ToString();
         }
 
         public virtual void PrintToConsole(float[,] arr)

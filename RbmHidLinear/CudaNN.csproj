@@ -91,12 +91,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Network.cs" />
+    <Compile Include="ICudaNetwork.cs" />
+    <Compile Include="INetwork.cs" />
+    <Compile Include="IRbm.cs" />
+    <Compile Include="IAdvancedRbmCuda.cs" />
+    <Compile Include="CudaAdvancedNetwork.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RbmBase.cs" />
-    <Compile Include="RbmBinary.cs" />
-    <Compile Include="RbmLinearHidden.cs" />
+    <Compile Include="CudaAdvancedRbmBase.cs" />
+    <Compile Include="CudaAdvancedRbmBinary.cs" />
+    <Compile Include="CudaAdvancedRbmLinearHidden.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">

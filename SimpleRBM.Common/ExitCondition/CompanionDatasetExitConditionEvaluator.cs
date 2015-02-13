@@ -31,143 +31,143 @@ namespace SimpleRBM.Common.ExitCondition
 
         }
 
-        public bool Exit(int epochNumber, T lastError, TimeSpan elapsedTime)
-        {
-            if (epochNumber > _maxEpochs)
-                return true;
+        //public bool Exit(int epochNumber, T lastError, TimeSpan elapsedTime)
+        //{
+        //    if (epochNumber > _maxEpochs)
+        //        return true;
 
 
 
-            var mainDelta = (T)Convert.ChangeType(
-                ((double)Convert.ChangeType(lastError, typeof(double)) -
-                 ((double)Convert.ChangeType(_mainWindow.MinValueSeen, typeof(double)))), typeof(T));
+        //    var mainDelta = (T)Convert.ChangeType(
+        //        ((double)Convert.ChangeType(lastError, typeof(double)) -
+        //         ((double)Convert.ChangeType(_mainWindow.MinValueSeen, typeof(double)))), typeof(T));
 
-            _factory.MainTracker.LogEpochError(_layer, epochNumber, lastError);
+        //    _factory.MainTracker.LogEpochError(_layer, epochNumber, lastError);
 
 
-            if (epochNumber % 20 == 0)
-                Console.WriteLine("Epoch: {0}\tLayer: {1}\tError: {2}\tElapsed: {3}, delta: {4}", epochNumber,
-                    _layer, lastError, elapsedTime,
-                    (double)Convert.ChangeType(_mainWindow.MinValueSeen, typeof(double)) -
-                    (double)Convert.ChangeType(lastError, typeof(double))); 
+        //    if (epochNumber % 20 == 0)
+        //        Console.WriteLine("Epoch: {0}\tLayer: {1}\tError: {2}\tElapsed: {3}, delta: {4}", epochNumber,
+        //            _layer, lastError, elapsedTime,
+        //            (double)Convert.ChangeType(_mainWindow.MinValueSeen, typeof(double)) -
+        //            (double)Convert.ChangeType(lastError, typeof(double))); 
       
 
-            bool mainDownward = false;
+        //    bool mainDownward = false;
 
-            if (Comparer<T>.Default.Compare(lastError, _mainWindow.MinValueSeen) < 0)
-            {
-                mainDownward = true;
-                _biggestMainDelta = default(T);
-            }
-            else
-            {
-                if (Comparer<T>.Default.Compare(lastError, _biggestCompanionDelta) > 0)
-                {
-                    _biggestMainDelta = mainDelta;
-                }
-            }
+        //    if (Comparer<T>.Default.Compare(lastError, _mainWindow.MinValueSeen) < 0)
+        //    {
+        //        mainDownward = true;
+        //        _biggestMainDelta = default(T);
+        //    }
+        //    else
+        //    {
+        //        if (Comparer<T>.Default.Compare(lastError, _biggestCompanionDelta) > 0)
+        //        {
+        //            _biggestMainDelta = mainDelta;
+        //        }
+        //    }
 
-            _mainWindow.Add(lastError);
-
-
-            if (epochNumber == 0 || mainDownward)
-            {
-                T companionError = _factory.Dbn.GetReconstructionError(_factory.TestData, _layer);
-
-                var companionDelta = (T)Convert.ChangeType(
-                    ((double)Convert.ChangeType(companionError, typeof(double)) -
-                     ((double)Convert.ChangeType(_companionWindow.MinValueSeen, typeof(double)))), typeof(T));
-
-                _factory.CompanionTracker.LogEpochError(_layer, epochNumber, companionError);
+        //    _mainWindow.Add(lastError);
 
 
-                if (epochNumber % 20 == 0)
-                    Console.WriteLine("Epoch: {0}\tLayer: {1}\tCompanion Error: {2}\tElapsed: {3}, delta: {4}", epochNumber,
-                        _layer, lastError, elapsedTime,
-                        (double)Convert.ChangeType(_companionWindow.MinValueSeen, typeof(double)) -
-                        (double)Convert.ChangeType(companionError, typeof(double))); 
+        //    if (epochNumber == 0 || mainDownward)
+        //    {
+        //        T companionError = _factory.Dbn.GetReconstructionError(_factory.TestData, _layer);
+
+        //        var companionDelta = (T)Convert.ChangeType(
+        //            ((double)Convert.ChangeType(companionError, typeof(double)) -
+        //             ((double)Convert.ChangeType(_companionWindow.MinValueSeen, typeof(double)))), typeof(T));
+
+        //        _factory.CompanionTracker.LogEpochError(_layer, epochNumber, companionError);
 
 
-                if (epochNumber > 0 && mainDownward)
-                {
-
-                    if (Comparer<T>.Default.Compare(companionError, _companionWindow.MinValueSeen) > 0)
-                    {
-                        _numGreater++;
-                        bool companionDownward = true;
-                        if (Comparer<T>.Default.Compare(companionDelta, _biggestCompanionDelta) > 0)
-                        {
-                            _biggestCompanionDelta = companionDelta;
-                            companionDownward = false;
-                            if (_exitNextLowest)
-                                return true;
-                        }
-
-                        if (_numGreater > MAXGREATER)
-                            _exitNextLowest = true;
-                    }
-                    else
-                    {
-                        if (_exitNextLowest)
-                            return true;
-
-                        _biggestCompanionDelta = default(T);
-                        _numGreater = 0;
-                    }
-                    ////only exit if the main set is converging and the companion set is diverging
-                    //if (mainDownward && shouldExit)
-                    //    return true;
+        //        if (epochNumber % 20 == 0)
+        //            Console.WriteLine("Epoch: {0}\tLayer: {1}\tCompanion Error: {2}\tElapsed: {3}, delta: {4}", epochNumber,
+        //                _layer, lastError, elapsedTime,
+        //                (double)Convert.ChangeType(_companionWindow.MinValueSeen, typeof(double)) -
+        //                (double)Convert.ChangeType(companionError, typeof(double))); 
 
 
-                    _companionWindow.Add(companionError);
-                }
-            }
+        //        if (epochNumber > 0 && mainDownward)
+        //        {
 
-            //if (epochNumber%_updateEpochs == 0)
-            //{
-            //    T companionError = _factory.Dbn.GetReconstructionError(_factory.TestData, _layer);
+        //            if (Comparer<T>.Default.Compare(companionError, _companionWindow.MinValueSeen) > 0)
+        //            {
+        //                _numGreater++;
+        //                bool companionDownward = true;
+        //                if (Comparer<T>.Default.Compare(companionDelta, _biggestCompanionDelta) > 0)
+        //                {
+        //                    _biggestCompanionDelta = companionDelta;
+        //                    companionDownward = false;
+        //                    if (_exitNextLowest)
+        //                        return true;
+        //                }
 
-            //    var companionDelta = (T) Convert.ChangeType(
-            //        ((double) Convert.ChangeType(companionError, typeof (double)) -
-            //         ((double) Convert.ChangeType(_companionWindow.MinValueSeen, typeof (double)))), typeof (T));
+        //                if (_numGreater > MAXGREATER)
+        //                    _exitNextLowest = true;
+        //            }
+        //            else
+        //            {
+        //                if (_exitNextLowest)
+        //                    return true;
 
-            //    Console.WriteLine("Epoch: {0} Companion error: {1}\t delta: {2}", epochNumber, companionError,
-            //        companionDelta);
-
-
-            //    bool shouldExit = false;
-            //    if (Comparer<T>.Default.Compare(companionError, _companionWindow.MinValueSeen) > 0)
-            //    {
-            //        _numGreater++;
-            //        bool companionDownward = true;
-            //        if (Comparer<T>.Default.Compare(companionDelta, _biggestCompanionDelta) > 0)
-            //        {
-            //            _biggestCompanionDelta = companionDelta;
-            //            companionDownward = false;
-            //            if (_exitNextLowest)
-            //                return true;
-            //        }
-
-            //        if (_numGreater > MAXGREATER)
-            //            _exitNextLowest = true;
-            //    }
-            //    else
-            //    {
-            //        if (_exitNextLowest)
-            //            return true;
-
-            //        _biggestCompanionDelta = default(T);
-            //        _numGreater = 0;
-            //    }
-            //    ////only exit if the main set is converging and the companion set is diverging
-            //    //if (mainDownward && shouldExit)
-            //    //    return true;
+        //                _biggestCompanionDelta = default(T);
+        //                _numGreater = 0;
+        //            }
+        //            ////only exit if the main set is converging and the companion set is diverging
+        //            //if (mainDownward && shouldExit)
+        //            //    return true;
 
 
-            //    _companionWindow.Add(companionError);
-            //}
-            return false;
-        }
+        //            _companionWindow.Add(companionError);
+        //        }
+        //    }
+
+        //    //if (epochNumber%_updateEpochs == 0)
+        //    //{
+        //    //    T companionError = _factory.Dbn.GetReconstructionError(_factory.TestData, _layer);
+
+        //    //    var companionDelta = (T) Convert.ChangeType(
+        //    //        ((double) Convert.ChangeType(companionError, typeof (double)) -
+        //    //         ((double) Convert.ChangeType(_companionWindow.MinValueSeen, typeof (double)))), typeof (T));
+
+        //    //    Console.WriteLine("Epoch: {0} Companion error: {1}\t delta: {2}", epochNumber, companionError,
+        //    //        companionDelta);
+
+
+        //    //    bool shouldExit = false;
+        //    //    if (Comparer<T>.Default.Compare(companionError, _companionWindow.MinValueSeen) > 0)
+        //    //    {
+        //    //        _numGreater++;
+        //    //        bool companionDownward = true;
+        //    //        if (Comparer<T>.Default.Compare(companionDelta, _biggestCompanionDelta) > 0)
+        //    //        {
+        //    //            _biggestCompanionDelta = companionDelta;
+        //    //            companionDownward = false;
+        //    //            if (_exitNextLowest)
+        //    //                return true;
+        //    //        }
+
+        //    //        if (_numGreater > MAXGREATER)
+        //    //            _exitNextLowest = true;
+        //    //    }
+        //    //    else
+        //    //    {
+        //    //        if (_exitNextLowest)
+        //    //            return true;
+
+        //    //        _biggestCompanionDelta = default(T);
+        //    //        _numGreater = 0;
+        //    //    }
+        //    //    ////only exit if the main set is converging and the companion set is diverging
+        //    //    //if (mainDownward && shouldExit)
+        //    //    //    return true;
+
+
+        //    //    _companionWindow.Add(companionError);
+        //    //}
+        //    return false;
+        //}
 
         public void Start()
         {
@@ -179,6 +179,11 @@ namespace SimpleRBM.Common.ExitCondition
         public void Stop()
         {
          
+        }
+
+        public bool Exit(int epochNumber, T lastError, TimeSpan elapsedTime)
+        {
+            throw new NotImplementedException();
         }
     }
 

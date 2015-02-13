@@ -5,26 +5,27 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ICSharpCode.Decompiler.Ast.Transforms;
+using Microsoft.Win32.SafeHandles;
 using SimpleRBM.Common;
 using SimpleRBM.Cuda;
 #if USEFLOAT
-using TElementType = System.Single;
+using TElement = System.Single;
 using xxx = SimpleRBM.Cuda.CudaRbmF;
 
 #else
-using TElementType = System.Double;
+using TElement = System.Double;
 using xxx = SimpleRBM.Cuda.CudaRbmD;
 #endif
 
 namespace CudaNN
 {
-    public class Network : IDisposable
+    public class CudaAdvancedNetwork : ICudaNetwork<TElement>
     {
-        public IList<RbmBase> Machines { get; protected set; }
-        public event EventHandler<EpochEventArgs<TElementType>> EpochComplete;
-        public event EventHandler<EpochEventArgs<TElementType>> LayerTrainComplete;
+        public IList<IAdvancedRbmCuda<TElement>> Machines { get; protected set; }
+        public event EventHandler<EpochEventArgs<TElement>> EpochComplete;
+        public event EventHandler<EpochEventArgs<TElement>> LayerTrainComplete;
 
-        protected void OnEpochComplete(EpochEventArgs<TElementType> args)
+        protected void OnEpochComplete(EpochEventArgs<TElement> args)
         {
             if (EpochComplete != null)
             {
@@ -32,7 +33,7 @@ namespace CudaNN
             }
         }
 
-        protected void OnLayerTrainComplete(EpochEventArgs<TElementType> args)
+        protected void OnLayerTrainComplete(EpochEventArgs<TElement> args)
         {
             if (LayerTrainComplete != null)
             {
@@ -40,33 +41,33 @@ namespace CudaNN
             }
         }
 
-        public Network(IEnumerable<RbmBase> machines)
+        public CudaAdvancedNetwork(IEnumerable<IAdvancedRbmCuda<TElement>> machines)
         {
             Machines = machines.ToList();
 
             foreach (var machine in Machines)
             {
-                machine.EpochComplete += (a, b) => OnEpochComplete(b);
-                machine.TrainComplete += (a, b) => OnLayerTrainComplete(b);
+                machine.EpochEnd += (a, b) => OnEpochComplete(b);
+                machine.TrainEnd += (a, b) => OnLayerTrainComplete(b);
             }
         }
 
 
-        public TElementType[,] Reconstruct(TElementType[,] data, int maxDepth = -1)
+        public TElement[,] Reconstruct(TElement[,] data, int maxDepth = -1)
         {
             using (var d = Machines[0].GPU.Upload(data))
-            using (var res = Reconstruct(d, maxDepth))
+            using (var res = AsCuda.Reconstruct(d, maxDepth))
                 return res.CopyLocal();
         }
 
-        public TElementType[,] Encode(TElementType[,] data, int maxDepth = -1)
+        public TElement[,] Encode(TElement[,] data, int maxDepth = -1)
         {
             using (var d = Machines[0].GPU.Upload(data))
-            using (var res = Encode(d, maxDepth))
+            using (var res = AsCuda.Encode(d, maxDepth))
                 return res.CopyLocal();
         }
 
-        public Matrix2D<TElementType> Encode(Matrix2D<TElementType> data, int maxDepth = -1)
+        Matrix2D<TElement> ICudaNetwork<TElement>.Encode(Matrix2D<TElement> data, int maxDepth = -1)
         {
             var d = data;
             var depth = maxDepth == -1 ? Machines.Count - 1 : maxDepth;
@@ -88,7 +89,7 @@ namespace CudaNN
         /// <param name="data"></param>
         /// <param name="maxDepth"></param>
         /// <returns></returns>
-        private Matrix2D<TElementType> EncodeWithLabelExpansion(Matrix2D<TElementType> data)
+        Matrix2D<TElement> ICudaNetwork<TElement>.EncodeWithLabelExpansion(Matrix2D<TElement> data)
         {
             var d = data;
             var depth = Machines.Count - 1;
@@ -96,7 +97,7 @@ namespace CudaNN
             {
                 if (i == Machines.Count - 1)
                 {
-                    var expanded = Machines[0].GPU.AllocateAndSet<TElementType>(data.GetLength(0),
+                    var expanded = Machines[0].GPU.AllocateAndSet<TElement>(data.GetLength(0),
                         Machines[i].NumVisibleNeurons);
                     expanded.InsertValuesFrom(0, 0, d);
 
@@ -116,20 +117,20 @@ namespace CudaNN
             return d;
         }
 
-        public Matrix2D<TElementType> Reconstruct(Matrix2D<TElementType> data, int maxDepth = -1)
+        Matrix2D<TElement> ICudaNetwork<TElement>.Reconstruct(Matrix2D<TElement> data, int maxDepth = -1)
         {
             var depth = maxDepth == -1 ? Machines.Count - 1 : maxDepth;
 
-            using (var encoded = Encode(data, depth))
-                return Decode(encoded, depth);
+            using (var encoded = AsCuda.Encode(data, depth))
+                return AsCuda.Decode(encoded, depth);
         }
 
 
-        public TElementType[,] Decode(TElementType[,] activations, int maxDepth = -1)
+        public TElement[,] Decode(TElement[,] activations, int maxDepth = -1)
         {
             using (var act = Machines[0].GPU.Upload(activations))
             {
-                using (var res = Decode(act, maxDepth))
+                using (var res = AsCuda.Decode(act, maxDepth))
                 {
                     return res.CopyLocal();
                 }
@@ -137,7 +138,7 @@ namespace CudaNN
         }
 
 
-        public Matrix2D<TElementType> Decode(Matrix2D<TElementType> activations, int maxDepth = -1)
+        Matrix2D<TElement> ICudaNetwork<TElement>.Decode(Matrix2D<TElement> activations, int maxDepth = -1)
         {
             var depth = maxDepth == -1 ? Machines.Count - 1 : maxDepth;
 
@@ -153,12 +154,12 @@ namespace CudaNN
             return d;
         }
 
-        public TElementType[,] ReconstructWithLabels(TElementType[,] data,
-            out TElementType[,] labels)
+        public TElement[,] ReconstructWithLabels(TElement[,] data,
+            out TElement[,] labels, bool softmaxLabels = true)
         {
-            Matrix2D<TElementType> lbl;
+            Matrix2D<TElement> lbl;
             using (var d = Machines[0].GPU.Upload(data))
-            using (var recon = ReconstructWithLabels(d, out lbl))
+            using (var recon = AsCuda.ReconstructWithLabels(d, out lbl, softmaxLabels))
             using (lbl)
             {
                 labels = lbl.CopyLocal();
@@ -167,21 +168,22 @@ namespace CudaNN
         }
 
 
-        public Matrix2D<TElementType> ReconstructWithLabels(Matrix2D<TElementType> data, out Matrix2D<TElementType> labels)
+        Matrix2D<TElement> ICudaNetwork<TElement>.ReconstructWithLabels(Matrix2D<TElement> data,
+            out Matrix2D<TElement> labels, bool softmaxLabels = true)
         {
             var depth = Machines.Count - 1;
 
-            using (var d = EncodeWithLabelExpansion(data))
-                return DecodeWithLabels(d, out labels);
+            using (var d = AsCuda.EncodeWithLabelExpansion(data))
+                return AsCuda.DecodeWithLabels(d, out labels, softmaxLabels);
         }
 
-        public TElementType[,] DecodeWithLabels(TElementType[,] activations,
-            out TElementType[,] labels)
+        public TElement[,] DecodeWithLabels(TElement[,] activations,
+            out TElement[,] labels, bool softmaxLabels = true)
         {
             using (var act = Machines[0].GPU.Upload(activations))
             {
-                Matrix2D<TElementType> lbl;
-                using (var res = DecodeWithLabels(act, out lbl))
+                Matrix2D<TElement> lbl;
+                using (var res = AsCuda.DecodeWithLabels(act, out lbl, softmaxLabels))
                 using (lbl)
                 {
                     labels = lbl.CopyLocal();
@@ -191,8 +193,8 @@ namespace CudaNN
         }
 
 
-        public Matrix2D<TElementType> DecodeWithLabels(Matrix2D<TElementType> activations,
-            out Matrix2D<TElementType> labels)
+        Matrix2D<TElement> ICudaNetwork<TElement>.DecodeWithLabels(Matrix2D<TElement> activations,
+            out Matrix2D<TElement> labels, bool softmaxLabels = true)
         {
             var depth = Machines.Count - 1;
 
@@ -205,7 +207,17 @@ namespace CudaNN
                 if (i == depth)
                 {
                     labels = constructed.SubMatrix(0, Machines[i - 1].NumHiddenNeurons);
-                    var c = constructed.SubMatrix(0, 0, 0, Machines[i - 1].NumHiddenNeurons);
+                    if (softmaxLabels)
+                    {
+                        using (labels)
+
+                        {
+                           var sm = labels.SoftMax();
+                            //sm.ToBinary();
+                            labels = sm;
+                        }
+                    }
+                    var c = constructed.SubMatrix(0, 0, 0, Machines[i - 2].NumHiddenNeurons);
                     constructed.Dispose();
                     constructed = c;
                 }
@@ -217,47 +229,61 @@ namespace CudaNN
         }
 
 
-        public TElementType[,] LabelData(TElementType[,] data)
+        public TElement[,] LabelData(TElement[,] data, bool softmaxLabels = true)
         {
             using (var d = Machines[0].GPU.Upload(data))
-            using (var r = LabelData(d))
+            using (var r = AsCuda.LabelData(d, softmaxLabels))
                 return r.CopyLocal();
         }
 
-        public Matrix2D<TElementType> LabelData(Matrix2D<TElementType> data)
+        Matrix2D<TElement> ICudaNetwork<TElement>.LabelData(Matrix2D<TElement> data, bool softmaxLabels = true)
         {
             var depth = Machines.Count - 1;
-            using (var d = EncodeWithLabelExpansion(data))
+            using (var d = AsCuda.EncodeWithLabelExpansion(data))
             using (var constructed = Machines[depth].Decode(d))
             {
-                return constructed.SubMatrix(0, Machines[depth - 1].NumHiddenNeurons);
+                var ret= constructed.SubMatrix(0, Machines[depth - 1].NumHiddenNeurons);
+                if (softmaxLabels)
+                {
+                    using (ret)
+                    {
+                        var sm= ret.SoftMax();
+                        //sm.ToBinary();
+                        return sm;
+                    }
+                }
+                else
+                {
+                    return ret;
+                }
+
             }
         }
 
-        public TElementType[,] DaydreamM(int numDreams, int maxDepth = -1, bool guassian = true)
+        public TElement[,] Daydream(int numDreams, int maxDepth = -1, bool guassian = true)
         {
-            using (var a = Daydream(numDreams, maxDepth, guassian))
+            using (var a = AsCuda.Daydream(numDreams, maxDepth, guassian))
                 return a.CopyLocal();
         }
 
-        public Matrix2D<TElementType> Daydream(int numDreams, int maxDepth = -1, bool guassian = true)
+        Matrix2D<TElement> ICudaNetwork<TElement>.Daydream(int numDreams, int maxDepth = -1, bool guassian = true)
         {
             using (
                 var rand = guassian
-                    ? Machines[0].GPU.GuassianDistribution( Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, (TElementType)0.5, (TElementType)0.2)
+                    ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, numDreams,
+                        Machines[0].NumVisibleNeurons, (TElement) 0.5, (TElement) 0.2)
                     : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, (TElementType)1))
+                        Machines[0].NumVisibleNeurons, (TElement) 1))
             {
-                return Reconstruct(rand, maxDepth);
+                return AsCuda.Reconstruct(rand, maxDepth);
             }
         }
 
-        public TElementType[,] DaydreamWithLabels(int numDreams, out TElementType[,] labels,
-            bool guassian = true)
+        public TElement[,] DaydreamWithLabels(int numDreams, out TElement[,] labels,
+            bool guassian = true, bool softmaxLabels = true)
         {
-            Matrix2D<TElementType> lbl;
-            using (var res = DaydreamWithLabels(numDreams, out lbl, guassian))
+            Matrix2D<TElement> lbl;
+            using (var res = AsCuda.DaydreamWithLabels(numDreams, out lbl, guassian, softmaxLabels))
             using (lbl)
             {
                 labels = lbl.CopyLocal();
@@ -265,26 +291,27 @@ namespace CudaNN
             }
         }
 
-        public Matrix2D<TElementType> DaydreamWithLabels(int numDreams, out Matrix2D<TElementType> labels, bool guassian = true)
+        Matrix2D<TElement> ICudaNetwork<TElement>.DaydreamWithLabels(int numDreams,
+            out Matrix2D<TElement> labels, bool guassian = true, bool softmaxLabels = true)
         {
             using (
                 var rand = guassian
                     ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, (TElementType)0.5, (TElementType)0.2)
+                        Machines[0].NumVisibleNeurons, (TElement) 0.5, (TElement) 0.2)
                     : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, (TElementType)1))
+                        Machines[0].NumVisibleNeurons, (TElement) 1))
             {
-                return ReconstructWithLabels(rand, out labels);
+                return AsCuda.ReconstructWithLabels(rand, out labels, softmaxLabels);
             }
         }
 
-        public TElementType[,] DaydreamByClass(TElementType[,] modelLabels,
-            out TElementType[,] generatedLabels, bool guassian = true)
+        public TElement[,] DaydreamByClass(TElement[,] modelLabels,
+            out TElement[,] generatedLabels, bool guassian = true)
         {
             using (var d = Machines[0].GPU.Upload(modelLabels))
             {
-                Matrix2D<TElementType> gen;
-                using (var res = DaydreamByClass(d, out gen, false))
+                Matrix2D<TElement> gen;
+                using (var res = AsCuda.DaydreamByClass(d, out gen, false))
                 using (gen)
                 {
                     generatedLabels = gen.CopyLocal();
@@ -293,56 +320,56 @@ namespace CudaNN
             }
         }
 
-        public Matrix2D<TElementType> DaydreamByClass(Matrix2D<TElementType> modelLabels, out Matrix2D<TElementType> generatedLabels, bool guassian = true)
+        Matrix2D<TElement> ICudaNetwork<TElement>.DaydreamByClass(Matrix2D<TElement> modelLabels,
+            out Matrix2D<TElement> generatedLabels, bool guassian = true, bool softmaxLabels = true)
         {
             var highest = Machines.Count - 1;
             using (
                 var rand = guassian
                     ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, modelLabels.GetLength(0),
-                        Machines[highest].NumVisibleNeurons, (TElementType)0.5, (TElementType)0.2)
+                        Machines[highest].NumVisibleNeurons, (TElement) 0.5, (TElement) 0.2)
                     : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, modelLabels.GetLength(0),
-                        Machines[highest].NumVisibleNeurons, (TElementType)1))
-            //using (var rand = Machines[0].GPU.AllocateAndSet<TElementType>(modelLabels.GetLength(0),
-            //            Machines[highest].NumVisibleNeurons))
+                        Machines[highest].NumVisibleNeurons, (TElement) 1))
+                //using (var rand = Machines[0].GPU.AllocateAndSet<TElementType>(modelLabels.GetLength(0),
+                //            Machines[highest].NumVisibleNeurons))
             {
                 rand.InsertValuesFrom(0, Machines[highest - 1].NumHiddenNeurons, modelLabels);
                 using (var encoded = Machines[highest].Encode(rand))
                 {
-                    return DecodeWithLabels(encoded, out generatedLabels);
+                    return AsCuda.DecodeWithLabels(encoded, out generatedLabels, softmaxLabels);
                 }
             }
         }
 
-        public void GreedyTrain(TElementType[,] data,
-            IExitConditionEvaluatorFactory<TElementType> exitConditionFactory,
-            ILearningRateCalculatorFactory<TElementType> weightLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElementType> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElementType> visBiasLearningRateCalculatorFactory)
+        public void GreedyTrain(TElement[,] data,
+            IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
         {
             using (var d = Machines[0].GPU.Upload(data))
-                GreedyTrain(d, exitConditionFactory, weightLearningRateCalculatorFactory,
+                AsCuda.GreedyTrain(d, exitConditionFactory, weightLearningRateCalculatorFactory,
                     hidBiasLearningRateCalculatorFactory, visBiasLearningRateCalculatorFactory);
         }
 
-        public void GreedySupervisedTrain(TElementType[,] data, TElementType[,] labels,
-           IExitConditionEvaluatorFactory<TElementType> exitConditionFactory,
-           ILearningRateCalculatorFactory<TElementType> weightLearningRateCalculatorFactory,
-           ILearningRateCalculatorFactory<TElementType> hidBiasLearningRateCalculatorFactory,
-           ILearningRateCalculatorFactory<TElementType> visBiasLearningRateCalculatorFactory)
+        public void GreedySupervisedTrain(TElement[,] data, TElement[,] labels,
+            IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
         {
             using (var d = Machines[0].GPU.Upload(data))
             using (var l = Machines[0].GPU.Upload(labels))
-                GreedySupervisedTrain(d, l, exitConditionFactory, weightLearningRateCalculatorFactory,
+                AsCuda.GreedySupervisedTrain(d, l, exitConditionFactory, weightLearningRateCalculatorFactory,
                     hidBiasLearningRateCalculatorFactory, visBiasLearningRateCalculatorFactory);
-
         }
 
 
-        public void GreedyTrain(Matrix2D<TElementType> data,
-            IExitConditionEvaluatorFactory<TElementType> exitConditionFactory,
-            ILearningRateCalculatorFactory<TElementType> weightLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElementType> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElementType> visBiasLearningRateCalculatorFactory)
+        void ICudaNetwork<TElement>.GreedyTrain(Matrix2D<TElement> data,
+            IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
         {
             var layerTrainData = data;
             for (var i = 0; i < Machines.Count; i++)
@@ -360,19 +387,18 @@ namespace CudaNN
             }
         }
 
-        public void GreedySupervisedTrain(Matrix2D<TElementType> data, Matrix2D<TElementType> labels,
-            IExitConditionEvaluatorFactory<TElementType> exitConditionFactory,
-            ILearningRateCalculatorFactory<TElementType> weightLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElementType> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElementType> visBiasLearningRateCalculatorFactory)
+        void ICudaNetwork<TElement>.GreedySupervisedTrain(Matrix2D<TElement> data, Matrix2D<TElement> labels,
+            IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
         {
             var layerTrainData = data;
             for (var i = 0; i < Machines.Count; i++)
             {
-
                 if (i == Machines.Count - 1)
                 {
-                    var combined = Machines[0].GPU.AllocateNoSet<TElementType>(data.GetLength(0),
+                    var combined = Machines[0].GPU.AllocateNoSet<TElement>(data.GetLength(0),
                         layerTrainData.GetLength(1) + labels.GetLength(1));
 
                     combined.InsertValuesFrom(0, 0, layerTrainData);
@@ -402,7 +428,7 @@ namespace CudaNN
             }
         }
 
-        public void Dispose()
+        void IDisposable.Dispose()
         {
             if (!Disposed)
             {
@@ -423,9 +449,19 @@ namespace CudaNN
             }
         }
 
-        public bool Disposed { get; protected set; }
+        private bool Disposed { get; set; }
 
-        ~Network()
+        protected ICudaNetwork<TElement> AsCuda
+        {
+            get { return this; }
+        }
+
+        IList<IRbm<TElement>> INetwork<TElement>.Machines
+        {
+            get { return (IList<IRbm<TElement>>)Machines; }
+        }
+
+        ~CudaAdvancedNetwork()
         {
             Trace.TraceError("Finalizer called!. Object should be disposed properly");
             Dispose(false);

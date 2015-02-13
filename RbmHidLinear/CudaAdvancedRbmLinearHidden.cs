@@ -124,9 +124,9 @@ using xxx = SimpleRBM.Cuda.CudaRbmD;
 
 namespace CudaNN
 {
-    public class RbmLinearHidden : RbmBase
+    public class CudaAdvancedRbmLinearHidden : CudaAdvancedRbmBase
     {
-        public RbmLinearHidden(GPGPU gpu, GPGPURAND rand, int layerIndex, int numVisibleNeurons, int numHiddenNeurons,
+        public CudaAdvancedRbmLinearHidden(GPGPU gpu, GPGPURAND rand, int layerIndex, int numVisibleNeurons, int numHiddenNeurons,
             /*TElementType epsilonw = (TElementType) 0.001, TElementType epsilonvb = (TElementType) 0.001,
             TElementType epsilonhb = (TElementType) 0.001,*/ TElementType weightcost = (TElementType) 0.0002,
             TElementType initialMomentum = (TElementType) 0.5, TElementType finalMomentum = (TElementType) 0.9)
@@ -139,7 +139,7 @@ namespace CudaNN
         {
             var numcases = data.GetLength(0);
 
-            //using (Matrix2D<TElementType> tiledHiddenBiases = HiddenBiases.RepMat(numcases))
+            //using (Matrix2D<TElementType> tiledHiddenBiases = HiddenBiases.RepMatRows(numcases))
             //using (Matrix2D<TElementType> datavishid = data.Multiply(Weights))
             //using (Matrix2D<TElementType> poshidprobs = datavishid.Add(tiledHiddenBiases))
             //using (Matrix2D<TElementType> rand = xxx.GuassianDistribution(_gpu, _rand, numcases, _numHiddenNeurons))
@@ -147,8 +147,8 @@ namespace CudaNN
             //    return poshidprobs.Add(rand);
             //}
 
-            using (Matrix2D<TElementType> tiledHiddenBiases = HiddenBiases.RepMat(numcases))
-            using (Matrix2D<TElementType> datavishid = data.Multiply(Weights))
+            using (Matrix2D<TElementType> tiledHiddenBiases = AsCuda.HiddenBiases.RepMatRows(numcases))
+            using (Matrix2D<TElementType> datavishid = data.Multiply(AsCuda.Weights))
             {
                 return datavishid.Add(tiledHiddenBiases);
             }
@@ -159,8 +159,8 @@ namespace CudaNN
             var numcases = activations.GetLength(0);
 
             Matrix2D<TElementType> negdata;
-            using (Matrix2D<TElementType> tiledvisBiases = VisibleBiases.RepMat(numcases))
-            using (Matrix2D<TElementType> vishidtransposed = Weights.Transpose())
+            using (Matrix2D<TElementType> tiledvisBiases = AsCuda.VisibleBiases.RepMatRows(numcases))
+            using (Matrix2D<TElementType> vishidtransposed = AsCuda.Weights.Transpose())
             {
                 negdata = activations.Multiply(vishidtransposed);
                 negdata.SubtractInPlace(tiledvisBiases);
@@ -184,23 +184,23 @@ namespace CudaNN
                     sw.Restart();
                     //start positive phase
 
-                    using (Matrix2D<TElementType> tiledHiddenBiases = HiddenBiases.RepMat(numcases))
-                    using (Matrix2D<TElementType> datavishid = data.Multiply(Weights))
+                    using (Matrix2D<TElementType> tiledHiddenBiases = AsCuda.HiddenBiases.RepMatRows(numcases))
+                    using (Matrix2D<TElementType> datavishid = data.Multiply(AsCuda.Weights))
                     using (Matrix2D<TElementType> poshidprobs = datavishid.Add(tiledHiddenBiases))
                     using (Matrix2D<TElementType> posprobs = dataTransposed.Multiply(poshidprobs))
                     using (Matrix2D<TElementType> poshidact = poshidprobs.SumColumns())
                     {
                         //end of positive phase
                         Matrix2D<TElementType> poshidstates;
-                        using (Matrix2D<TElementType> rand = GPU.GuassianDistribution(GPURAND, numcases, NumHiddenNeurons, scale:(TElementType)1))
+                        using (Matrix2D<TElementType> rand = AsCuda.GPU.GuassianDistribution(AsCuda.GPURAND, numcases, NumHiddenNeurons, scale: (TElementType)1))
                         {
                             poshidstates = poshidprobs.Add(rand);
                         }
 
                         //start neg phase
                         Matrix2D<TElementType> negdata;
-                        using (Matrix2D<TElementType> tiledvisBiases = VisibleBiases.RepMat(numcases))
-                        using (Matrix2D<TElementType> vishidtransposed = Weights.Transpose())
+                        using (Matrix2D<TElementType> tiledvisBiases = AsCuda.VisibleBiases.RepMatRows(numcases))
+                        using (Matrix2D<TElementType> vishidtransposed = AsCuda.Weights.Transpose())
                         {
                             negdata = poshidstates.Multiply(vishidtransposed);
                             negdata.SubtractInPlace(tiledvisBiases);
@@ -212,7 +212,7 @@ namespace CudaNN
                         Matrix2D<TElementType> negvisact;
                         Matrix2D<TElementType> negprods;
 
-                        using (Matrix2D<TElementType> neghidprobs = negdata.Multiply(Weights))
+                        using (Matrix2D<TElementType> neghidprobs = negdata.Multiply(AsCuda.Weights))
                         using (Matrix2D<TElementType> negdatatransposed = negdata.Transpose())
                         {
                             neghidprobs.AddInPlace(tiledHiddenBiases);
@@ -241,7 +241,7 @@ namespace CudaNN
 
                         using (Matrix2D<TElementType> momentumvishidinc = _vishidinc.Multiply(momentum))
                         using (Matrix2D<TElementType> posprodsminusnegprods = posprobs.Subtract(negprods))
-                        using (Matrix2D<TElementType> vishidweightcost = Weights.Multiply(WeightCost))
+                        using (Matrix2D<TElementType> vishidweightcost = AsCuda.Weights.Multiply(WeightCost))
                         {
                             posprodsminusnegprods.MultiplyInPlace(((TElementType)1) / numcases);
                             posprodsminusnegprods.SubtractInPlace(vishidweightcost);
@@ -268,9 +268,9 @@ namespace CudaNN
                             _hidbiasinc = momentumhidbiasinc.Add(poshidactminusneghidact);
                         }
 
-                        Weights.AddInPlace(_vishidinc);
-                        VisibleBiases.AddInPlace(_visbiasinc);
-                        HiddenBiases.AddInPlace(_hidbiasinc);
+                        AsCuda.Weights.AddInPlace(_vishidinc);
+                        AsCuda.VisibleBiases.AddInPlace(_visbiasinc);
+                        AsCuda.HiddenBiases.AddInPlace(_hidbiasinc);
 
                         neghidact.Dispose();
                         negvisact.Dispose();

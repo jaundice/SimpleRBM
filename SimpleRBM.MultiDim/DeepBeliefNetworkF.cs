@@ -75,18 +75,18 @@ namespace SimpleRBM.MultiDim
             for (int i = 0; i < Machines.Length; i++)
             {
                 visibleData = i < startDepth
-                    ? Machines[i].GetHiddenLayer(visibleData)
+                    ? Machines[i].Encode(visibleData)
                     : GreedyTrain(visibleData, i, exitEvaluatorFactory, learningRateCalculatorFactory, out error);
             }
         }
 
         public TElement[,] Encode(TElement[,] data)
         {
-            data = Machines[0].GetHiddenLayer(data);
+            data = Machines[0].Encode(data);
 
             for (int i = 0; i < Machines.Length - 1; i++)
             {
-                data = Machines[i + 1].GetHiddenLayer(data);
+                data = Machines[i + 1].Encode(data);
             }
 
             return data;
@@ -94,11 +94,11 @@ namespace SimpleRBM.MultiDim
 
         public TElement[,] Decode(TElement[,] data)
         {
-            data = Machines[Machines.Length - 1].GetVisibleLayer(data);
+            data = Machines[Machines.Length - 1].Decode(data);
 
             for (int i = Machines.Length - 1; i > 0; i--)
             {
-                data = Machines[i - 1].GetVisibleLayer(data);
+                data = Machines[i - 1].Decode(data);
             }
 
             return data;
@@ -113,7 +113,7 @@ namespace SimpleRBM.MultiDim
         public TElement[,] DayDream(int numberOfDreams)
         {
             TElement[,] dreamRawData = Distributions.UniformRandromMatrixBoolF(numberOfDreams,
-                Machines[0].NumVisibleElements);
+                Machines[0].NumVisibleNeurons);
 
             TElement[,] ret = Reconstruct(dreamRawData);
 
@@ -128,7 +128,7 @@ namespace SimpleRBM.MultiDim
                 learningRateCalculatorFactory.Create(layerIndex));
             RaiseTrainEnd(err);
             error = err;
-            return Machines[layerIndex].GetHiddenLayer(data);
+            return Machines[layerIndex].Encode(data);
         }
 
         public Task AsyncGreedyTrain(TElement[,] data, int layerIndex,

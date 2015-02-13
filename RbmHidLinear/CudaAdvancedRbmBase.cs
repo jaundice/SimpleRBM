@@ -2,19 +2,17 @@ using System;
 using System.Diagnostics;
 using Cudafy.Host;
 using Cudafy.Maths.RAND;
+using Mono.CSharp;
 using SimpleRBM.Common;
 using SimpleRBM.Cuda;
 #if USEFLOAT
 using TElementType = System.Single;
-using xxx = SimpleRBM.Cuda.CudaRbmF;
-
 #else
 using TElementType = System.Double;
-using xxx = SimpleRBM.Cuda.CudaRbmD;
 #endif
 namespace CudaNN
 {
-    public abstract class RbmBase : IDisposable
+    public abstract class CudaAdvancedRbmBase : IDisposable, IAdvancedRbmCuda<TElementType>, IRbm<TElementType>
     {
         //private TElementType _epsilonhb;
         //private TElementType _epsilonvb;
@@ -34,25 +32,25 @@ namespace CudaNN
         protected Matrix2D<TElementType> _vishidinc;
         private int _layerIndex;
 
-        public event EventHandler<EpochEventArgs<TElementType>> EpochComplete;
-        public event EventHandler<EpochEventArgs<TElementType>> TrainComplete;
+        public event EventHandler<EpochEventArgs<TElementType>> EpochEnd;
+        public event EventHandler<EpochEventArgs<TElementType>> TrainEnd;
 
         protected void OnEpochComplete(EpochEventArgs<TElementType> args)
         {
-            if (EpochComplete != null)
+            if (EpochEnd != null)
             {
-                EpochComplete(this, args);
+                EpochEnd(this, args);
             }
         }
 
         protected void OnTrainComplete(EpochEventArgs<TElementType> args)
         {
-            if (TrainComplete != null)
+            if (TrainEnd != null)
             {
-                TrainComplete(this, args);
+                TrainEnd(this, args);
             }
         }
-        protected RbmBase(GPGPU gpu, GPGPURAND rand, int layerIndex, int numVisibleNeurons, int numHiddenNeurons,
+        protected CudaAdvancedRbmBase(GPGPU gpu, GPGPURAND rand, int layerIndex, int numVisibleNeurons, int numHiddenNeurons,
             /*TElementType epsilonw = (TElementType) 0.001, TElementType epsilonvb = (TElementType) 0.001,
             TElementType epsilonhb = (TElementType) 0.001,*/ TElementType weightcost = (TElementType) 0.0002,
             TElementType initialMomentum = (TElementType) 0.5, TElementType finalMomentum = (TElementType) 0.9)
@@ -80,17 +78,17 @@ namespace CudaNN
 
         public bool Disposed { get; protected set; }
 
-        public Matrix2D<TElementType> HiddenBiases
+         Matrix2D<TElementType> IAdvancedRbmCuda<TElementType>.HiddenBiases
         {
             get { return _hiddenBiases; }
         }
 
-        public Matrix2D<TElementType> VisibleBiases
+         Matrix2D<TElementType> IAdvancedRbmCuda<TElementType>.VisibleBiases
         {
             get { return _visibleBiases; }
         }
 
-        public Matrix2D<TElementType> Weights
+         Matrix2D<TElementType> IAdvancedRbmCuda<TElementType>.Weights
         {
             get { return _weights; }
         }
@@ -125,7 +123,7 @@ namespace CudaNN
             get { return _weightcost; }
         }
 
-        public GPGPU GPU
+        GPGPU IAdvancedRbmCuda<TElementType>.GPU
         {
             get { return _gpu; }
         }
@@ -135,7 +133,7 @@ namespace CudaNN
             get { return _layerIndex; }
         }
 
-        public GPGPURAND GPURAND
+        GPGPURAND IAdvancedRbmCuda<TElementType>.GPURAND
         {
             get { return _rand; }
         }
@@ -160,9 +158,9 @@ namespace CudaNN
             }
         }
 
-        public void GreedyTrain(TElementType[,] srcdata, IExitConditionEvaluator<TElementType> exitConditionEvaluator, ILearningRateCalculator<TElementType> weightLearningRateCalculator, ILearningRateCalculator<TElementType> hidBiasLearningRateCalculator, ILearningRateCalculator<TElementType> visBiasLearningRateCalculator)
+        public void GreedyTrain(TElementType[,] visibleData, IExitConditionEvaluator<TElementType> exitConditionEvaluator, ILearningRateCalculator<TElementType> weightLearningRateCalculator, ILearningRateCalculator<TElementType> hidBiasLearningRateCalculator, ILearningRateCalculator<TElementType> visBiasLearningRateCalculator)
         {
-            using (Matrix2D<TElementType> data = _gpu.Upload(srcdata))
+            using (Matrix2D<TElementType> data = _gpu.Upload(visibleData))
             {
                 GreedyTrain(data, exitConditionEvaluator, weightLearningRateCalculator, hidBiasLearningRateCalculator, visBiasLearningRateCalculator);
             }
@@ -205,20 +203,27 @@ namespace CudaNN
         
         public abstract void GreedyTrain(Matrix2D<TElementType> data, IExitConditionEvaluator<TElementType> exitConditionEvaluator, ILearningRateCalculator<TElementType> weightLearningRateCalculator, ILearningRateCalculator<TElementType> hidBiasLearningRateCalculator, ILearningRateCalculator<TElementType> visBiasLearningRateCalculator   );
 
-        private void Dispose(bool disposing)
+        public void Dispose(bool disposing)
         {
             if (disposing)
             {
-                Weights.Dispose();
-                HiddenBiases.Dispose();
-                VisibleBiases.Dispose();
+               
+
+                AsCuda.Weights.Dispose();
+                AsCuda.HiddenBiases.Dispose();
+                AsCuda.VisibleBiases.Dispose();
                 _vishidinc.Dispose();
                 _visbiasinc.Dispose();
                 _hidbiasinc.Dispose();
             }
         }
 
-        ~RbmBase()
+        protected IAdvancedRbmCuda<TElementType> AsCuda
+        {
+            get { return this; }
+        }
+
+        ~CudaAdvancedRbmBase()
         {
             Trace.TraceError("Finalizer called. Dispose of properly");
             Dispose(false);
