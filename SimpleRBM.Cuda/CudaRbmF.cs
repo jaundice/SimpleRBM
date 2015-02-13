@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Cudafy;
 using Cudafy.Host;
@@ -392,7 +393,7 @@ namespace SimpleRBM.Cuda
             int numCols = allData.GetLength(1);
             int i;
 
-            var partitions = new List<Tuple<int, Matrix2D<TElement>>>();
+            var partitions = new List<Tuple<Matrix2D<TElement>, Matrix2D<TElement>>>();
             var transposedPartitions = new List<Matrix2D<TElement>>();
             using (Matrix2D<TElement> dataBlock = GPU.AllocateNoSet<TElement>(allData.GetLength(0), numCols + 1))
             {
@@ -409,8 +410,7 @@ namespace SimpleRBM.Cuda
                     int examples = endIndex - j;
                     Matrix2D<TElement> part = dataBlock.SubMatrix(j, 0, examples);
 
-                    partitions.Add(Tuple.Create(examples, part));
-                    transposedPartitions.Add(part.Transpose());
+                    partitions.Add(Tuple.Create(part, part.Transpose()));
                 }
             }
 
@@ -418,16 +418,13 @@ namespace SimpleRBM.Cuda
 
             for (i = 0;; i++)
             {
-                Matrix2D<TElement> data = partitions[i%partitions.Count].Item2;
-                Matrix2D<TElement> dataTransposed = transposedPartitions[i%partitions.Count];
-
-                error = GreedyTrainInternal(data, dataTransposed, i, learningRateCalculator, sw);
+                sw.Restart();
+                error = partitions.Sum(part => GreedyTrainInternal(part.Item1, part.Item2, i, learningRateCalculator));
 
                 RaiseEpochEnd(i, error);
 
                 if (exitEvaluator.Exit(i, error, sw.Elapsed))
                     break;
-                sw.Reset();
             }
 
 
@@ -468,15 +465,14 @@ namespace SimpleRBM.Cuda
 
                     for (i = 0;; i++)
                     {
-                        sw.Start();
+                        sw.Restart();
 
-                        error = GreedyTrainInternal(data, dataTransposed, i, learningRateCalculator, sw);
+                        error = GreedyTrainInternal(data, dataTransposed, i, learningRateCalculator);
                        
                         RaiseEpochEnd(i, error);
 
                         if (exitEvaluator.Exit(i, error, sw.Elapsed))
                             break;
-                        sw.Reset();
                     }
                 }
             }
@@ -489,14 +485,13 @@ namespace SimpleRBM.Cuda
 
         private TElement GreedyTrainInternal(Matrix2D<TElement> visibleDataWithBias,
             Matrix2D<TElement> visibleDataWithBiasTansposed, int epoch,
-            ILearningRateCalculator<TElement> learningRateCalculator, Stopwatch sw)
+            ILearningRateCalculator<TElement> learningRateCalculator)
         {
             TElement error = 0f;
 
             int numExamples = visibleDataWithBias.GetLength(0);
 
 
-            sw.Restart();
 
             Matrix2D<TElement> posHiddenStates;
             Matrix2D<TElement> posAssociations;

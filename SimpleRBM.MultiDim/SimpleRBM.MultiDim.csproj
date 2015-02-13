@@ -86,12 +86,15 @@
     <Compile Include="DeepBeliefNetworkF.cs" />
     <Compile Include="DeepBeliefNetworkD.cs" />
     <Compile Include="Distributions.cs" />
-    <Compile Include="MatrixException.cs" />
     <Compile Include="Matrix2D.cs" />
+    <Compile Include="Matrix2DD.cs" />
+    <Compile Include="MatrixException.cs" />
+    <Compile Include="Matrix2DF.cs" />
     <Compile Include="MultiDimDbnFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RestrictedBoltzmannMachineF.cs" />
     <Compile Include="RestrictedBoltzmannMachineD.cs" />
+    <Compile Include="ThreadUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

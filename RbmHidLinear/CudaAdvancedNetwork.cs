@@ -251,7 +251,6 @@ namespace CudaNN
                 {
                     return ret;
                 }
-
             }
         }
 
@@ -266,9 +265,9 @@ namespace CudaNN
             using (
                 var rand = guassian
                     ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, (TElement)0.5, (TElement)0.2)
+                        Machines[0].NumVisibleNeurons, (TElement) 0.5, (TElement) 0.2)
                     : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, (TElement)1))
+                        Machines[0].NumVisibleNeurons, (TElement) 1))
             {
                 return AsCuda.Reconstruct(rand, maxDepth);
             }
@@ -292,9 +291,9 @@ namespace CudaNN
             using (
                 var rand = guassian
                     ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, (TElement)0.5, (TElement)0.2)
+                        Machines[0].NumVisibleNeurons, (TElement) 0.5, (TElement) 0.2)
                     : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, (TElement)1))
+                        Machines[0].NumVisibleNeurons, (TElement) 1))
             {
                 return AsCuda.ReconstructWithLabels(rand, out labels, softmaxLabels);
             }
@@ -322,9 +321,9 @@ namespace CudaNN
             using (
                 var rand = guassian
                     ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, modelLabels.GetLength(0),
-                        Machines[highest].NumVisibleNeurons, (TElement)0.5, (TElement)0.2)
+                        Machines[highest].NumVisibleNeurons, (TElement) 0.5, (TElement) 0.2)
                     : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, modelLabels.GetLength(0),
-                        Machines[highest].NumVisibleNeurons, (TElement)1))
+                        Machines[highest].NumVisibleNeurons, (TElement) 1))
             {
                 rand.InsertValuesFrom(0, Machines[highest - 1].NumHiddenNeurons, modelLabels);
                 using (var encoded = Machines[highest].Encode(rand))
@@ -451,13 +450,211 @@ namespace CudaNN
 
         IList<IRestrictedBoltzmannMachine<TElement>> INetwork<TElement>.Machines
         {
-            get { return (IList<IRestrictedBoltzmannMachine<TElement>>)Machines; }
+            get { return (IList<IRestrictedBoltzmannMachine<TElement>>) Machines; }
         }
 
         ~CudaAdvancedNetwork()
         {
             Trace.TraceError("Finalizer called!. Object should be disposed properly");
             Dispose(false);
+        }
+
+
+        void ICudaNetwork<TElement>.GreedyBatchedTrain(Matrix2D<TElement> data, int batchSize,
+            IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+        {
+            var layerTrainData = data;
+            for (var i = 0; i < Machines.Count; i++)
+            {
+                Machines[i].GreedyBatchedTrain(layerTrainData, batchSize, exitConditionFactory.Create(i),
+                    weightLearningRateCalculatorFactory.Create(i),
+                    hidBiasLearningRateCalculatorFactory.Create(i),
+                    visBiasLearningRateCalculatorFactory.Create(i));
+                var encoded = Machines[i].Encode(layerTrainData);
+                if (!ReferenceEquals(layerTrainData, data))
+                {
+                    layerTrainData.Dispose();
+                }
+                layerTrainData = encoded;
+            }
+        }
+
+        void ICudaNetwork<TElement>.GreedyBatchedSupervisedTrain(Matrix2D<TElement> data, Matrix2D<TElement> labels,
+            int batchSize, IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+        {
+            var layerTrainData = data;
+            for (var i = 0; i < Machines.Count; i++)
+            {
+                if (i == Machines.Count - 1)
+                {
+                    var combined = Machines[0].GPU.AllocateNoSet<TElement>(data.GetLength(0),
+                        layerTrainData.GetLength(1) + labels.GetLength(1));
+
+                    combined.InsertValuesFrom(0, 0, layerTrainData);
+                    combined.InsertValuesFrom(0, layerTrainData.GetLength(1), labels);
+                    layerTrainData.Dispose();
+                    layerTrainData = combined;
+                }
+
+
+                Machines[i].GreedyBatchedTrain(layerTrainData, batchSize, exitConditionFactory.Create(i),
+                    weightLearningRateCalculatorFactory.Create(i),
+                    hidBiasLearningRateCalculatorFactory.Create(i),
+                    visBiasLearningRateCalculatorFactory.Create(i));
+
+
+                var encoded = Machines[i].Encode(layerTrainData);
+                if (!ReferenceEquals(layerTrainData, data))
+                {
+                    layerTrainData.Dispose();
+                }
+                layerTrainData = encoded;
+            }
+
+            if (!ReferenceEquals(layerTrainData, data))
+            {
+                layerTrainData.Dispose();
+            }
+        }
+
+
+        public void GreedyBatchedTrain(TElement[,] data, int batchSize,
+            IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+        {
+            //todo: consider managing batch partitions here in main memory allowing for bigger datasets but at the expense of more copying to and from the gpu
+            using (var d = Machines[0].GPU.Upload(data))
+            {
+                AsCuda.GreedyBatchedTrain(d, batchSize, exitConditionFactory, weightLearningRateCalculatorFactory,
+                    hidBiasLearningRateCalculatorFactory, visBiasLearningRateCalculatorFactory);
+            }
+        }
+
+        public void GreedyBatchedSupervisedTrain(TElement[,] data, TElement[,] labels, int batchSize,
+            IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+        {
+            //todo: consider managing batch partitions here in main memory allowing for bigger datasets but at the expense of more copying to and from the gpu
+            using (var d = Machines[0].GPU.Upload(data))
+            using (var l = Machines[0].GPU.Upload(labels))
+                AsCuda.GreedyBatchedSupervisedTrain(d, l, batchSize, exitConditionFactory,
+                    weightLearningRateCalculatorFactory, hidBiasLearningRateCalculatorFactory,
+                    visBiasLearningRateCalculatorFactory);
+        }
+
+
+        void ICudaNetwork<TElement>.GreedyBatchedTrainMem(Matrix2D<TElement> data, int batchSize,
+            IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+        {
+            var layerTrainData = data;
+            for (var i = 0; i < Machines.Count; i++)
+            {
+                var localCopy = layerTrainData.CopyLocal();
+
+                Machines[i].GreedyBatchedTrainMem(layerTrainData, batchSize, exitConditionFactory.Create(i),
+                    weightLearningRateCalculatorFactory.Create(i),
+                    hidBiasLearningRateCalculatorFactory.Create(i),
+                    visBiasLearningRateCalculatorFactory.Create(i));
+
+                Matrix2D<float> encoded;
+                using (var up = Machines[0].GPU.Upload(localCopy))
+                {
+                    encoded = Machines[i].Encode(up);
+                }
+
+                layerTrainData = encoded;
+            }
+        }
+
+        void ICudaNetwork<TElement>.GreedyBatchedSupervisedTrainMem(Matrix2D<TElement> data, Matrix2D<TElement> labels,
+            int batchSize, IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+        {
+            var layerTrainData = data;
+            TElement[,] local = data.CopyLocal();
+            for (var i = 0; i < Machines.Count; i++)
+            {
+                if (i == Machines.Count - 1)
+                {
+                    var combined = Machines[0].GPU.AllocateNoSet<TElement>(data.GetLength(0),
+                        layerTrainData.GetLength(1) + labels.GetLength(1));
+
+                    combined.InsertValuesFrom(0, 0, layerTrainData);
+                    combined.InsertValuesFrom(0, layerTrainData.GetLength(1), labels);
+                    labels.Dispose();
+                    layerTrainData.Dispose();
+                    layerTrainData = combined;
+                    local = combined.CopyLocal();
+                }
+
+
+                Machines[i].GreedyBatchedTrainMem(layerTrainData, batchSize, exitConditionFactory.Create(i),
+                    weightLearningRateCalculatorFactory.Create(i),
+                    hidBiasLearningRateCalculatorFactory.Create(i),
+                    visBiasLearningRateCalculatorFactory.Create(i));
+
+                Matrix2D<float> encoded;
+                using (var d = Machines[0].GPU.Upload(local))
+                {
+                    encoded = Machines[i].Encode(d);
+                }
+
+                layerTrainData = encoded;
+            }
+
+
+            layerTrainData.Dispose();
+        }
+
+
+        public void GreedyBatchedTrainMem(TElement[,] data, int batchSize,
+            IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+        {
+            using (var d = Machines[0].GPU.Upload(data))
+            {
+                AsCuda.GreedyBatchedTrainMem(d, batchSize, exitConditionFactory, weightLearningRateCalculatorFactory,
+                    hidBiasLearningRateCalculatorFactory, visBiasLearningRateCalculatorFactory);
+            }
+        }
+
+        public void GreedyBatchedSupervisedTrainMem(TElement[,] data, TElement[,] labels, int batchSize,
+            IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+        {
+            //todo: consider managing batch partitions here in main memory allowing for bigger datasets but at the expense of more copying to and from the gpu
+            using (var d = Machines[0].GPU.Upload(data))
+            using (var l = Machines[0].GPU.Upload(labels))
+                AsCuda.GreedyBatchedSupervisedTrainMem(d, l, batchSize, exitConditionFactory,
+                    weightLearningRateCalculatorFactory, hidBiasLearningRateCalculatorFactory,
+                    visBiasLearningRateCalculatorFactory);
+        }
+
+        public void SetDefaultMachineState(SuspendState state)
+        {
+            foreach (var machine in Machines)
+            {
+                machine.SetState(state);
+            }
         }
     }
 }

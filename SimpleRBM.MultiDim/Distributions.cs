@@ -76,7 +76,7 @@ namespace SimpleRBM.MultiDim
                 var arr = (double*)handle.AddrOfPinnedObject();
 
 
-                Parallel.For(0, rows, i => Parallel.For(0, cols, j => Matrix2D.UnsafeUpdate2DArray(arr, cols, i, j, GaussianNormal())));
+                ThreadUtil.Run(rows, cols, (i, j) => Matrix2D.UnsafeUpdate2DArray(arr, cols, i, j, GaussianNormal()));
 
 
                 return matrix;
@@ -104,7 +104,7 @@ namespace SimpleRBM.MultiDim
                 var arr = (float*)handle.AddrOfPinnedObject();
 
 
-                Parallel.For(0, rows, i => Parallel.For(0, cols, j => Matrix2D.UnsafeUpdate2DArrayF(arr, cols, i, j, (float)GaussianNormal())));
+                ThreadUtil.Run(rows, cols, (i, j) => Matrix2D.UnsafeUpdate2DArray(arr, cols, i, j, (float)GaussianNormal()));
 
 
                 return matrix;
@@ -133,7 +133,7 @@ namespace SimpleRBM.MultiDim
                 var arr = (double*)handle.AddrOfPinnedObject();
 
 
-                Parallel.For(0, rows, i => Parallel.For(0, cols, j => Matrix2D.UnsafeUpdate2DArray(arr, cols, i, j, GetRandomDouble())));
+                ThreadUtil.Run(rows, cols, (i, j) =>  Matrix2D.UnsafeUpdate2DArray(arr, cols, i, j, GetRandomDouble()));
 
 
                 return matrix;
@@ -156,7 +156,7 @@ namespace SimpleRBM.MultiDim
                 var arr = (float*)handle.AddrOfPinnedObject();
 
 
-                Parallel.For(0, rows, i => Parallel.For(0, cols, j => Matrix2D.UnsafeUpdate2DArrayF(arr, cols, i, j, (float)GetRandomDouble())));
+                ThreadUtil.Run(rows, cols, (i, j) =>  Matrix2D.UnsafeUpdate2DArray(arr, cols, i, j, (float)GetRandomDouble()));
 
 
                 return matrix;
@@ -177,8 +177,7 @@ namespace SimpleRBM.MultiDim
         {
             var matrix = new double[rows, cols];
 
-            Parallel.For(0, rows,
-                i => Parallel.For(0, cols, j => { matrix[i, j] = Convert.ToInt32(GetRandomDouble()); }));
+            ThreadUtil.Run(rows, cols, (i, j) =>  matrix[i, j] = Convert.ToInt32(GetRandomDouble()));
 
             return matrix;
         }
@@ -187,8 +186,7 @@ namespace SimpleRBM.MultiDim
         {
             var matrix = new float[rows, cols];
 
-            Parallel.For(0, rows,
-                i => Parallel.For(0, cols, j => { matrix[i, j] = Convert.ToInt32(GetRandomDouble()); }));
+            ThreadUtil.Run(rows, cols, (i, j) =>  matrix[i, j] = Convert.ToInt32(GetRandomDouble()));
 
             return matrix;
         }

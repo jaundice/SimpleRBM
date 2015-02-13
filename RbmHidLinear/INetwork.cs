@@ -36,7 +36,31 @@ namespace CudaNN
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
 
+        void GreedyBatchedTrain(TElement[,] data, int batchSize,
+            IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+
+        void GreedyBatchedTrainMem(TElement[,] data, int batchSize,
+            IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+
         void GreedySupervisedTrain(TElement[,] data, TElement[,] labels,
+            IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+
+        void GreedyBatchedSupervisedTrain(TElement[,] data, TElement[,] labels, int batchSize,
+            IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+
+        void GreedyBatchedSupervisedTrainMem(TElement[,] data, TElement[,] labels, int batchSize,
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,

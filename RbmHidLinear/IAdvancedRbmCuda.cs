@@ -1,4 +1,5 @@
 using System;
+using System.Security.Cryptography.X509Certificates;
 using Cudafy.Host;
 using Cudafy.Maths.RAND;
 using SimpleRBM.Common;
@@ -6,29 +7,54 @@ using SimpleRBM.Cuda;
 
 namespace CudaNN
 {
-    public interface IAdvancedRbmCuda<TElementType> : IDisposable, IRestrictedBoltzmannMachine<TElementType>
-        where TElementType : struct, IComparable<TElementType>
+    public enum SuspendState
     {
-        Matrix2D<TElementType> Encode(Matrix2D<TElementType> data);
-        Matrix2D<TElementType> Decode(Matrix2D<TElementType> activations);
+        Active,
+        Suspended
+    }
 
-        void GreedyTrain(Matrix2D<TElementType> data,
-            IExitConditionEvaluator<TElementType> exitConditionEvaluator,
-            ILearningRateCalculator<TElementType> weightLearningRateCalculator,
-            ILearningRateCalculator<TElementType> hidBiasLearningRateCalculator,
-            ILearningRateCalculator<TElementType> visBiasLearningRateCalculator);
+    public interface IAdvancedRbmCuda<TElement> : IDisposable, IRestrictedBoltzmannMachine<TElement>
+        where TElement : struct, IComparable<TElement>
+    {
+        Matrix2D<TElement> Encode(Matrix2D<TElement> data);
+        Matrix2D<TElement> Decode(Matrix2D<TElement> activations);
 
-        Matrix2D<TElementType> HiddenBiases { get; }
-        Matrix2D<TElementType> VisibleBiases { get; }
-        Matrix2D<TElementType> Weights { get; }
-        TElementType FinalMomentum { get; }
-        TElementType InitialMomentum { get; }
-        TElementType WeightCost { get; }
+        SuspendState State { get; }
+
+        void Suspend();
+        void Wake();
+
+        void GreedyTrain(Matrix2D<TElement> data,
+            IExitConditionEvaluator<TElement> exitConditionEvaluator,
+            ILearningRateCalculator<TElement> weightLearningRateCalculator,
+            ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
+            ILearningRateCalculator<TElement> visBiasLearningRateCalculator);
+
+        void GreedyBatchedTrain(Matrix2D<TElement> data, int batchSize,
+            IExitConditionEvaluator<TElement> exitConditionEvaluator,
+            ILearningRateCalculator<TElement> weightLearningRateCalculator,
+            ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
+            ILearningRateCalculator<TElement> visBiasLearningRateCalculator);
+
+        void GreedyBatchedTrainMem(Matrix2D<TElement> data, int batchSize,
+            IExitConditionEvaluator<TElement> exitConditionEvaluator,
+            ILearningRateCalculator<TElement> weightLearningRateCalculator,
+            ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
+            ILearningRateCalculator<TElement> visBiasLearningRateCalculator);
+
+        Matrix2D<TElement> HiddenBiases { get; }
+        Matrix2D<TElement> VisibleBiases { get; }
+        Matrix2D<TElement> Weights { get; }
+        TElement FinalMomentum { get; }
+        TElement InitialMomentum { get; }
+        TElement WeightCost { get; }
         GPGPU GPU { get; }
         GPGPURAND GPURAND { get; }
         int NumVisibleNeurons { get; }
         int NumHiddenNeurons { get; }
-        Matrix2D<TElementType> Reconstruct(Matrix2D<TElementType> data);
+        Matrix2D<TElement> Reconstruct(Matrix2D<TElement> data);
         void Dispose(bool disposing);
+
+        void SetState(SuspendState state);
     }
 }

@@ -154,8 +154,8 @@ namespace SimpleRBM.Demo
 
 
             var demo = new DemoApp();
-            var factory = new CudaDbnFactory();
-            //var factory = new MultiDimDbnFactory();
+            //var factory = new CudaDbnFactory();
+            var factory = new MultiDimDbnFactory();
             Console.WriteLine("Using {0}", factory.GetType().Name);
 
 #if USEFLOAT

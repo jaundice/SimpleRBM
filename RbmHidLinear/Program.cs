@@ -37,10 +37,11 @@ namespace CudaNN
 
         private static void Main(string[] args)
         {
-            string demo = Demos.Faces;
-            //int numTrainingExamples = 185946;
-            int numTrainingExamples = 500;
+            string demo = Demos.Data;
+            int numTrainingExamples = 185946;
+            //int numTrainingExamples = 1000;
             //int numTrainingExamples = 10;
+            //int numTrainingExamples = 200;
 
 
             GPGPU dev;
@@ -56,20 +57,20 @@ namespace CudaNN
             switch (demo)
             {
                 case "Faces":
-                {
-                    FacesDemo(dev, rand, numTrainingExamples, pathBase);
-                    break;
-                }
+                    {
+                        FacesDemo(dev, rand, numTrainingExamples, pathBase);
+                        break;
+                    }
                 case "Data":
-                {
-                    CsvDemo(dev, rand, numTrainingExamples, pathBase);
-                    break;
-                }
+                    {
+                        CsvDemo(dev, rand, numTrainingExamples, pathBase);
+                        break;
+                    }
                 case "Kaggle":
-                {
-                    KaggleDemo(dev, rand, numTrainingExamples, pathBase);
-                    break;
-                }
+                    {
+                        KaggleDemo(dev, rand, numTrainingExamples, pathBase);
+                        break;
+                    }
             }
         }
 
@@ -83,9 +84,10 @@ namespace CudaNN
             {
                 new CudaAdvancedRbmBinary(dev, rand, 0, 178, 120, false, encodingNoiseLevel: (TElement) 0.5),
                 new CudaAdvancedRbmBinary(dev, rand, 1, 120, 150, true),
-                new CudaAdvancedRbmBinary(dev, rand, 2, 150, 32, true)
+                new CudaAdvancedRbmBinary(dev, rand, 2, 150, 20, true)
             }))
             {
+                net.SetDefaultMachineState(SuspendState.Active);
                 string[] lbl;
                 TElement[,] coded;
 
@@ -95,19 +97,20 @@ namespace CudaNN
 
                 net.EpochComplete += (a, b) =>
                 {
-                    if (b.Epoch%500 == 0)
+                    if (b.Epoch % 500 == 0)
                     {
-                        var recon = ((CudaAdvancedNetwork) a).Reconstruct(tdata, b.Layer);
+                        var recon = ((CudaAdvancedNetwork)a).Reconstruct(tdata, b.Layer);
                         SaveImages(pathBase, string.Format("{0}_{1}_{{0}}_Reconstruction.jpg", b.Layer, b.Epoch), recon);
                     }
                 };
 
-
-                net.GreedyTrain(d.ReadTestData(0, numTrainingExamples),
-                    new ManualKeyPressExitEvaluatorFactory<TElement>(0.0005f, 10000),
+                //batch the data in gpu memory
+                net.GreedyBatchedTrain(d.ReadTestData(0, numTrainingExamples),
+                    10000,
+                    new ManualKeyPressExitEvaluatorFactory<TElement>(10f, 5000),
                     new LinearlyDecayingLearningRateFactory<TElement>(0.001, 0.999),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.001, 0.999),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.001, 0.999));
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.001, 0.99999),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.001, 0.99999));
 
                 var testData = d.ReadTrainingData(numTrainingExamples, 200, out lbl, out coded);
 
@@ -144,25 +147,26 @@ namespace CudaNN
 
             using (var net = new CudaAdvancedNetwork(new CudaAdvancedRbmBase[]
             {
-                new CudaAdvancedRbmBinary(dev, rand, 0, 250*250, 1000, false, encodingNoiseLevel: (TElement) 0.9),
-                new CudaAdvancedRbmBinary(dev, rand, 1, 1000, 4000, true),
+                new CudaAdvancedRbmBinary(dev, rand, 0, 250*250, 2000, false, encodingNoiseLevel: (TElement) 0.9),
+                new CudaAdvancedRbmBinary(dev, rand, 1, 2000, 4000, true),
                 new CudaAdvancedRbmBinary(dev, rand, 2, 4000, 4000, true)
             }))
             {
+                net.SetDefaultMachineState(SuspendState.Suspended);//keep data in main memory as much as possible
                 string[] lbl;
                 TElement[,] coded;
-
                 net.EpochComplete += (a, b) =>
                 {
-                    if (b.Epoch%100 == 0)
+                    if (b.Epoch % 100 == 0)
                     {
-                        var dreams = ((CudaAdvancedNetwork) a).Daydream(10, b.Layer);
+                        var dreams = ((CudaAdvancedNetwork)a).Daydream(10, b.Layer);
                         SaveImages(pathBase, string.Format("{0}_{1}_{{0}}_Daydream.jpg", b.Layer, b.Epoch), dreams);
                     }
                 };
                 var training = dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded);
                 SaveImages(pathBase, "TrainingData_{0}.jpg", training);
-                net.GreedyTrain(training,
+                //batch the data into main memory
+                net.GreedyBatchedTrainMem(training, 20,
                     new ManualKeyPressExitEvaluatorFactory<TElement>(0.0005f, 10000),
                     new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999),
                     new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999),
@@ -192,32 +196,37 @@ namespace CudaNN
                 //visible buffer expanded by 10 for labeling
             }))
             {
+                //keep data in gpu memory as much as possible
+                net.SetDefaultMachineState(SuspendState.Active);
+
+
                 int[] lbl;
                 TElement[,] coded;
 
+
                 net.EpochComplete += (a, b) =>
                 {
-                    if (b.Epoch%100 == 0)
+                    if (b.Epoch % 100 == 0)
                     {
                         TElement[,] daydream;
                         if (b.Layer == net.Machines.Count - 1)
                         {
                             TElement[,] labels;
-                            daydream = ((CudaAdvancedNetwork) a).DaydreamWithLabels(10, out labels, true, true);
+                            daydream = ((CudaAdvancedNetwork)a).DaydreamWithLabels(10, out labels, true, true);
 
                             dataProvider.PrintToConsole(daydream,
                                 computedLabels: labels);
                         }
                         else
                         {
-                            daydream = ((CudaAdvancedNetwork) a).Daydream(10, b.Layer);
+                            daydream = ((CudaAdvancedNetwork)a).Daydream(10, b.Layer);
                         }
                         SaveImages(pathBase, string.Format("{0}_{1}_DayDream_{{0}}.jpg", b.Layer, b.Epoch), daydream);
                     }
                 };
 
-                net.GreedySupervisedTrain(dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded),
-                    coded,
+                net.GreedyBatchedSupervisedTrain(dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded),
+                    coded, 200,
                     new ManualKeyPressExitEvaluatorFactory<TElement>(0.0005f, 3920),
                     new LinearlyDecayingLearningRateFactory<TElement>(0.03, 0.9999),
                     new LinearlyDecayingLearningRateFactory<TElement>(0.03, 0.9999),
@@ -253,7 +262,7 @@ namespace CudaNN
                 a =>
                     ImageUtils.SaveImageData(data, a,
                         Path.Combine(pathBase, string.Format(nameFormatString, a)),
-                        b => (byte) (b*255f)));
+                        b => (byte)(b * 255f)));
         }
 
 
@@ -279,8 +288,8 @@ namespace CudaNN
             CudafyModule mod = CudafyTranslator.Cudafy(
                 plat,
                 arch,
-                typeof (ActivationFunctionsCuda),
-                typeof (Matrix2DCuda)
+                typeof(ActivationFunctionsCuda),
+                typeof(Matrix2DCuda)
                 );
 
 
@@ -290,7 +299,7 @@ namespace CudaNN
 
             rand = GPGPURAND.Create(dev, curandRngType.CURAND_RNG_PSEUDO_DEFAULT);
 
-            rand.SetPseudoRandomGeneratorSeed((ulong) DateTime.Now.Ticks);
+            rand.SetPseudoRandomGeneratorSeed((ulong)DateTime.Now.Ticks);
             rand.GenerateSeeds();
 
             Console.WriteLine("Loading Module");
