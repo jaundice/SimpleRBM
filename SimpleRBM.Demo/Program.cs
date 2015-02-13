@@ -9,6 +9,7 @@ using SimpleRBM.Common.LearningRate;
 using SimpleRBM.Cuda;
 using SimpleRBM.Demo.Demo;
 using SimpleRBM.Demo.IO;
+using SimpleRBM.MultiDim;
 #if USEFLOAT
 using TElement = System.Single;
 
@@ -20,7 +21,7 @@ namespace SimpleRBM.Demo
 {
     internal class Program
     {
-        private static readonly ILayerDefinition[] _defaultHandwrittenLayerSizes =
+        private static readonly ILayerDefinition[] DefaultHandwrittenLayerSizes =
         {
             new LayerDefinition
             {
@@ -45,7 +46,7 @@ namespace SimpleRBM.Demo
             }
         };
 
-        private static readonly ILayerDefinition[] _defaultKaggleLayerSizes =
+        private static readonly ILayerDefinition[] DefaultKaggleLayerSizes =
         {
             new LayerDefinition
             {
@@ -70,7 +71,7 @@ namespace SimpleRBM.Demo
             }
         };
 
-        private static readonly ILayerDefinition[] _defaultFacesLayerSizes =
+        private static readonly ILayerDefinition[] DefaultFacesLayerSizes =
         {
             new LayerDefinition
             {
@@ -95,7 +96,7 @@ namespace SimpleRBM.Demo
             }
         };
 
-        private static readonly ILayerDefinition[] _defaultAudioLayerSizes =
+        private static readonly ILayerDefinition[] DefaultAudioLayerSizes =
         {
             new LayerDefinition
             {
@@ -120,7 +121,7 @@ namespace SimpleRBM.Demo
             }
         };
 
-        private static readonly ILayerDefinition[] _defaultCsvLayerSizes =
+        private static readonly ILayerDefinition[] DefaultCsvLayerSizes =
         {
             new LayerDefinition
             {
@@ -169,9 +170,8 @@ namespace SimpleRBM.Demo
                 Execute<TElement, string>(
                     demo,
                     factory,
-                    new IODataTypeProxy<string>(new FacesDataF(ConfigurationManager.AppSettings["FacesDirectory"]),
-                        new FacesDataD(ConfigurationManager.AppSettings["FacesDirectory"])),
-                    _defaultFacesLayerSizes,
+                    new FacesData(ConfigurationManager.AppSettings["FacesDirectory"], ConfigurationManager.AppSettings["FacesTestDirectory"]),
+                    DefaultFacesLayerSizes,
                     new LinearlyDecayingLearningRateFactory<TElement>(learningRate, 0.999999),
                     new LinearlyDecayingLearningRateFactory<TElement>(0.01, 0.99999),
                     trainingSize,
@@ -183,11 +183,9 @@ namespace SimpleRBM.Demo
                 Execute<TElement, int>(
                     demo,
                     factory,
-                    new IODataTypeProxy<int>(new KaggleDataF(ConfigurationManager.AppSettings["KaggleTrainingData"],
+                     new KaggleData(ConfigurationManager.AppSettings["KaggleTrainingData"],
                         ConfigurationManager.AppSettings["KaggleTestData"]),
-                        new KaggleDataD(ConfigurationManager.AppSettings["KaggleTrainingData"],
-                            ConfigurationManager.AppSettings["KaggleTestData"])),
-                    _defaultKaggleLayerSizes,
+                    DefaultKaggleLayerSizes,
                     new LinearlyDecayingLearningRateFactory<TElement>(learningRate, 0.999999),
                     new LinearlyDecayingLearningRateFactory<TElement>(0.01, 0.99999),
                     trainingSize,
@@ -201,7 +199,7 @@ namespace SimpleRBM.Demo
                     factory,
                     new CsvData(ConfigurationManager.AppSettings["CsvDataTraining"],
                         ConfigurationManager.AppSettings["CsvDataTest"], true, true),
-                    _defaultCsvLayerSizes,
+                    DefaultCsvLayerSizes,
                     new LinearlyDecayingLearningRateFactory<TElement>(learningRate, 0.999999),
                     new LinearlyDecayingLearningRateFactory<TElement>(0.01, 0.99999),
                     trainingSize,
@@ -214,7 +212,7 @@ namespace SimpleRBM.Demo
                     new AudioDemoApp(),
                     factory,
                     new WavData(ConfigurationManager.AppSettings["WavAudioDirectory"], 18500),
-                    _defaultAudioLayerSizes,
+                    DefaultAudioLayerSizes,
                     new LinearlyDecayingLearningRateFactory<TElement>(learningRate, 0.999999),
                     new LinearlyDecayingLearningRateFactory<TElement>(0.01, 0.99999),
                     trainingSize,
@@ -226,9 +224,8 @@ namespace SimpleRBM.Demo
                 Execute<TElement, int>(
                     demo,
                     factory,
-                    new IODataTypeProxy<int>(new HandwrittenNumbersDataF("optdigits-tra.txt"),
-                        new HandwrittenNumbersDataD("optdigits-tra.txt")),
-                    _defaultHandwrittenLayerSizes,
+                    new HandwrittenNumbersData("optdigits-tra.txt"),
+                    DefaultHandwrittenLayerSizes,
                     new LinearlyDecayingLearningRateFactory<TElement>(learningRate, 0.999999),
                     new LinearlyDecayingLearningRateFactory<TElement>(0.01, 0.99999),
                     trainingSize,
@@ -246,11 +243,6 @@ namespace SimpleRBM.Demo
             int skipTrainingRecords, bool classify) where TDataElementType : struct, IComparable<TDataElementType>
         {
             demo.Execute(dbnFactory,
-                /*new CompanionDatasetExitConditionEvaluatorFactory<TDataElementType>(null, 10000, 20,
-                   new EpochErrorFileTracker<TDataElementType>("main.log"),
-                    new EpochErrorFileTracker<TDataElementType>("companion.log")),*/
-                /*new ManualKeyPressExitEvaluatorFactory<TDataElementType>(
-                    (TDataElementType)Convert.ChangeType(0.0005, typeof(TDataElementType)), 10000),*/
                 defaultLayerSizes,
                 data,
                 preTrainLearningRateCalculatorFactory,

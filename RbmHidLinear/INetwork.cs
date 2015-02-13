@@ -4,42 +4,42 @@ using SimpleRBM.Common;
 
 namespace CudaNN
 {
-    public interface INetwork<TElementType> where TElementType : struct, IComparable<TElementType>
+    public interface INetwork<TElement> where TElement : struct, IComparable<TElement>
     {
-        IList<IRbm<TElementType>> Machines { get; }
+        IList<IRestrictedBoltzmannMachine<TElement>> Machines { get; }
 
-        event EventHandler<EpochEventArgs<TElementType>> EpochComplete;
-        event EventHandler<EpochEventArgs<TElementType>> LayerTrainComplete;
-        TElementType[,] Reconstruct(TElementType[,] data, int maxDepth = -1);
-        TElementType[,] Encode(TElementType[,] data, int maxDepth = -1);
-        TElementType[,] Decode(TElementType[,] activations, int maxDepth = -1);
+        event EventHandler<EpochEventArgs<TElement>> EpochComplete;
+        event EventHandler<EpochEventArgs<TElement>> LayerTrainComplete;
+        TElement[,] Reconstruct(TElement[,] data, int maxDepth = -1);
+        TElement[,] Encode(TElement[,] data, int maxDepth = -1);
+        TElement[,] Decode(TElement[,] activations, int maxDepth = -1);
 
-        TElementType[,] ReconstructWithLabels(TElementType[,] data,
-            out TElementType[,] labels, bool softmaxLabels = true);
+        TElement[,] ReconstructWithLabels(TElement[,] data,
+            out TElement[,] labels, bool softmaxLabels = true);
 
-        TElementType[,] DecodeWithLabels(TElementType[,] activations,
-            out TElementType[,] labels, bool softmaxLabels = true);
+        TElement[,] DecodeWithLabels(TElement[,] activations,
+            out TElement[,] labels, bool softmaxLabels = true);
 
-        TElementType[,] LabelData(TElementType[,] data, bool softmaxLabels = true);
+        TElement[,] LabelData(TElement[,] data, bool softmaxLabels = true);
 
-        TElementType[,] Daydream(int numDreams, int maxDepth = -1, bool guassian = true);
+        TElement[,] Daydream(int numDreams, int maxDepth = -1, bool guassian = true);
 
-        TElementType[,] DaydreamWithLabels(int numDreams, out TElementType[,] labels,
+        TElement[,] DaydreamWithLabels(int numDreams, out TElement[,] labels,
             bool guassian = true, bool softmaxLabels = true);
 
-        TElementType[,] DaydreamByClass(TElementType[,] modelLabels,
-            out TElementType[,] generatedLabels, bool guassian = true);
+        TElement[,] DaydreamByClass(TElement[,] modelLabels,
+            out TElement[,] generatedLabels, bool guassian = true, bool softmaxGeneratedLabels = true);
 
-        void GreedyTrain(TElementType[,] data,
-            IExitConditionEvaluatorFactory<TElementType> exitConditionFactory,
-            ILearningRateCalculatorFactory<TElementType> weightLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElementType> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElementType> visBiasLearningRateCalculatorFactory);
+        void GreedyTrain(TElement[,] data,
+            IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
 
-        void GreedySupervisedTrain(TElementType[,] data, TElementType[,] labels,
-            IExitConditionEvaluatorFactory<TElementType> exitConditionFactory,
-            ILearningRateCalculatorFactory<TElementType> weightLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElementType> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElementType> visBiasLearningRateCalculatorFactory);
+        void GreedySupervisedTrain(TElement[,] data, TElement[,] labels,
+            IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
     }
 }

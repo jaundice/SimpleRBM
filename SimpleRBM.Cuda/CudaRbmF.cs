@@ -148,11 +148,11 @@ namespace SimpleRBM.Cuda
             }
         }
 
-        public TElement GreedyTrain(TElement[,] visibleData, IExitConditionEvaluator<TElement> exitEvaluator,
+        public void GreedyTrain(TElement[,] visibleData, IExitConditionEvaluator<TElement> exitEvaluator,
             ILearningRateCalculator<TElement> learningRateCalculator)
         {
             using (var d = GPU.Upload(visibleData))
-                return ((IBasicRbmCuda<TElement>) this).GreedyTrain(d, exitEvaluator, learningRateCalculator);
+                 ((IBasicRbmCuda<TElement>) this).GreedyTrain(d, exitEvaluator, learningRateCalculator);
         }
 
 
@@ -471,67 +471,7 @@ namespace SimpleRBM.Cuda
                         sw.Start();
 
                         error = GreedyTrainInternal(data, dataTransposed, i, learningRateCalculator, sw);
-
-                        //Matrix2D<TElement> posHiddenStates;
-                        //Matrix2D<TElement> posAssociations;
-                        //using (Matrix2D<TElement> posHiddenActivations = data.Multiply(Weights))
-                        //{
-                        //    ActivateInPlace(posHiddenActivations, HiddenActivation);
-
-                        //    using (
-                        //        Matrix2D<TElement> uniformRandom = GPU.UniformDistribution(GPURAND, numExamples,
-                        //            NumHiddenNeurons + 1, (TElement) 1))
-                        //    {
-                        //        posHiddenStates = posHiddenActivations.GreaterThan(uniformRandom);
-                        //    }
-
-                        //    posAssociations = dataTransposed.Multiply(posHiddenActivations);
-                        //}
-
-                        //Matrix2D<TElement> negVisibleActivations;
-                        //using (Matrix2D<TElement> weightsTransposed = Weights.Transpose())
-                        //using (posHiddenStates)
-                        //{
-                        //    negVisibleActivations = posHiddenStates.Multiply(weightsTransposed);
-                        //    ActivateInPlace(negVisibleActivations, VisibleActivation);
-                        //    negVisibleActivations.UpdateValuesAlongAxis(0, 1f, Axis.Column);
-                        //}
-
-
-                        //Matrix2D<TElement> negAssociations;
-                        //using (Matrix2D<TElement> negHiddenActivations = negVisibleActivations.Multiply(Weights))
-                        //{
-                        //    using (Matrix2D<TElement> negVisibleProbsTransposed = negVisibleActivations.Transpose())
-                        //    {
-                        //        ActivateInPlace(negHiddenActivations, HiddenActivation);
-                        //        negAssociations = negVisibleProbsTransposed.Multiply(negHiddenActivations);
-                        //    }
-                        //}
-
-                        //using (posAssociations)
-                        //using (negAssociations)
-                        //{
-                        //    posAssociations.SubtractInPlace(negAssociations);
-
-
-                        //    posAssociations.MultiplyInPlace(learningRateCalculator.CalculateLearningRate(LayerIndex, i)/
-                        //                                    numExamples);
-
-                        //    posAssociations.AddInPlace(Weights);
-
-                        //    Weights.UpdateWithMomentumInPlace(posAssociations,
-                        //        IsInitialized ? MOMENTUM : (TElement) 0.5);
-                        //    if (i > 5)
-                        //        IsInitialized = true;
-                        //}
-
-                        //using (Matrix2D<TElement> delta = data.Subtract(negVisibleActivations))
-                        //using (negVisibleActivations)
-                        //{
-                        //    delta.PowInPlace((TElement) 2.0);
-
-                        //    error = delta.Sum();
-                        //}
+                       
                         RaiseEpochEnd(i, error);
 
                         if (exitEvaluator.Exit(i, error, sw.Elapsed))
@@ -640,8 +580,6 @@ namespace SimpleRBM.Cuda
                 using (Matrix2D<TElement> posHiddenActivations = data.Multiply(Weights))
                 {
                     ActivateInPlace(posHiddenActivations, HiddenActivation);
-                    //posHiddenActivations.LogisticInPlace();
-
 
                     using (
                         Matrix2D<TElement> uniformRandom = GPU.UniformDistribution(GPURAND, numExamples,

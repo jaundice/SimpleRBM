@@ -7,6 +7,7 @@ using System.Windows.Markup;
 using SimpleRBM.Common;
 using SimpleRBM.Common.Save;
 using TElement = System.Single;
+using LSI = SimpleRBM.Common.Save.LayerSaveInfoF;
 namespace SimpleRBM.MultiDim
 {
     public class RestrictedBoltzmannMachineF : IRestrictedBoltzmannMachine<TElement>
@@ -19,7 +20,6 @@ namespace SimpleRBM.MultiDim
             NumVisibleNeurons = numVisible;
             VisibleActivation = visibleActivation;
             HiddenActivation = hiddenActivation;
-
             Weights = new TElement[numVisible + 1, numHidden + 1];
             Matrix2D.InsertValuesFrom(
                 Weights,
@@ -28,7 +28,7 @@ namespace SimpleRBM.MultiDim
                 Matrix2D.Multiply(
                     Distributions.GaussianMatrixF(
                         numVisible,
-                        numHidden), 0.1f));
+                        numHidden),(TElement) 0.1));
         }
 
         public ActivationFunction VisibleActivation { get; protected set; }
@@ -47,7 +47,7 @@ namespace SimpleRBM.MultiDim
         public int NumHiddenNeurons { get; protected set; }
         public int NumVisibleNeurons { get; protected set; }
 
-        public float[,] Activate(float[,] matrix)
+        public TElement[,] Activate(TElement[,] matrix)
         {
             switch (VisibleActivation)
             {
@@ -60,9 +60,9 @@ namespace SimpleRBM.MultiDim
                         return ActivationFunctions.TanhF(matrix);
                     }
                 case ActivationFunction.SoftPlus:
-                {
-                    return matrix;
-                }
+                    {
+                        return matrix;
+                    }
                 default:
                     throw new NotImplementedException();
             }
@@ -142,23 +142,23 @@ namespace SimpleRBM.MultiDim
             return Matrix2D.SubMatrix(data, 0, 1);
         }
 
-        public TElement GreedyTrain(TElement[][] data, IExitConditionEvaluator<TElement> exitEvaluator,
+        public void GreedyTrain(TElement[][] data, IExitConditionEvaluator<TElement> exitEvaluator,
             ILearningRateCalculator<TElement> learningRateCalculator)
         {
-            return GreedyTrain(Matrix2D.JaggedToMultidimesional(data), exitEvaluator, learningRateCalculator);
+            GreedyTrain(Matrix2D.JaggedToMultidimesional(data), exitEvaluator, learningRateCalculator);
         }
 
-        public Task<TElement> AsyncGreedyTrain(TElement[][] data, IExitConditionEvaluator<TElement> exitEvaluator,
+        public Task AsyncGreedyTrain(TElement[][] data, IExitConditionEvaluator<TElement> exitEvaluator,
             ILearningRateCalculator<TElement> learningRateCalculator)
         {
             return AsyncGreedyTrain(Matrix2D.JaggedToMultidimesional(data), exitEvaluator, learningRateCalculator);
         }
 
-        public TElement GreedyTrain(TElement[,] visibleData, IExitConditionEvaluator<TElement> exitEvaluator,
+        public void GreedyTrain(TElement[,] visibleData, IExitConditionEvaluator<TElement> exitEvaluator,
             ILearningRateCalculator<TElement> learningRateCalculator)
         {
             exitEvaluator.Start();
-            TElement error = 0f;
+            TElement error;
 
             int numExamples = visibleData.GetLength(0);
             var data = new TElement[numExamples, visibleData.GetLength(1) + 1];
@@ -201,11 +201,6 @@ namespace SimpleRBM.MultiDim
                 error = Matrix2D.EnumerateElements(Matrix2D.Pow(Matrix2D.Subtract(data, negVisibleProbs), 2)).Sum();
                 RaiseEpochEnd(i, error);
 
-                //if (i%20 == 0)
-                //    Console.WriteLine("Epoch {0}: error is {1}, computation time (ms): {2}", i, error,
-                //        sw.ElapsedMilliseconds);
-
-
 
                 if (exitEvaluator.Exit(i, error, sw.Elapsed))
                     break;
@@ -215,10 +210,9 @@ namespace SimpleRBM.MultiDim
 
             RaiseTrainEnd(i, error);
             exitEvaluator.Stop();
-            return error;
         }
 
-        public Task<TElement> AsyncGreedyTrain(TElement[,] data, IExitConditionEvaluator<TElement> exitEvaluator,
+        public Task AsyncGreedyTrain(TElement[,] data, IExitConditionEvaluator<TElement> exitEvaluator,
             ILearningRateCalculator<TElement> learningRateCalculator)
         {
             return Task.Run(() => GreedyTrain(data, exitEvaluator, learningRateCalculator));
@@ -249,47 +243,6 @@ namespace SimpleRBM.MultiDim
                 EpochEnd(this, new EpochEventArgs<TElement> { Epoch = epoch, Error = error });
         }
 
-
-
-        public TElement[,] GetSoftmaxLayer(TElement[,] visibleStates)
-        {
-            throw new NotImplementedException();
-        }
-
-        public TElement GreedySupervisedTrain(TElement[,] data, TElement[,] labels, IExitConditionEvaluator<TElement> exitEvaluator, ILearningRateCalculator<TElement> learningRateCalculator)
-        {
-            throw new NotImplementedException();
-        }
-
-        public TElement GreedyBatchedSupervisedTrain(TElement[,] data, TElement[,] labels, int batchSize, IExitConditionEvaluator<TElement> exitEvaluator, ILearningRateCalculator<TElement> learningRateCalculator)
-        {
-            throw new NotImplementedException();
-        }
-
-        public TElement[,] Classify(TElement[,] data, out TElement[,] labels)
-        {
-            throw new NotImplementedException();
-        }
-
-        public TElement GreedyBatchedTrain(TElement[][] data, int batchRows, IExitConditionEvaluator<TElement> exitEvaluator, ILearningRateCalculator<TElement> learningRateCalculator)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<TElement> AsyncGreedyBatchedTrain(TElement[][] data, int batchRows, IExitConditionEvaluator<TElement> exitEvaluator, ILearningRateCalculator<TElement> learningRateCalculator)
-        {
-            throw new NotImplementedException();
-        }
-
-        public TElement GreedyBatchedTrain(TElement[,] data, int batchRows, IExitConditionEvaluator<TElement> exitEvaluator, ILearningRateCalculator<TElement> learningRateCalculator)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<TElement> AsyncGreedyBatchedTrain(TElement[,] data, int batchRows, IExitConditionEvaluator<TElement> exitEvaluator, ILearningRateCalculator<TElement> learningRateCalculator)
-        {
-            throw new NotImplementedException();
-        }
 
         public TElement CalculateReconstructionError(TElement[,] data)
         {

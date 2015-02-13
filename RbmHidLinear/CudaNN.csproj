@@ -93,7 +93,6 @@
   <ItemGroup>
     <Compile Include="ICudaNetwork.cs" />
     <Compile Include="INetwork.cs" />
-    <Compile Include="IRbm.cs" />
     <Compile Include="IAdvancedRbmCuda.cs" />
     <Compile Include="CudaAdvancedNetwork.cs" />
     <Compile Include="Program.cs" />

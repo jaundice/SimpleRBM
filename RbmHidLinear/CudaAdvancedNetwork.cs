@@ -2,10 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ICSharpCode.Decompiler.Ast.Transforms;
-using Microsoft.Win32.SafeHandles;
 using SimpleRBM.Common;
 using SimpleRBM.Cuda;
 #if USEFLOAT
@@ -210,9 +206,8 @@ namespace CudaNN
                     if (softmaxLabels)
                     {
                         using (labels)
-
                         {
-                           var sm = labels.SoftMax();
+                            var sm = labels.SoftMax();
                             //sm.ToBinary();
                             labels = sm;
                         }
@@ -242,12 +237,12 @@ namespace CudaNN
             using (var d = AsCuda.EncodeWithLabelExpansion(data))
             using (var constructed = Machines[depth].Decode(d))
             {
-                var ret= constructed.SubMatrix(0, Machines[depth - 1].NumHiddenNeurons);
+                var ret = constructed.SubMatrix(0, Machines[depth - 1].NumHiddenNeurons);
                 if (softmaxLabels)
                 {
                     using (ret)
                     {
-                        var sm= ret.SoftMax();
+                        var sm = ret.SoftMax();
                         //sm.ToBinary();
                         return sm;
                     }
@@ -271,9 +266,9 @@ namespace CudaNN
             using (
                 var rand = guassian
                     ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, (TElement) 0.5, (TElement) 0.2)
+                        Machines[0].NumVisibleNeurons, (TElement)0.5, (TElement)0.2)
                     : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, (TElement) 1))
+                        Machines[0].NumVisibleNeurons, (TElement)1))
             {
                 return AsCuda.Reconstruct(rand, maxDepth);
             }
@@ -297,21 +292,21 @@ namespace CudaNN
             using (
                 var rand = guassian
                     ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, (TElement) 0.5, (TElement) 0.2)
+                        Machines[0].NumVisibleNeurons, (TElement)0.5, (TElement)0.2)
                     : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, (TElement) 1))
+                        Machines[0].NumVisibleNeurons, (TElement)1))
             {
                 return AsCuda.ReconstructWithLabels(rand, out labels, softmaxLabels);
             }
         }
 
         public TElement[,] DaydreamByClass(TElement[,] modelLabels,
-            out TElement[,] generatedLabels, bool guassian = true)
+            out TElement[,] generatedLabels, bool guassian = true, bool softmaxGeneratedLabels = true)
         {
             using (var d = Machines[0].GPU.Upload(modelLabels))
             {
                 Matrix2D<TElement> gen;
-                using (var res = AsCuda.DaydreamByClass(d, out gen, false))
+                using (var res = AsCuda.DaydreamByClass(d, out gen, guassian, softmaxGeneratedLabels))
                 using (gen)
                 {
                     generatedLabels = gen.CopyLocal();
@@ -327,11 +322,9 @@ namespace CudaNN
             using (
                 var rand = guassian
                     ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, modelLabels.GetLength(0),
-                        Machines[highest].NumVisibleNeurons, (TElement) 0.5, (TElement) 0.2)
+                        Machines[highest].NumVisibleNeurons, (TElement)0.5, (TElement)0.2)
                     : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, modelLabels.GetLength(0),
-                        Machines[highest].NumVisibleNeurons, (TElement) 1))
-                //using (var rand = Machines[0].GPU.AllocateAndSet<TElementType>(modelLabels.GetLength(0),
-                //            Machines[highest].NumVisibleNeurons))
+                        Machines[highest].NumVisibleNeurons, (TElement)1))
             {
                 rand.InsertValuesFrom(0, Machines[highest - 1].NumHiddenNeurons, modelLabels);
                 using (var encoded = Machines[highest].Encode(rand))
@@ -375,9 +368,9 @@ namespace CudaNN
             for (var i = 0; i < Machines.Count; i++)
             {
                 Machines[i].GreedyTrain(layerTrainData, exitConditionFactory.Create(i),
-                    weightLearningRateCalculatorFactory.Create(Machines[i].LayerIndex),
-                    hidBiasLearningRateCalculatorFactory.Create(Machines[i].LayerIndex),
-                    visBiasLearningRateCalculatorFactory.Create(Machines[i].LayerIndex));
+                    weightLearningRateCalculatorFactory.Create(i),
+                    hidBiasLearningRateCalculatorFactory.Create(i),
+                    visBiasLearningRateCalculatorFactory.Create(i));
                 var encoded = Machines[i].Encode(layerTrainData);
                 if (!ReferenceEquals(layerTrainData, data))
                 {
@@ -409,9 +402,9 @@ namespace CudaNN
 
 
                 Machines[i].GreedyTrain(layerTrainData, exitConditionFactory.Create(i),
-                    weightLearningRateCalculatorFactory.Create(Machines[i].LayerIndex),
-                    hidBiasLearningRateCalculatorFactory.Create(Machines[i].LayerIndex),
-                    visBiasLearningRateCalculatorFactory.Create(Machines[i].LayerIndex));
+                    weightLearningRateCalculatorFactory.Create(i),
+                    hidBiasLearningRateCalculatorFactory.Create(i),
+                    visBiasLearningRateCalculatorFactory.Create(i));
 
 
                 var encoded = Machines[i].Encode(layerTrainData);
@@ -456,9 +449,9 @@ namespace CudaNN
             get { return this; }
         }
 
-        IList<IRbm<TElement>> INetwork<TElement>.Machines
+        IList<IRestrictedBoltzmannMachine<TElement>> INetwork<TElement>.Machines
         {
-            get { return (IList<IRbm<TElement>>)Machines; }
+            get { return (IList<IRestrictedBoltzmannMachine<TElement>>)Machines; }
         }
 
         ~CudaAdvancedNetwork()

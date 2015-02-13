@@ -85,8 +85,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DataIOBaseD.cs" />
-    <Compile Include="DataIOBaseF.cs" />
+    <Compile Include="DataIOBase.cs" />
     <Compile Include="ExitCondition\CompanionDatasetExitConditionEvaluator.cs" />
     <Compile Include="ExitCondition\CompanionDatasetExitConditionEvaluatorFactory.cs" />
     <Compile Include="ExitCondition\EpochCountExitCondition.cs" />

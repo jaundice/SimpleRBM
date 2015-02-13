@@ -9,6 +9,7 @@ using SimpleRBM.Demo.WavUtil;
 
 namespace SimpleRBM.Demo.Demo
 {
+    //very experimental
     public class AudioDemoApp : IDemo
     {
         public void Execute<TDataElement, TLabel>(IDeepBeliefNetworkFactory<TDataElement> dbnFactory,
@@ -224,9 +225,6 @@ namespace SimpleRBM.Demo.Demo
                     skipTrainingRecords + trainingSize,
                     100, out labels2, out labelsCoded);
 
-                //float[,] reconstructedItems =
-                //    dbn.Reconstruct(tdata);                
-
 
                 TDataElement[,] labelsComputed = null;
                 TDataElement[,] reconstructedItems = classify
@@ -256,14 +254,12 @@ namespace SimpleRBM.Demo.Demo
 
                 TDataElement[,] computedLabels2 = null;
 
-                //c
                 TDataElement[,] reconstructedTestData = classify
                     ? ((IDeepBeliefNetworkExtended<TDataElement>) dbn).ReconstructWithLabels(testData, out computedLabels2)
                     : dbn.Reconstruct(testData);
                 ulong[][] featKeys2 =
                     KeyEncoder.GenerateKeys(computedLabels2);
-                ;
-                //float[,] reconstructedTestData = dbn.Reconstruct(testData);
+
                 dataProvider.PrintToConsole(reconstructedTestData, testData, keys: featKeys2,
                     computedLabels: computedLabels2);
                 Task.Run(() =>

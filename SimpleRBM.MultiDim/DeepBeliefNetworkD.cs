@@ -70,12 +70,11 @@ namespace SimpleRBM.MultiDim
             IExitConditionEvaluatorFactory<double> exitEvaluatorFactory,
             ILearningRateCalculatorFactory<double> learningRateCalculatorFactory)
         {
-            double error;
             for (int i = 0; i < Machines.Length; i++)
             {
                 visibleData = i < startDepth
                     ? Machines[i].Encode(visibleData)
-                    : GreedyTrain(visibleData, i, exitEvaluatorFactory, learningRateCalculatorFactory, out error);
+                    : GreedyTrain(visibleData, i, exitEvaluatorFactory, learningRateCalculatorFactory);
             }
         }
 
@@ -121,12 +120,11 @@ namespace SimpleRBM.MultiDim
 
         public double[,] GreedyTrain(double[,] data, int layerIndex,
             IExitConditionEvaluatorFactory<double> exitEvaluatorFactory,
-            ILearningRateCalculatorFactory<double> learningRateCalculatorFactory, out double error)
+            ILearningRateCalculatorFactory<double> learningRateCalculatorFactory)
         {
-            double err = Machines[layerIndex].GreedyTrain(data, exitEvaluatorFactory.Create(layerIndex),
+           Machines[layerIndex].GreedyTrain(data, exitEvaluatorFactory.Create(layerIndex),
                 learningRateCalculatorFactory.Create(layerIndex));
-            RaiseTrainEnd(err);
-            error = err;
+            
             return Machines[layerIndex].Encode(data);
         }
 
@@ -134,9 +132,8 @@ namespace SimpleRBM.MultiDim
             IExitConditionEvaluatorFactory<double> exitEvaluatorFactory,
             ILearningRateCalculatorFactory<double> learningRateCalculatorFactory)
         {
-            double err;
             return Task.Run(
-                () => GreedyTrain(data, layerIndex, exitEvaluatorFactory, learningRateCalculatorFactory, out err));
+                () => GreedyTrain(data, layerIndex, exitEvaluatorFactory, learningRateCalculatorFactory));
         }
 
         public void GreedyTrainAll(double[,] visibleData, IExitConditionEvaluatorFactory<double> exitEvaluatorFactory,
@@ -146,8 +143,7 @@ namespace SimpleRBM.MultiDim
 
             for (int i = 0; i < Machines.Length; i++)
             {
-                visibleData = GreedyTrain(visibleData, i, exitEvaluatorFactory, learningRateCalculatorFactory, out error);
-                RaiseTrainEnd(error);
+                visibleData = GreedyTrain(visibleData, i, exitEvaluatorFactory, learningRateCalculatorFactory);
             }
         }
 
@@ -174,49 +170,11 @@ namespace SimpleRBM.MultiDim
         }
 
 
-        public double[,] GreedyBatchedTrain(double[,] data, int layerPosition, int batchRows,
-            IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<double> learningRateFactory, out double error)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task AsyncGreedyBatchedTrain(double[,] data, int layerPosition, int batchRows,
-            IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<double> learningRateFactory)
-        {
-            throw new NotImplementedException();
-        }
-
         public void GreedyBatchedTrainAll(double[,] visibleData, int batchRows,
             IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory,
             ILearningRateCalculatorFactory<double> learningRateFactory)
         {
             throw new NotImplementedException();
-        }
-
-        public Task AsyncGreedyBatchedTrainAll(double[,] visibleData, int batchRows,
-            IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<double> learningRateFactory)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void GreedyBatchedTrainLayersFrom(double[,] visibleData, int startDepth, int batchRows,
-            IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<double> learningRateFactory)
-        {
-            throw new NotImplementedException();
-        }
-
-        private void RaiseTrainEnd(double error)
-        {
-            if (TrainEnd != null)
-                TrainEnd(this, new EpochEventArgs<double>
-                {
-                    Epoch = -1,
-                    Error = error
-                });
         }
 
         private void OnRbm_EpochEnd(object sender, EpochEventArgs<double> e)

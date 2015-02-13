@@ -4,17 +4,16 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using SimpleRBM.Common;
-using SimpleRBM.Demo.Demo;
 using SimpleRBM.Demo.Util;
 
 namespace SimpleRBM.Demo.IO
 {
-    public class WavData : DataIOBaseD<string>, IDataIO<float, string>
+    public class WavData : DataIOBase<string>
     {
         private readonly int _maxSamples;
 
         public WavData(string dataPath, int maxSamples)
-            : base(dataPath)
+            : base(dataPath, dataPath)
         {
             _maxSamples = maxSamples;
         }
@@ -31,11 +30,6 @@ namespace SimpleRBM.Demo.IO
             return ConvertArrayToFloat(sdata);
         }
 
-
-        public new float[,] ReadTestData(int skipRecords, int count)
-        {
-            return ConvertArrayToFloat(ReadTestData(base.DataPath, skipRecords, count));
-        }
 
         public void PrintToConsole(float[,] arr, float[,] reference = null, string[] referenceLabels = null,
             float[,] referenceLabelsCoded = null, ulong[][] keys = null, float[,] computedLabels = null)
@@ -87,7 +81,7 @@ namespace SimpleRBM.Demo.IO
 
         private double[,] ReadWavData(List<FileInfo> files)
         {
-            var data = new double[files.Count, 2 * _maxSamples];
+            var data = new double[files.Count, 2*_maxSamples];
             for (int i = 0; i < files.Count; i++)
             {
                 int idx = i;
@@ -96,13 +90,13 @@ namespace SimpleRBM.Demo.IO
                 {
                     if (sample.Length == 1)
                     {
-                        data[idx, 2 * a] = sample[0][a];
-                        data[idx, (2 * a) + 1] = sample[0][a];
+                        data[idx, 2*a] = sample[0][a];
+                        data[idx, (2*a) + 1] = sample[0][a];
                     }
                     else
                     {
-                        data[idx, 2 * a] = sample[0][a];
-                        data[idx, (2 * a) + 1] = sample[1][a] / 2;
+                        data[idx, 2*a] = sample[0][a];
+                        data[idx, (2*a) + 1] = sample[1][a]/2;
                     }
                 });
                 //pad any empty samples
@@ -110,20 +104,20 @@ namespace SimpleRBM.Demo.IO
                 {
                     if (sample.Length == 1)
                     {
-                        data[idx, 2 * a] = 0;
-                        data[idx, (2 * a) + 1] = 0;
+                        data[idx, 2*a] = 0;
+                        data[idx, (2*a) + 1] = 0;
                     }
                     else
                     {
-                        data[idx, 2 * a] = 0;
-                        data[idx, (2 * a) + 1] = 0;
+                        data[idx, 2*a] = 0;
+                        data[idx, (2*a) + 1] = 0;
                     }
                 });
             }
             return data;
         }
 
-        protected override double[,] ReadTestData(string filePath, int startLine, int count)
+        protected override double[,] ReadTestDataD(string filePath, int startLine, int count)
         {
             var rnd = new Random();
 
@@ -145,7 +139,7 @@ namespace SimpleRBM.Demo.IO
             var arr = new float[src.GetLength(0), src.GetLength(1)];
 
             Parallel.For(0, arr.GetLength(0),
-                a => Parallel.For(0, arr.GetLength(1), b => { arr[a, b] = (float)src[a, b]; }));
+                a => Parallel.For(0, arr.GetLength(1), b => { arr[a, b] = (float) src[a, b]; }));
             return arr;
         }
 
@@ -156,6 +150,20 @@ namespace SimpleRBM.Demo.IO
             Parallel.For(0, arr.GetLength(0),
                 a => Parallel.For(0, arr.GetLength(1), b => { arr[a, b] = src[a, b]; }));
             return arr;
+        }
+
+        protected override float[,] ReadTrainingData(string filePath, int skipRecords, int count, out string[] labels,
+            out float[,] labelsCoded)
+        {
+            double[,] coded;
+            var res = ConvertArrayToFloat(ReadTrainingData(TestDataPath, skipRecords, count, out labels, out coded));
+            labelsCoded = ConvertArrayToFloat(coded);
+            return res;
+        }
+
+        protected override float[,] ReadTestDataF(string filePath, int skipRecords, int count)
+        {
+            return ConvertArrayToFloat(ReadTestDataD(TestDataPath, skipRecords, count));
         }
     }
 }

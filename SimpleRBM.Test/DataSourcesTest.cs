@@ -11,7 +11,7 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void TestHandwrittenNumbers()
         {
-            var io = new HandwrittenNumbersDataF("optdigits-tra.txt");
+            var io = new HandwrittenNumbersData("optdigits-tra.txt");
 
             int[] labels;
             float[,] labelsCoded;
@@ -23,7 +23,7 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void TestKaggleTrainingData()
         {
-            var io = new KaggleDataF(ConfigurationManager.AppSettings["KaggleTrainingData"],
+            var io = new KaggleData(ConfigurationManager.AppSettings["KaggleTrainingData"],
                 ConfigurationManager.AppSettings["KaggleTestData"]);
 
             int[] labels;
@@ -36,7 +36,7 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void TestMNist()
         {
-            var provider = new FacesDataF(ConfigurationManager.AppSettings["FacesDirectory"]);
+            var provider = new FacesData(ConfigurationManager.AppSettings["FacesDirectory"], ConfigurationManager.AppSettings["FacesDirectory"]);
             string[] labels;
             float[,] labelsCoded;
             float[,] data = provider.ReadTrainingData(0, 20, out labels, out labelsCoded);

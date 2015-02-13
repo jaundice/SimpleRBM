@@ -73,6 +73,7 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>SimpleRBM.Demo.Program</StartupObject>
@@ -89,19 +90,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Demo\CommandLine.cs" />
+    <Compile Include="Demo\DemoUtil.cs" />
     <Compile Include="IO\CsvData.cs" />
-    <Compile Include="IO\DataTypeProxy.cs" />
     <Compile Include="Demo\AudioDemo.cs" />
     <Compile Include="Demo\DataDemo.cs" />
-    <Compile Include="IO\HandwrittenNumbersDataF.cs" />
-    <Compile Include="IO\HandwrittenNumbersDataD.cs" />
+    <Compile Include="IO\HandwrittenNumbersData.cs" />
     <Compile Include="Demo\DemoApp.cs" />
-    <Compile Include="IO\KaggleDataD.cs" />
-    <Compile Include="IO\KaggleDataF.cs" />
+    <Compile Include="IO\KaggleData.cs" />
     <Compile Include="Util\KeyEncoder.cs" />
     <Compile Include="Util\LabelEncoder.cs" />
-    <Compile Include="IO\FacesDataD.cs" />
-    <Compile Include="IO\FacesDataF.cs" />
+    <Compile Include="IO\FacesData.cs" />
     <Compile Include="IO\WavData.cs" />
     <Compile Include="IDemo.cs" />
     <Compile Include="ImageUtils.cs" />

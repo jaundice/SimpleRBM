@@ -12,7 +12,7 @@ using TElementType = System.Double;
 #endif
 namespace CudaNN
 {
-    public abstract class CudaAdvancedRbmBase : IDisposable, IAdvancedRbmCuda<TElementType>, IRbm<TElementType>
+    public abstract class CudaAdvancedRbmBase : IDisposable, IAdvancedRbmCuda<TElementType>
     {
         //private TElementType _epsilonhb;
         //private TElementType _epsilonvb;
@@ -227,6 +227,28 @@ namespace CudaNN
         {
             Trace.TraceError("Finalizer called. Dispose of properly");
             Dispose(false);
+        }
+
+
+        public TElementType[,] DayDream(int numberOfSamples)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void GreedyTrain(TElementType[,] visibleData, IExitConditionEvaluator<TElementType> exitEvaluator, ILearningRateCalculator<TElementType> learningRateCalculator)
+        {
+            GreedyTrain(visibleData, exitEvaluator, learningRateCalculator, learningRateCalculator,
+                learningRateCalculator);
+        }
+
+        public ILayerSaveInfo<TElementType> GetSaveInfo()
+        {
+            throw new NotImplementedException();
+        }
+
+        public TElementType CalculateReconstructionError(TElementType[,] data)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -71,12 +71,11 @@ namespace SimpleRBM.MultiDim
             IExitConditionEvaluatorFactory<TElement> exitEvaluatorFactory,
             ILearningRateCalculatorFactory<TElement> learningRateCalculatorFactory)
         {
-            TElement error;
             for (int i = 0; i < Machines.Length; i++)
             {
                 visibleData = i < startDepth
                     ? Machines[i].Encode(visibleData)
-                    : GreedyTrain(visibleData, i, exitEvaluatorFactory, learningRateCalculatorFactory, out error);
+                    : GreedyTrain(visibleData, i, exitEvaluatorFactory, learningRateCalculatorFactory);
             }
         }
 
@@ -122,12 +121,11 @@ namespace SimpleRBM.MultiDim
 
         public TElement[,] GreedyTrain(TElement[,] data, int layerIndex,
             IExitConditionEvaluatorFactory<TElement> exitEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateCalculatorFactory, out TElement error)
+            ILearningRateCalculatorFactory<TElement> learningRateCalculatorFactory)
         {
-            TElement err = Machines[layerIndex].GreedyTrain(data, exitEvaluatorFactory.Create(layerIndex),
+            Machines[layerIndex].GreedyTrain(data, exitEvaluatorFactory.Create(layerIndex),
                 learningRateCalculatorFactory.Create(layerIndex));
-            RaiseTrainEnd(err);
-            error = err;
+           
             return Machines[layerIndex].Encode(data);
         }
 
@@ -135,30 +133,19 @@ namespace SimpleRBM.MultiDim
             IExitConditionEvaluatorFactory<TElement> exitEvaluatorFactory,
             ILearningRateCalculatorFactory<TElement> learningRateCalculatorFactory)
         {
-            TElement err;
             return Task.Run(
-                () => GreedyTrain(data, layerIndex, exitEvaluatorFactory, learningRateCalculatorFactory, out err));
+                () => GreedyTrain(data, layerIndex, exitEvaluatorFactory, learningRateCalculatorFactory));
         }
 
         public void GreedyTrainAll(TElement[,] visibleData, IExitConditionEvaluatorFactory<TElement> exitEvaluatorFactory,
             ILearningRateCalculatorFactory<TElement> learningRateCalculatorFactory)
         {
-            TElement error;
 
             for (int i = 0; i < Machines.Length; i++)
             {
-                visibleData = GreedyTrain(visibleData, i, exitEvaluatorFactory, learningRateCalculatorFactory, out error);
-                RaiseTrainEnd(error);
+                visibleData = GreedyTrain(visibleData, i, exitEvaluatorFactory, learningRateCalculatorFactory);
             }
         }
-
-        public Task AsyncGreedyTrainAll(TElement[,] visibleData,
-            IExitConditionEvaluatorFactory<TElement> exitEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateCalculatorFactory)
-        {
-            return Task.Run(() => GreedyTrainAll(visibleData, exitEvaluatorFactory, learningRateCalculatorFactory));
-        }
-
 
         public event EventHandler<EpochEventArgs<TElement>> EpochEnd;
 
@@ -174,21 +161,6 @@ namespace SimpleRBM.MultiDim
             return Machines.Select(a => a.GetSaveInfo());
         }
 
-
-        public TElement[,] GreedyBatchedTrain(TElement[,] data, int layerPosition, int batchRows,
-            IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory, out TElement error)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task AsyncGreedyBatchedTrain(TElement[,] data, int layerPosition, int batchRows,
-            IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory)
-        {
-            throw new NotImplementedException();
-        }
-
         public void GreedyBatchedTrainAll(TElement[,] visibleData, int batchRows,
             IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
             ILearningRateCalculatorFactory<TElement> learningRateFactory)
@@ -196,29 +168,6 @@ namespace SimpleRBM.MultiDim
             throw new NotImplementedException();
         }
 
-        public Task AsyncGreedyBatchedTrainAll(TElement[,] visibleData, int batchRows,
-            IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void GreedyBatchedTrainLayersFrom(TElement[,] visibleData, int startDepth, int batchRows,
-            IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory)
-        {
-            throw new NotImplementedException();
-        }
-
-        private void RaiseTrainEnd(TElement error)
-        {
-            if (TrainEnd != null)
-                TrainEnd(this, new EpochEventArgs<TElement>
-                {
-                    Epoch = -1,
-                    Error = error
-                });
-        }
 
         private void OnRbm_EpochEnd(object sender, EpochEventArgs<TElement> e)
         {

@@ -59,7 +59,7 @@ namespace SimpleRBM.MultiDim
         /// <param name="rows"></param>
         /// <param name="cols"></param>
         /// <returns></returns>
-        public unsafe static double[,] GaussianMatrix(int rows, int cols)
+        public unsafe static double[,] GaussianMatrixD(int rows, int cols)
         {
             //var matrix = new double[rows, cols];
 

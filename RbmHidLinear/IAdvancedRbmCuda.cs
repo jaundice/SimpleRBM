@@ -6,7 +6,7 @@ using SimpleRBM.Cuda;
 
 namespace CudaNN
 {
-    public interface IAdvancedRbmCuda<TElementType> : IDisposable, IRbm<TElementType>
+    public interface IAdvancedRbmCuda<TElementType> : IDisposable, IRestrictedBoltzmannMachine<TElementType>
         where TElementType : struct, IComparable<TElementType>
     {
         Matrix2D<TElementType> Encode(Matrix2D<TElementType> data);

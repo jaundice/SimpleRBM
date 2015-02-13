@@ -42,142 +42,81 @@ namespace SimpleRBM.Demo.Demo
                     dbn = dbnFactory.Create(defaultLayerSizes);
                 }
 
-                var companionDatasetExitConditionEvaluatorFactory =
-                    preTrainExitConditionEvaluatorFactory as CompanionDatasetExitConditionEvaluatorFactory<TDataElement>;
-                if (companionDatasetExitConditionEvaluatorFactory != null)
-                {
-                    companionDatasetExitConditionEvaluatorFactory.Dbn = (IDeepBeliefNetworkExtended<TDataElement>)dbn;
-                    companionDatasetExitConditionEvaluatorFactory.TestData = dataProvider.ReadTestData(0, 400);
-                }
+
                 string pathBase = Path.Combine(Environment.CurrentDirectory, Guid.NewGuid().ToString());
                 Directory.CreateDirectory(pathBase);
                 Directory.CreateDirectory(Path.Combine(pathBase, "Original"));
-                if (dbn is IDeepBeliefNetworkExtended<TDataElement>)
+
+                DemoUtil.WireEvents(dataProvider, classify, dbn, pathBase);
+
+                Console.WriteLine("Training Network");
+                TLabel[] labels;
+
+
+                int trainFrom = CommandLine.ReadCommandLine("-trainfromlevel:", int.TryParse, -1);
+
+                TDataElement[,] referenceLabelsCoded;
+                TDataElement[,] trainingData = dataProvider.ReadTrainingData(
+                    skipTrainingRecords,
+                    trainingSize,
+                    out labels, out referenceLabelsCoded);
+
+                DemoUtil.SaveImages(pathBase, "OriginalTrainingData_{0}.jpg", trainingData);
+
+
+                if (trainFrom > -1)
                 {
-                    var ddd = (IDeepBeliefNetworkExtended<TDataElement>)dbn;
-                    TDataElement[,] runningtestData = dataProvider.ReadTestData(0, 20);
-                    Task.Run(() =>
-                        Parallel.For(0, runningtestData.GetLength(0), kk =>
-                            ImageUtils.SaveImageData(runningtestData, kk,
-                                Path.Combine(pathBase, "Original",
-                                    string.Format("OriginalTestData_{0}.jpg", kk)),
-                                a => Convert.ToByte(Convert.ToSingle(a) * 255f))
-                            ));
-
-                    ddd.EpochEnd += (sender, args) =>
-                    {
-                        if (args.Epoch % 500 == 0)
-                        {
-                            //Console.WriteLine("daydream:");
-                            TDataElement[,] dream = ddd.DayDream(10, args.Layer);
-                            Task.Run(() =>
-                                Parallel.For(0, dream.GetLength(0), kk =>
-                                    ImageUtils.SaveImageData(dream, kk,
-                                        Path.Combine(pathBase,
-                                            string.Format("{0}_{1}_Dream_{2}.jpg", args.Layer, args.Epoch, kk)),
-                                        a => Convert.ToByte(Convert.ToSingle(a) * 255f))
-                                    ));
-
-                            //dataProvider.PrintToConsole(dream);
-
-                            //Console.WriteLine("recreate");
-
-                            TDataElement[,] reconstructedRunningTestData = null;
-                            TDataElement[,] calculatedLabels = null;
-                            ulong[][] runningKeys = null;
-                            if (args.Layer == dbn.NumMachines - 1)
-                            {
-                                reconstructedRunningTestData = classify
-                                    ? ddd.ReconstructWithLabels(runningtestData, out calculatedLabels)
-                                    : ddd.Reconstruct(runningtestData);
-                                runningKeys = KeyEncoder.GenerateKeys(calculatedLabels);
-                            }
-                            else
-                            {
-                                reconstructedRunningTestData = ddd.Reconstruct(runningtestData, args.Layer);
-                            }
-                            //dataProvider.PrintToConsole(reconstructedRunningTestData, runningtestData, keys: runningKeys,
-                            //    computedLabels: calculatedLabels);
-
-                            Task.Run(() =>
-                                Parallel.For(0, reconstructedRunningTestData.GetLength(0), kk =>
-                                    ImageUtils.SaveImageData(reconstructedRunningTestData, kk,
-                                        Path.Combine(pathBase,
-                                            string.Format("{0}_{1}_Reconstruction_{2}.jpg", args.Layer, args.Epoch, kk)),
-                                        a => Convert.ToByte(Convert.ToSingle(a) * 255f))
-                                    ));
-                        }
-                    };
+                    throw new NotImplementedException();
+                    //if (batchSize == -1)
+                    //{
+                    //    dbn.GreedyTrainLayersFrom(trainingData, trainFrom, preTrainExitConditionEvaluatorFactory,
+                    //        preTrainLearningRateCalculatorFactory);
+                    //}
+                    //else
+                    //{
+                    //    dbn.GreedyBatchedTrainLayersFrom(trainingData, trainFrom, batchSize,
+                    //        preTrainExitConditionEvaluatorFactory, preTrainLearningRateCalculatorFactory);
+                    //}
                 }
-                //for (var kk = 0; kk < 1000; kk++)
-                //while(false)
+                else
                 {
-                    Console.WriteLine("Training Network");
-                    TLabel[] labels;
-
-
-                    int trainFrom = CommandLine.ReadCommandLine("-trainfromlevel:", int.TryParse, -1);
-
-                    TDataElement[,] referenceLabelsCoded;
-                    TDataElement[,] trainingData = dataProvider.ReadTrainingData(
-                        skipTrainingRecords,
-                        trainingSize,
-                        out labels, out referenceLabelsCoded);
-                    Task.Run(() =>
-                        Parallel.For(0, trainingData.GetLength(0), kk =>
-                            ImageUtils.SaveImageData(trainingData, kk,
-                                Path.Combine(pathBase, "Original",
-                                    string.Format("OriginalTrainingData_{0}.jpg", kk)),
-                                a => Convert.ToByte(Convert.ToSingle(a) * 255f))
-                            ));
-
-
-                    if (trainFrom > -1)
+                    if (batchSize == -1)
                     {
-                        throw new NotImplementedException();
-                        //if (batchSize == -1)
-                        //{
-                        //    dbn.GreedyTrainLayersFrom(trainingData, trainFrom, preTrainExitConditionEvaluatorFactory,
-                        //        preTrainLearningRateCalculatorFactory);
-                        //}
-                        //else
-                        //{
-                        //    dbn.GreedyBatchedTrainLayersFrom(trainingData, trainFrom, batchSize,
-                        //        preTrainExitConditionEvaluatorFactory, preTrainLearningRateCalculatorFactory);
-                        //}
+                        //classifier
+                        var extended = dbn as IDeepBeliefNetworkExtended<TDataElement>;
+
+                        if (classify && extended != null)
+                            extended.GreedySupervisedTrainAll(trainingData,
+                                referenceLabelsCoded, preTrainExitConditionEvaluatorFactory,
+                                preTrainLearningRateCalculatorFactory);
+                        else
+                            dbn.GreedyTrainAll(trainingData, preTrainExitConditionEvaluatorFactory,
+                                preTrainLearningRateCalculatorFactory);
                     }
                     else
                     {
-                        if (batchSize == -1)
-                        {
-                            //classifier
-                            if (classify)
-                                ((IBasicNetworkCuda<TDataElement>)dbn).GreedySupervisedTrainAll(trainingData,
-                                    referenceLabelsCoded, preTrainExitConditionEvaluatorFactory,
-                                    preTrainLearningRateCalculatorFactory);
-                            else
-                                dbn.GreedyTrainAll(trainingData, preTrainExitConditionEvaluatorFactory,
-                                    preTrainLearningRateCalculatorFactory);
-                        }
+                        //classifier
+                        var extended = dbn as IDeepBeliefNetworkExtended<TDataElement>;
+                        if (classify && extended != null)
+                            extended.GreedyBatchedSupervisedTrainAll(
+                                trainingData,
+                                referenceLabelsCoded, batchSize, preTrainExitConditionEvaluatorFactory,
+                                preTrainLearningRateCalculatorFactory);
                         else
-                        {
-                            //classifier
-                            if (classify)
-                                ((IDeepBeliefNetworkExtended<TDataElement>)dbn).GreedyBatchedSupervisedTrainAll(
-                                    trainingData,
-                                    referenceLabelsCoded, batchSize, preTrainExitConditionEvaluatorFactory,
-                                    preTrainLearningRateCalculatorFactory);
-                            else
-                                dbn.GreedyBatchedTrainAll(trainingData, batchSize, preTrainExitConditionEvaluatorFactory,
-                                    preTrainLearningRateCalculatorFactory);
-                        }
+                            dbn.GreedyBatchedTrainAll(trainingData, batchSize, preTrainExitConditionEvaluatorFactory,
+                                preTrainLearningRateCalculatorFactory);
                     }
+                }
 
-                    if (trainFrom < dbn.NumMachines)
-                    {
-                        SaveNetwork<TDataElement, TLabel>(pathBase, dbn);
-                    }
-                    Console.WriteLine("Fine train");
+                if (trainFrom < dbn.NumMachines)
+                {
+                    DemoUtil.SaveNetwork<TDataElement, TLabel>(pathBase, dbn);
+                }
+
+
+                Console.WriteLine("Fine train");
+                if (dbn is IDeepBeliefNetworkExtended<TDataElement>)
+                {
                     if (!classify)
                     {
                         ((IDeepBeliefNetworkExtended<TDataElement>)dbn).UpDownTrainAll(trainingData, 2,
@@ -189,93 +128,29 @@ namespace SimpleRBM.Demo.Demo
                             referenceLabelsCoded, 2, fineTrainExitConditionEvaluatorFactory,
                             fineTrainLearningRateCalculatorFactory);
                     }
-
-                    SaveNetwork<TDataElement, TLabel>(pathBase, dbn);
                 }
+
+                DemoUtil.SaveNetwork<TDataElement, TLabel>(pathBase, dbn);
 
 
                 Console.WriteLine("++++++++++++++++++++++++++++++++++++++++++++");
                 Console.WriteLine("Reconstructions");
                 Console.WriteLine("Training Data:");
                 Console.WriteLine();
+
                 //Take a sample of input arrays and try to reconstruct them.
-                TLabel[] labels2;
-                TDataElement[,] labelsCoded;
-                TDataElement[,] tdata = dataProvider.ReadTrainingData(
-                    skipTrainingRecords + trainingSize,
-                    100, out labels2, out labelsCoded);
-
-                //float[,] reconstructedItems =
-                //    dbn.Reconstruct(tdata);                
-
-
-                TDataElement[,] labelsComputed = null;
-                TDataElement[,] reconstructedItems = classify
-                    ? ((IDeepBeliefNetworkExtended<TDataElement>)dbn).ReconstructWithLabels(tdata,
-                        out labelsComputed)
-                    : dbn.Reconstruct(tdata);
-
-
-                ulong[][] featureKeys = KeyEncoder.GenerateKeys(labelsComputed);
-
-                dataProvider.PrintToConsole(reconstructedItems, tdata, labels2, keys: featureKeys,
-                    computedLabels: labelsComputed, referenceLabelsCoded: labelsCoded);
-
-                Task.Run(() =>
-                    Parallel.For(0, reconstructedItems.GetLength(0), kk =>
-                        ImageUtils.SaveImageData(reconstructedItems, kk,
-                            Path.Combine(pathBase,
-                                string.Format("Final_Reconstructions_{0}.jpg", kk)),
-                            a => Convert.ToByte(Convert.ToSingle(a) * 255f))
-                        ));
+                DemoUtil.ReconstructTrainingData(dataProvider, trainingSize, skipTrainingRecords, classify, dbn, pathBase);
 
                 Console.WriteLine();
                 Console.WriteLine();
-                Console.WriteLine("Test Data:");
-                Console.WriteLine();
-                TDataElement[,] testData = dataProvider.ReadTestData(0, 100);
 
-                TDataElement[,] computedLabels2 = null;
+                TDataElement[,] computedLabels2;
+                DemoUtil.ReconstructTestData(dataProvider, classify, dbn, pathBase, out computedLabels2);
 
-                //c
-                TDataElement[,] reconstructedTestData = classify
-                    ? ((IDeepBeliefNetworkExtended<TDataElement>)dbn).ReconstructWithLabels(testData, out computedLabels2)
-                    : dbn.Reconstruct(testData);
-                ulong[][] featKeys2 =
-                    KeyEncoder.GenerateKeys(computedLabels2);
-                ;
-                //float[,] reconstructedTestData = dbn.Reconstruct(testData);
-                dataProvider.PrintToConsole(reconstructedTestData, testData, keys: featKeys2,
-                    computedLabels: computedLabels2);
-                Task.Run(() =>
-                    Parallel.For(0, reconstructedTestData.GetLength(0), kk =>
-                        ImageUtils.SaveImageData(reconstructedTestData, kk,
-                            Path.Combine(pathBase,
-                                string.Format("Final_Reconstructions_Test_{0}.jpg", kk)),
-                            a => Convert.ToByte(Convert.ToSingle(a) * 255f))
-                        ));
 
                 if (classify)
                 {
-                    Console.WriteLine("Generating 5 examples of each class");
-
-                    int numPossibleLabels = computedLabels2.GetLength(1);
-                    int numExamples = numPossibleLabels * 5;
-                    int row = 0;
-                    var labels = new TDataElement[numExamples, numPossibleLabels];
-                    var one = (TDataElement)Convert.ChangeType(1, typeof(TDataElement));
-                    for (int label = 0; label < numPossibleLabels; label++)
-                    {
-                        for (int exNo = 0; exNo < 5; exNo++)
-                        {
-                            labels[row++, label] = one;
-                        }
-                    }
-
-                    TDataElement[,] generated =
-                        ((IDeepBeliefNetworkExtended<TDataElement>)dbn).DaydreamByClass(labels);
-
-                    dataProvider.PrintToConsole(generated, computedLabels: labels);
+                    DemoUtil.DreamWithClass(dataProvider, computedLabels2, dbn);
                 }
 
 
@@ -286,15 +161,8 @@ namespace SimpleRBM.Demo.Demo
                 do
                 {
                     //Day dream 10 images
-                    TDataElement[,] dreams = dbn.DayDream(10);
-                    dataProvider.PrintToConsole(dreams);
-                    Task.Run(() =>
-                        Parallel.For(0, dreams.GetLength(0), kk =>
-                            ImageUtils.SaveImageData(dreams, kk,
-                                Path.Combine(pathBase,
-                                    string.Format("Final_Dreams_{0}.jpg", kk)),
-                                a => Convert.ToByte(Convert.ToSingle(a) * 255f))
-                            ));
+                    DemoUtil.DayDream(dataProvider, dbn, pathBase);
+
                     Console.WriteLine();
                     Console.WriteLine("++++++++++++++++++++++++++++++++++++++++++++");
                 } while (!new[] { 'Q', 'q' }.Contains(Console.ReadKey().KeyChar));
@@ -304,32 +172,6 @@ namespace SimpleRBM.Demo.Demo
                 var disp = dbn as IDisposable;
                 if (disp != null)
                     disp.Dispose();
-            }
-        }
-
-        private static void SaveNetwork<TDataElement, TLabel>(string pathBase, IDeepBeliefNetwork<TDataElement> dbn)
-            where TDataElement : struct, IComparable<TDataElement>
-        {
-            var dir = new DirectoryInfo(pathBase);
-
-            DateTime dt = DateTime.Now;
-
-            DirectoryInfo dir2 =
-                dir.CreateSubdirectory(string.Format("{0:D4}-{1:D2}-{2:D2}_{3:D2}-{4:D2}-{5:D2}", dt.Year,
-                    dt.Month,
-                    dt.Day, dt.Hour, dt.Minute, dt.Second));
-            int i = 0;
-            try
-            {
-                foreach (var layerSaveInfo in dbn.GetLayerSaveInfos())
-                {
-                    layerSaveInfo.Save(Path.Combine(dir2.FullName, string.Format("layer_{0}.bin", i)));
-                    i++;
-                }
-            }
-            catch (OutOfMemoryException)
-            {
-                // big network on x86 :(
             }
         }
     }

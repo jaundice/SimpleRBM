@@ -513,7 +513,7 @@ namespace SimpleRBM.Test
         public static void CreateRandomMatricesD(GPGPU dev, int rows, int cols, out double[,] netMatrix,
             out Matrix2D<double> cudaMatrix)
         {
-            netMatrix = Distributions.GaussianMatrix(rows, cols);
+            netMatrix = Distributions.GaussianMatrixD(rows, cols);
 
             cudaMatrix = dev.AllocateAndSet<double>(rows, cols);
 

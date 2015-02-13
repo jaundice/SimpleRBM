@@ -6,11 +6,13 @@ using System.Threading.Tasks;
 using SimpleRBM.Common;
 using SimpleRBM.Common.Save;
 
+using TElement = System.Double;
+
 namespace SimpleRBM.MultiDim
 {
-    public class RestrictedBoltzmannMachineD : IRestrictedBoltzmannMachine<double>
+    public class RestrictedBoltzmannMachineD : IRestrictedBoltzmannMachine<TElement>
     {
-        private double[,] Weights;
+        private TElement[,] Weights;
 
         public RestrictedBoltzmannMachineD(int numVisible, int numHidden, ActivationFunction visibleActivation, ActivationFunction hiddenActivation)
         {
@@ -18,13 +20,13 @@ namespace SimpleRBM.MultiDim
             NumVisibleNeurons = numVisible;
             VisibleActivation = visibleActivation;
             HiddenActivation = hiddenActivation;
-            Weights = new double[numVisible + 1, numHidden + 1];
+            Weights = new TElement[numVisible + 1, numHidden + 1];
             Matrix2D.InsertValuesFrom(
                 Weights,
                 1,
                 1,
                 Matrix2D.Multiply(
-                    Distributions.GaussianMatrix(
+                    Distributions.GaussianMatrixD(
                         numVisible,
                         numHidden),0.1));
         }
@@ -33,7 +35,7 @@ namespace SimpleRBM.MultiDim
         public ActivationFunction HiddenActivation { get; protected set; }
 
 
-        public RestrictedBoltzmannMachineD(int numVisible, int numHidden, double[,] weights, ActivationFunction visibleActivation, ActivationFunction hiddenActivation)
+        public RestrictedBoltzmannMachineD(int numVisible, int numHidden, TElement[,] weights, ActivationFunction visibleActivation, ActivationFunction hiddenActivation)
         {
             NumHiddenNeurons = numHidden;
             NumVisibleNeurons = numVisible;
@@ -45,7 +47,7 @@ namespace SimpleRBM.MultiDim
         public int NumHiddenNeurons { get; protected set; }
         public int NumVisibleNeurons { get; protected set; }
 
-        public double[,] Activate(double[,] matrix)
+        public TElement[,] Activate(TElement[,] matrix)
         {
             switch (VisibleActivation)
             {
@@ -66,17 +68,17 @@ namespace SimpleRBM.MultiDim
             }
         }
 
-        public double[,] Encode(double[,] visibleStates)
+        public TElement[,] Encode(TElement[,] visibleStates)
         {
             int numExamples = visibleStates.GetLength(0);
-            double[,] hiddenStates = Matrix2D.OnesD(numExamples, NumHiddenNeurons + 1);
+            TElement[,] hiddenStates = Matrix2D.OnesD(numExamples, NumHiddenNeurons + 1);
 
-            var data = new double[numExamples, visibleStates.GetLength(1) + 1];
+            var data = new TElement[numExamples, visibleStates.GetLength(1) + 1];
             Matrix2D.InsertValuesFrom(data, 0, 1, visibleStates);
             Matrix2D.UpdateValueAlongAxis(data, 0, 1, Matrix2D.Axis.Vertical);
-            double[,] hiddenActivations = Matrix2D.Multiply(data, Weights);
+            TElement[,] hiddenActivations = Matrix2D.Multiply(data, Weights);
 
-            double[,] hiddenProbs = Activate(hiddenActivations);
+            TElement[,] hiddenProbs = Activate(hiddenActivations);
             hiddenStates = Matrix2D.GreaterThan(hiddenProbs,
                 Distributions.UniformRandromMatrixD(numExamples, NumHiddenNeurons + 1));
             hiddenStates = Matrix2D.SubMatrix(hiddenStates, 0, 1);
@@ -84,54 +86,54 @@ namespace SimpleRBM.MultiDim
             return hiddenStates;
         }
 
-        public double[,] Decode(double[,] hiddenStates)
+        public TElement[,] Decode(TElement[,] hiddenStates)
         {
             int numExamples = hiddenStates.GetLength(0);
-            var data = new double[numExamples, hiddenStates.GetLength(1) + 1];
+            var data = new TElement[numExamples, hiddenStates.GetLength(1) + 1];
 
             Matrix2D.UpdateValueAlongAxis(data, 0, 1, Matrix2D.Axis.Vertical);
             Matrix2D.InsertValuesFrom(data, 0, 1, hiddenStates);
 
-            double[,] visibleActivations = Matrix2D.Multiply(data, Matrix2D.Transpose(Weights));
+            TElement[,] visibleActivations = Matrix2D.Multiply(data, Matrix2D.Transpose(Weights));
 
-            double[,] visibleProbs = Activate(visibleActivations);
+            TElement[,] visibleProbs = Activate(visibleActivations);
 
-            double[,] visibleStates = Matrix2D.GreaterThan(
+            TElement[,] visibleStates = Matrix2D.GreaterThan(
                 visibleProbs, Distributions.UniformRandromMatrixD(numExamples, NumVisibleNeurons + 1));
 
             visibleStates = Matrix2D.SubMatrix(visibleStates, 0, 1);
             return visibleStates;
         }
 
-        public double[,] Reconstruct(double[,] data)
+        public TElement[,] Reconstruct(TElement[,] data)
         {
-            double[,] hidden = Encode(data);
+            TElement[,] hidden = Encode(data);
             return Decode(hidden);
         }
 
-        public double[,] DayDream(int numberOfSamples)
+        public TElement[,] DayDream(int numberOfSamples)
         {
-            double[,] data = Matrix2D.OnesD(numberOfSamples, NumVisibleNeurons + 1);
+            TElement[,] data = Matrix2D.OnesD(numberOfSamples, NumVisibleNeurons + 1);
             Matrix2D.InsertValuesFrom(data, 0, 1, Distributions.UniformRandromMatrixBoolD(1, NumVisibleNeurons), 1);
             //hiddenStates = Matrix2D.Update(hiddenStates, 0, 1, 1);
             for (int i = 0; i < numberOfSamples; i++)
             {
-                double[,] visible = Matrix2D.SubMatrix(data, i, 0, 1);
-                double[,] hiddenActivations = Matrix2D.ToVector(Matrix2D.Multiply(
+                TElement[,] visible = Matrix2D.SubMatrix(data, i, 0, 1);
+                TElement[,] hiddenActivations = Matrix2D.ToVector(Matrix2D.Multiply(
                     visible, Weights));
 
-                double[,] hiddenProbs = Activate(hiddenActivations);
-                double[,] hiddenStates = Matrix2D.GreaterThan(hiddenProbs,
+                TElement[,] hiddenProbs = Activate(hiddenActivations);
+                TElement[,] hiddenStates = Matrix2D.GreaterThan(hiddenProbs,
                     Distributions.UniformRandromVectorD(NumHiddenNeurons + 1));
 
                 hiddenStates[0, 0] = 1;
 
-                double[,] visibleActivations = Matrix2D.ToVector(Matrix2D.Multiply(hiddenStates, Matrix2D.Transpose(
+                TElement[,] visibleActivations = Matrix2D.ToVector(Matrix2D.Multiply(hiddenStates, Matrix2D.Transpose(
                     Weights)));
 
-                double[,] visibleProbs = Activate(visibleActivations);
+                TElement[,] visibleProbs = Activate(visibleActivations);
 
-                double[,] visibleStates = Matrix2D.GreaterThan(visibleProbs,
+                TElement[,] visibleStates = Matrix2D.GreaterThan(visibleProbs,
                     Distributions.UniformRandromVectorD(NumVisibleNeurons + 1));
 
                 Matrix2D.InsertValuesFromRowOrColumn(data, visibleStates, 0, false, i, 0);
@@ -140,26 +142,26 @@ namespace SimpleRBM.MultiDim
             return Matrix2D.SubMatrix(data, 0, 1);
         }
 
-        public double GreedyTrain(double[][] data, IExitConditionEvaluator<double> exitEvaluator,
-            ILearningRateCalculator<double> learningRateCalculator)
+        public void GreedyTrain(TElement[][] data, IExitConditionEvaluator<TElement> exitEvaluator,
+            ILearningRateCalculator<TElement> learningRateCalculator)
         {
-            return GreedyTrain(Matrix2D.JaggedToMultidimesional(data), exitEvaluator, learningRateCalculator);
+            GreedyTrain(Matrix2D.JaggedToMultidimesional(data), exitEvaluator, learningRateCalculator);
         }
 
-        public Task<double> AsyncGreedyTrain(double[][] data, IExitConditionEvaluator<double> exitEvaluator,
-            ILearningRateCalculator<double> learningRateCalculator)
+        public Task AsyncGreedyTrain(TElement[][] data, IExitConditionEvaluator<TElement> exitEvaluator,
+            ILearningRateCalculator<TElement> learningRateCalculator)
         {
             return AsyncGreedyTrain(Matrix2D.JaggedToMultidimesional(data), exitEvaluator, learningRateCalculator);
         }
 
-        public double GreedyTrain(double[,] visibleData, IExitConditionEvaluator<double> exitEvaluator,
-            ILearningRateCalculator<double> learningRateCalculator)
+        public void GreedyTrain(TElement[,] visibleData, IExitConditionEvaluator<TElement> exitEvaluator,
+            ILearningRateCalculator<TElement> learningRateCalculator)
         {
             exitEvaluator.Start();
-            double error = 0d;
+            TElement error = 0d;
 
             int numExamples = visibleData.GetLength(0);
-            var data = new double[numExamples, visibleData.GetLength(1) + 1];
+            var data = new TElement[numExamples, visibleData.GetLength(1) + 1];
 
             Matrix2D.InsertValuesFrom(data, 0, 1, visibleData);
             Matrix2D.UpdateValueAlongAxis(data, 0, 1, Matrix2D.Axis.Vertical);
@@ -170,21 +172,21 @@ namespace SimpleRBM.MultiDim
             {
                 sw.Start();
 
-                double[,] posHiddenActivations = Matrix2D.Multiply(data, Weights);
-                double[,] posHiddenProbs = Activate(posHiddenActivations);
-                double[,] posHiddenStates = Matrix2D.GreaterThan(posHiddenProbs,
+                TElement[,] posHiddenActivations = Matrix2D.Multiply(data, Weights);
+                TElement[,] posHiddenProbs = Activate(posHiddenActivations);
+                TElement[,] posHiddenStates = Matrix2D.GreaterThan(posHiddenProbs,
                     Distributions.UniformRandromMatrixD(numExamples, NumHiddenNeurons + 1));
-                double[,] posAssociations = Matrix2D.Multiply(Matrix2D.Transpose(data), posHiddenProbs);
+                TElement[,] posAssociations = Matrix2D.Multiply(Matrix2D.Transpose(data), posHiddenProbs);
 
-                double[,] negVisibleActivations = Matrix2D.Multiply(posHiddenStates, Matrix2D.Transpose(Weights));
-                double[,] negVisibleProbs = Activate(negVisibleActivations);
+                TElement[,] negVisibleActivations = Matrix2D.Multiply(posHiddenStates, Matrix2D.Transpose(Weights));
+                TElement[,] negVisibleProbs = Activate(negVisibleActivations);
 
                 Matrix2D.UpdateValueAlongAxis(negVisibleProbs, 0, 1, Matrix2D.Axis.Vertical);
 
-                double[,] negHiddenActivations = Matrix2D.Multiply(negVisibleProbs, Weights);
-                double[,] negHiddenProbs = Activate(negHiddenActivations);
+                TElement[,] negHiddenActivations = Matrix2D.Multiply(negVisibleProbs, Weights);
+                TElement[,] negHiddenProbs = Activate(negHiddenActivations);
 
-                double[,] negAssociations = Matrix2D.Multiply(Matrix2D.Transpose(negVisibleProbs), negHiddenProbs);
+                TElement[,] negAssociations = Matrix2D.Multiply(Matrix2D.Transpose(negVisibleProbs), negHiddenProbs);
 
                 Weights = Matrix2D.Add(
                     Weights,
@@ -199,11 +201,6 @@ namespace SimpleRBM.MultiDim
                 error = Matrix2D.EnumerateElements(Matrix2D.Pow(Matrix2D.Subtract(data, negVisibleProbs), 2)).Sum();
                 RaiseEpochEnd(i, error);
 
-                //if (i%20 == 0)
-                //    Console.WriteLine("Epoch {0}: error is {1}, computation time (ms): {2}", i, error,
-                //        sw.ElapsedMilliseconds);
-               
-
 
                 if (exitEvaluator.Exit(i, error, sw.Elapsed))
                     break; 
@@ -213,83 +210,41 @@ namespace SimpleRBM.MultiDim
 
             RaiseTrainEnd(i, error);
             exitEvaluator.Stop();
-            return error;
         }
 
-        public Task<double> AsyncGreedyTrain(double[,] data, IExitConditionEvaluator<double> exitEvaluator,
-            ILearningRateCalculator<double> learningRateCalculator)
+        public Task AsyncGreedyTrain(TElement[,] data, IExitConditionEvaluator<TElement> exitEvaluator,
+            ILearningRateCalculator<TElement> learningRateCalculator)
         {
             return Task.Run(() => GreedyTrain(data, exitEvaluator, learningRateCalculator));
         }
 
-        public event EventHandler<EpochEventArgs<double>> EpochEnd;
+        public event EventHandler<EpochEventArgs<TElement>> EpochEnd;
 
-        public event EventHandler<EpochEventArgs<double>> TrainEnd;
+        public event EventHandler<EpochEventArgs<TElement>> TrainEnd;
 
 
-        public ILayerSaveInfo<double> GetSaveInfo()
+        public ILayerSaveInfo<TElement> GetSaveInfo()
         {
             return new LayerSaveInfoD(NumVisibleNeurons, NumHiddenNeurons,
-                Matrix2D.Duplicate(Weights, sizeof (double)), VisibleActivation, HiddenActivation);
+                Matrix2D.Duplicate(Weights, sizeof (TElement)), VisibleActivation, HiddenActivation);
         }
 
 
 
-        private void RaiseTrainEnd(int epoch, double error)
+        private void RaiseTrainEnd(int epoch, TElement error)
         {
             if (TrainEnd != null)
-                TrainEnd(this, new EpochEventArgs<double> {Epoch = epoch, Error = error});
+                TrainEnd(this, new EpochEventArgs<TElement> {Epoch = epoch, Error = error});
         }
 
-        private void RaiseEpochEnd(int epoch, double error)
+        private void RaiseEpochEnd(int epoch, TElement error)
         {
             if (EpochEnd != null)
-                EpochEnd(this, new EpochEventArgs<double> {Epoch = epoch, Error = error});
+                EpochEnd(this, new EpochEventArgs<TElement> {Epoch = epoch, Error = error});
         }
 
 
-
-        public double[,] GetSoftmaxLayer(double[,] visibleStates)
-        {
-            throw new NotImplementedException();
-        }
-
-        public double GreedySupervisedTrain(double[,] data, double[,] labels, IExitConditionEvaluator<double> exitEvaluator, ILearningRateCalculator<double> learningRateCalculator)
-        {
-            throw new NotImplementedException();
-        }
-
-        public double GreedyBatchedSupervisedTrain(double[,] data, double[,] labels, int batchSize, IExitConditionEvaluator<double> exitEvaluator, ILearningRateCalculator<double> learningRateCalculator)
-        {
-            throw new NotImplementedException();
-        }
-
-        public double[,] Classify(double[,] data, out double[,] labels)
-        {
-            throw new NotImplementedException();
-        }
-
-        public double GreedyBatchedTrain(double[][] data, int batchRows, IExitConditionEvaluator<double> exitEvaluator, ILearningRateCalculator<double> learningRateCalculator)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<double> AsyncGreedyBatchedTrain(double[][] data, int batchRows, IExitConditionEvaluator<double> exitEvaluator, ILearningRateCalculator<double> learningRateCalculator)
-        {
-            throw new NotImplementedException();
-        }
-
-        public double GreedyBatchedTrain(double[,] data, int batchRows, IExitConditionEvaluator<double> exitEvaluator, ILearningRateCalculator<double> learningRateCalculator)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<double> AsyncGreedyBatchedTrain(double[,] data, int batchRows, IExitConditionEvaluator<double> exitEvaluator, ILearningRateCalculator<double> learningRateCalculator)
-        {
-            throw new NotImplementedException();
-        }
-
-        public double CalculateReconstructionError(double[,] data)
+        public TElement CalculateReconstructionError(TElement[,] data)
         {
             throw new NotImplementedException();
         }
