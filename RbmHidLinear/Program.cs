@@ -107,10 +107,10 @@ namespace CudaNN
                 //batch the data in gpu memory
                 net.GreedyBatchedTrain(d.ReadTestData(0, numTrainingExamples),
                     10000,
-                    new ManualKeyPressExitEvaluatorFactory<TElement>(10f, 5000),
-                    new ConstantLearningRateFactory<TElement>(0.0001),
-                    new ConstantLearningRateFactory<TElement>(0.0001),
-                     new ConstantLearningRateFactory<TElement>(0.0001));
+                    new ManualKeyPressExitEvaluatorFactory<TElement>((TElement)0.005, 10000),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.999999, 0.000001),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.999999, 0.000001),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.999999, 0.000001));
 
                 var testData = d.ReadTrainingData(numTrainingExamples, 200, out lbl, out coded);
 
@@ -170,9 +170,9 @@ namespace CudaNN
                 //batch the data into main memory
                 net.GreedyBatchedTrainMem(training, 200,
                     new ManualKeyPressExitEvaluatorFactory<TElement>(0.0005f, 10000),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.999999),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.999999),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.999999));
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.999999, 0.000001),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.999999, 0.000001),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.999999, 0.000001));
 
                 var testData = dataProvider.ReadTrainingData(numTrainingExamples, 200, out lbl, out coded);
 
@@ -231,9 +231,9 @@ namespace CudaNN
                     dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded),
                     coded, 4000,
                     new ManualKeyPressExitEvaluatorFactory<TElement>(0.0005f, 3920),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999));
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999, 0.000001),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999, 0.000001),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999, 0.000001));
 
                 int[] testSrcLabels;
                 TElement[,] testSourceCoded;
@@ -287,14 +287,26 @@ namespace CudaNN
 
             if (plat == ePlatform.x64)
                 throw new Exception("CUDA Random will fail currently on x64");
+            string kernelPath = Path.Combine(Environment.CurrentDirectory, "CudaKernels.kernel");
 
-            CudafyModule mod = CudafyTranslator.Cudafy(
-                plat,
-                arch,
-                typeof(ActivationFunctionsCuda),
-                typeof(Matrix2DCuda)
-                );
-
+            CudafyModule mod;
+            if (File.Exists(kernelPath))
+            {
+                Console.WriteLine("Loading kernels  from {0}", kernelPath);
+                mod = CudafyModule.Deserialize(kernelPath);
+            }
+            else
+            {
+                Console.WriteLine("Compiling cuda kernels");
+                mod = CudafyTranslator.Cudafy(
+                   plat,
+                   arch,
+                   typeof(ActivationFunctionsCuda),
+                   typeof(Matrix2DCuda)
+                   );
+                Console.WriteLine("Saving kernels to {0}", kernelPath);
+                mod.Serialize(kernelPath);
+            }
 
             ThreadOptimiser.Instance = new ThreadOptimiser(props.Capability, props.MultiProcessorCount,
                 props.MaxThreadsPerBlock,
