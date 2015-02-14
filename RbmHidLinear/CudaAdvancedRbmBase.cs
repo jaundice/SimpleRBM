@@ -10,16 +10,13 @@ using SimpleRBM.Cuda;
 using TElement = System.Single;
 
 #else
-using TElementType = System.Double;
+using TElement = System.Double;
 #endif
 
 namespace CudaNN
 {
     public abstract class CudaAdvancedRbmBase : IDisposable, IAdvancedRbmCuda<TElement>
     {
-        //private TElementType _epsilonhb;
-        //private TElementType _epsilonvb;
-        //private TElementType _epsilonw;
         private TElement _finalmomentum;
         private GPGPU _gpu;
         private int _layerIndex;
@@ -56,14 +53,9 @@ namespace CudaNN
         }
 
         protected CudaAdvancedRbmBase(GPGPU gpu, GPGPURAND rand, int layerIndex, int numVisibleNeurons,
-            int numHiddenNeurons,
-            /*TElementType epsilonw = (TElementType) 0.001, TElementType epsilonvb = (TElementType) 0.001,
-            TElementType epsilonhb = (TElementType) 0.001,*/ TElement weightcost = (TElement) 0.0002,
+            int numHiddenNeurons, TElement weightcost = (TElement) 0.0002,
             TElement initialMomentum = (TElement) 0.5, TElement finalMomentum = (TElement) 0.9)
         {
-            //_epsilonw = epsilonw; // Learning rate for weights 
-            //_epsilonvb = epsilonvb; // Learning rate for biases of visible units
-            //_epsilonhb = epsilonhb; // Learning rate for biases of hidden units 
             _weightcost = weightcost;
             _initialmomentum = initialMomentum;
             _finalmomentum = finalMomentum;

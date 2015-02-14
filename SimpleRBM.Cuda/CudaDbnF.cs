@@ -411,8 +411,6 @@ namespace SimpleRBM.Cuda
                         Machines[highest].NumVisibleNeurons, (TElement)0.5, (TElement)0.2)
                     : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, modelLabels.GetLength(0),
                         Machines[highest].NumVisibleNeurons, (TElement)1))
-            //using (var rand = Machines[0].GPU.AllocateAndSet<TElementType>(modelLabels.GetLength(0),
-            //            Machines[highest].NumVisibleNeurons))
             {
                 rand.InsertValuesFrom(0, Machines[highest - 1].NumHiddenNeurons, modelLabels);
                 using (var encoded = Machines[highest].Encode(rand))

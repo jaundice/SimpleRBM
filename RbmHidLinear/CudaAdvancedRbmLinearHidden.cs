@@ -6,6 +6,7 @@ using Cudafy.Host;
 using Cudafy.Maths.RAND;
 /*
 http://www.cs.toronto.edu/~hinton/code/rbmhidlinear.m
+
 % Version 1.000
 %
 % Code provided by Ruslan Salakhutdinov and Geoff Hinton
@@ -113,6 +114,7 @@ poshidstates = poshidprobs+randn(numcases,numhid);
 fprintf(1, 'epoch %4i error %f \n', epoch, errsum);
 
 end
+
 */
 using SimpleRBM.Common;
 using SimpleRBM.Cuda;
@@ -121,7 +123,7 @@ using TElement = System.Single;
 using xxx = SimpleRBM.Cuda.CudaRbmF;
 
 #else
-using TElementType = System.Double;
+using TElement = System.Double;
 using xxx = SimpleRBM.Cuda.CudaRbmD;
 #endif
 
@@ -131,8 +133,7 @@ namespace CudaNN
     {
         public CudaAdvancedRbmLinearHidden(GPGPU gpu, GPGPURAND rand, int layerIndex, int numVisibleNeurons,
             int numHiddenNeurons,
-            /*TElementType epsilonw = (TElementType) 0.001, TElementType epsilonvb = (TElementType) 0.001,
-            TElementType epsilonhb = (TElementType) 0.001,*/ TElement weightcost = (TElement) 0.0002,
+            TElement weightcost = (TElement) 0.0002,
             TElement initialMomentum = (TElement) 0.5, TElement finalMomentum = (TElement) 0.9)
             : base(
                 gpu, rand, layerIndex, numVisibleNeurons, numHiddenNeurons, /*epsilonw, epsilonvb, epsilonhb,*/
@@ -147,14 +148,6 @@ namespace CudaNN
             Wake();
 
             var numcases = data.GetLength(0);
-
-            //using (Matrix2D<TElementType> tiledHiddenBiases = HiddenBiases.RepMatRows(numcases))
-            //using (Matrix2D<TElementType> datavishid = data.Multiply(Weights))
-            //using (Matrix2D<TElementType> poshidprobs = datavishid.Add(tiledHiddenBiases))
-            //using (Matrix2D<TElementType> rand = xxx.GuassianDistribution(_gpu, _rand, numcases, _numHiddenNeurons))
-            //{
-            //    return poshidprobs.Add(rand);
-            //}
 
             using (Matrix2D<TElement> tiledHiddenBiases = AsCuda.HiddenBiases.RepMatRows(numcases))
             using (Matrix2D<TElement> datavishid = data.Multiply(AsCuda.Weights))
@@ -192,7 +185,7 @@ namespace CudaNN
         {
             var state = State;
             Wake();
-
+            int numcases = data.GetLength(0);
             exitConditionEvaluator.Start();
             var sw = new Stopwatch();
             using (Matrix2D<TElement> dataTransposed = data.Transpose())
@@ -200,10 +193,10 @@ namespace CudaNN
             {
                 int epoch;
                 TElement error;
-                for (epoch = 0; ; epoch++)
+                for (epoch = 0;; epoch++)
                 {
                     sw.Restart();
-                    error = BatchedTrainEpoch(data, dataTransposed, posvisact, epoch, weightLearningRateCalculator,
+                    error = BatchedTrainEpoch(data, dataTransposed, posvisact, epoch, numcases, weightLearningRateCalculator,
                         hidBiasLearningRateCalculator, visBiasLearningRateCalculator);
 
                     OnEpochComplete(new EpochEventArgs<TElement>()
@@ -229,14 +222,14 @@ namespace CudaNN
             SetState(state);
         }
 
-        private float BatchedTrainEpoch(Matrix2D<float> data, Matrix2D<float> dataTransposed, Matrix2D<float> posvisact,
-            int epoch, ILearningRateCalculator<float> weightLearningRateCalculator,
-            ILearningRateCalculator<float> hidBiasLearningRateCalculator,
-            ILearningRateCalculator<float> visBiasLearningRateCalculator)
+        private TElement BatchedTrainEpoch(Matrix2D<TElement> data, Matrix2D<TElement> dataTransposed,
+            Matrix2D<TElement> posvisact,
+            int epoch, int numcases, ILearningRateCalculator<TElement> weightLearningRateCalculator,
+            ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
+            ILearningRateCalculator<TElement> visBiasLearningRateCalculator)
         {
-            float error;
+            TElement error;
             //start positive phase
-            int numcases = data.GetLength(0);
 
             using (Matrix2D<TElement> tiledHiddenBiases = AsCuda.HiddenBiases.RepMatRows(numcases))
             using (Matrix2D<TElement> datavishid = data.Multiply(AsCuda.Weights))
@@ -248,7 +241,7 @@ namespace CudaNN
                 Matrix2D<TElement> poshidstates;
                 using (
                     Matrix2D<TElement> rand = AsCuda.GPU.GuassianDistribution(AsCuda.GPURAND, numcases, NumHiddenNeurons,
-                        scale: (TElement)1))
+                        scale: (TElement) 1))
                 {
                     poshidstates = poshidprobs.Add(rand);
                 }
@@ -294,32 +287,30 @@ namespace CudaNN
                 TElement momentum = epoch < 5 ? InitialMomentum : FinalMomentum;
                 using (negprods)
                 using (Matrix2D<TElement> momentumvishidinc = WeightInc.Multiply(momentum))
-                using (Matrix2D<TElement> posprodsminusnegprods = posprobs.Subtract(negprods))
+                using (Matrix2D<TElement> posprodsminusnegprods = posprobs.Subtract(negprods).MultiplyInPlace((TElement) 1/(TElement) numcases))
                 using (Matrix2D<TElement> vishidweightcost = AsCuda.Weights.Multiply(WeightCost))
                 {
-                    posprodsminusnegprods.MultiplyInPlace(((TElement)1) / numcases);
                     posprodsminusnegprods.SubtractInPlace(vishidweightcost);
                     posprodsminusnegprods.MultiplyInPlace(weightLearningRateCalculator.CalculateLearningRate(
                         LayerIndex, epoch));
+
                     WeightInc.Dispose();
                     _vishidinc = momentumvishidinc.Add(posprodsminusnegprods);
                 }
 
                 using (negvisact)
                 using (Matrix2D<TElement> momentumvisbiasinc = VisibleBiasInc.Multiply(momentum))
-                using (Matrix2D<TElement> posvisactminusnegvisact = posvisact.Subtract(negvisact))
+                using (Matrix2D<TElement> posvisactminusnegvisact = posvisact.Subtract(negvisact).MultiplyInPlace(
+                    visBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch)/(TElement) numcases))
                 {
-                    posvisactminusnegvisact.MultiplyInPlace(
-                        visBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch) / numcases);
                     VisibleBiasInc.Dispose();
                     _visbiasinc = momentumvisbiasinc.Add(posvisactminusnegvisact);
                 }
                 using (neghidact)
                 using (Matrix2D<TElement> momentumhidbiasinc = HiddenBiasInc.Multiply(momentum))
-                using (Matrix2D<TElement> poshidactminusneghidact = poshidact.Subtract(neghidact))
+                using (Matrix2D<TElement> poshidactminusneghidact = poshidact.Subtract(neghidact).MultiplyInPlace(
+                    hidBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch)/(TElement) numcases))
                 {
-                    poshidactminusneghidact.MultiplyInPlace(
-                        hidBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch) / numcases);
                     HiddenBiasInc.Dispose();
                     _hidbiasinc = momentumhidbiasinc.Add(poshidactminusneghidact);
                 }
@@ -340,9 +331,9 @@ namespace CudaNN
         {
             var state = State;
             Suspend();
-
+            int numcases = data.GetLength(0);
             exitConditionEvaluator.Start();
-            List<Tuple<Matrix2D<float>, Matrix2D<float>, Matrix2D<float>>> datasets = null;
+            List<Tuple<Matrix2D<TElement>, Matrix2D<TElement>, Matrix2D<TElement>>> datasets = null;
 
             try
             {
@@ -351,11 +342,11 @@ namespace CudaNN
                 TElement error;
                 Stopwatch sw = new Stopwatch();
                 int epoch;
-                for (epoch = 0; ; epoch++)
+                for (epoch = 0;; epoch++)
                 {
                     sw.Restart();
                     error =
-                        datasets.Sum(block => BatchedTrainEpoch(block.Item1, block.Item2, block.Item3, epoch,
+                        datasets.Sum(block => BatchedTrainEpoch(block.Item1, block.Item2, block.Item3, epoch,numcases,
                             weightLearningRateCalculator, hidBiasLearningRateCalculator, visBiasLearningRateCalculator));
 
                     OnEpochComplete(new EpochEventArgs<TElement>()
@@ -397,9 +388,9 @@ namespace CudaNN
         {
             var state = State;
             Suspend();
-
+            int numcases = data.GetLength(0);
             exitConditionEvaluator.Start();
-            List<Tuple<float[,], float[,], float[,]>> datasets;
+            List<Tuple<TElement[,], TElement[,], TElement[,]>> datasets;
 
 
             using (data)
@@ -410,7 +401,7 @@ namespace CudaNN
             TElement error;
             Stopwatch sw = new Stopwatch();
             int epoch;
-            for (epoch = 0; ; epoch++)
+            for (epoch = 0;; epoch++)
             {
                 sw.Restart();
                 error = datasets.Sum(block =>
@@ -418,7 +409,7 @@ namespace CudaNN
                     using (var d = AsCuda.GPU.Upload(block.Item1))
                     using (var t = AsCuda.GPU.Upload(block.Item2))
                     using (var p = AsCuda.GPU.Upload(block.Item3))
-                        return BatchedTrainEpoch(d, t, p, epoch,
+                        return BatchedTrainEpoch(d, t, p, epoch,numcases,
                             weightLearningRateCalculator, hidBiasLearningRateCalculator,
                             visBiasLearningRateCalculator);
                 });

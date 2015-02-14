@@ -38,9 +38,9 @@ namespace SimpleRBM.Cuda
             Console.WriteLine("Initializing {0}", LayerName);
 
             Matrix2D<TElement> weights = gpu.GuassianDistribution(rand, numVisible + 1, numHidden + 1,
-                (TElement) 0,
-                (TElement) 0.5,
-                (TElement) 0.1);
+                (TElement)0,
+                (TElement)0.5,
+                (TElement)0.1);
 
             weights.UpdateValuesAlongAxis(0, 0f, Axis.Row);
             weights.UpdateValuesAlongAxis(0, 0f, Axis.Column);
@@ -110,7 +110,7 @@ namespace SimpleRBM.Cuda
         public TElement[,] Encode(TElement[,] visibleStates)
         {
             using (var data = GPU.Upload(visibleStates))
-            using (var res = ((IBasicRbmCuda<TElement>) this).Encode(data))
+            using (var res = ((IBasicRbmCuda<TElement>)this).Encode(data))
             {
                 return res.CopyLocal();
             }
@@ -119,7 +119,7 @@ namespace SimpleRBM.Cuda
         public TElement[,] Decode(TElement[,] hiddenStates)
         {
             using (var data = GPU.Upload(hiddenStates))
-            using (var res = ((IBasicRbmCuda<TElement>) this).Decode(data))
+            using (var res = ((IBasicRbmCuda<TElement>)this).Decode(data))
             {
                 return res.CopyLocal();
             }
@@ -128,7 +128,7 @@ namespace SimpleRBM.Cuda
         public TElement[,] Reconstruct(TElement[,] data)
         {
             using (var d = GPU.Upload(data))
-            using (var res = ((IBasicRbmCuda<TElement>) this).Reconstruct(d))
+            using (var res = ((IBasicRbmCuda<TElement>)this).Reconstruct(d))
             {
                 return res.CopyLocal();
             }
@@ -136,7 +136,7 @@ namespace SimpleRBM.Cuda
 
         public TElement[,] DayDream(int numberOfSamples)
         {
-            using (var res = ((IBasicRbmCuda<TElement>) this).DayDream(numberOfSamples))
+            using (var res = ((IBasicRbmCuda<TElement>)this).DayDream(numberOfSamples))
                 return res.CopyLocal();
         }
 
@@ -145,7 +145,7 @@ namespace SimpleRBM.Cuda
         {
             using (var data = GPU.Upload(srcData))
             {
-                return ((IBasicRbmCuda<TElement>) this).CalculateReconstructionError(data);
+                return ((IBasicRbmCuda<TElement>)this).CalculateReconstructionError(data);
             }
         }
 
@@ -153,7 +153,7 @@ namespace SimpleRBM.Cuda
             ILearningRateCalculator<TElement> learningRateCalculator)
         {
             using (var d = GPU.Upload(visibleData))
-                 ((IBasicRbmCuda<TElement>) this).GreedyTrain(d, exitEvaluator, learningRateCalculator);
+                ((IBasicRbmCuda<TElement>)this).GreedyTrain(d, exitEvaluator, learningRateCalculator);
         }
 
 
@@ -172,7 +172,7 @@ namespace SimpleRBM.Cuda
         {
             using (var d = _gpu.Upload(srcData))
             {
-                return ((IBasicRbmCuda<TElement>) this).GreedyBatchedTrain(d, batchRows, exitEvaluator,
+                return ((IBasicRbmCuda<TElement>)this).GreedyBatchedTrain(d, batchRows, exitEvaluator,
                     learningRateCalculator);
             }
         }
@@ -183,24 +183,24 @@ namespace SimpleRBM.Cuda
             switch (activationFunction)
             {
                 case ActivationFunction.Sigmoid:
-                {
-                    matrix.LogisticInPlace();
-                    break;
-                }
+                    {
+                        matrix.LogisticInPlace();
+                        break;
+                    }
                 case ActivationFunction.Tanh:
-                {
-                    matrix.TanhInPlace();
-                    break;
-                }
+                    {
+                        matrix.TanhInPlace();
+                        break;
+                    }
                 case ActivationFunction.SoftPlus:
-                {
-                    matrix.SoftPlusInPlace();
-                    break;
-                }
+                    {
+                        matrix.SoftPlusInPlace();
+                        break;
+                    }
                 case ActivationFunction.SoftMax:
-                {
-                    throw new NotImplementedException();
-                }
+                    {
+                        throw new NotImplementedException();
+                    }
             }
         }
 
@@ -223,7 +223,7 @@ namespace SimpleRBM.Cuda
                 initialHiddenStates.UpdateValuesAlongAxis(0, 1f, Axis.Column);
 
 
-                for (int i = 0;; i++)
+                for (int i = 0; ; i++)
                 {
                     sw.Restart();
                     Matrix2D<TElement> posVisibleProbs;
@@ -263,7 +263,7 @@ namespace SimpleRBM.Cuda
                     using (Matrix2D<TElement> posMinusNegAssoc = posAssociations.Subtract(negAssociations))
                     {
                         posMinusNegAssoc.MultiplyInPlace(
-                            learningRateCalculator.CalculateLearningRate(LayerIndex, i)/
+                            learningRateCalculator.CalculateLearningRate(LayerIndex, i) /
                             numExamples);
                         posMinusNegAssoc.AddInPlace(Weights);
                         Weights.UpdateWithMomentumInPlace(posMinusNegAssoc, MOMENTUM);
@@ -289,13 +289,13 @@ namespace SimpleRBM.Cuda
         private void RaiseTrainEnd(int epoch, TElement error)
         {
             if (TrainEnd != null)
-                TrainEnd(this, new EpochEventArgs<TElement> {Layer = LayerIndex, Epoch = epoch, Error = error});
+                TrainEnd(this, new EpochEventArgs<TElement> { Layer = LayerIndex, Epoch = epoch, Error = error });
         }
 
         private void RaiseEpochEnd(int epoch, TElement error)
         {
             if (EpochEnd != null)
-                EpochEnd(this, new EpochEventArgs<TElement> {Layer = LayerIndex, Epoch = epoch, Error = error});
+                EpochEnd(this, new EpochEventArgs<TElement> { Layer = LayerIndex, Epoch = epoch, Error = error });
         }
 
         private static IEnumerable<T> EnumerateElements<T>(T[,] matrix)
@@ -338,7 +338,7 @@ namespace SimpleRBM.Cuda
                     ActivateInPlace(hiddenActivations, HiddenActivation);
                     using (
                         Matrix2D<TElement> uniformRand = GPU.UniformDistribution(GPURAND, numExamples,
-                            NumHiddenNeurons + 1, (TElement) 1.0))
+                            NumHiddenNeurons + 1, (TElement)1.0))
 
                     using (Matrix2D<TElement> hsTemp = hiddenActivations.GreaterThan(uniformRand))
                     {
@@ -362,7 +362,7 @@ namespace SimpleRBM.Cuda
                     ActivateInPlace(visibleActivations, VisibleActivation);
                     using (
                         Matrix2D<TElement> randomDist = GPU.UniformDistribution(GPURAND, numExamples,
-                            NumVisibleNeurons + 1, (TElement) 1))
+                            NumVisibleNeurons + 1, (TElement)1))
                     using (Matrix2D<TElement> visibleStatesTemp = visibleActivations.GreaterThan(randomDist))
                     {
                         return visibleStatesTemp.SubMatrix(0, 1);
@@ -373,14 +373,14 @@ namespace SimpleRBM.Cuda
 
         Matrix2D<TElement> IBasicRbmCuda<TElement>.Reconstruct(Matrix2D<TElement> data)
         {
-            return ((IBasicRbmCuda<TElement>) this).Decode(((IBasicRbmCuda<TElement>) this).Encode(data));
+            return ((IBasicRbmCuda<TElement>)this).Decode(((IBasicRbmCuda<TElement>)this).Encode(data));
         }
 
         Matrix2D<TElement> IBasicRbmCuda<TElement>.DayDream(int numberOfSamples)
         {
-            using (var rand = GPU.UniformDistribution(GPURAND, numberOfSamples, NumVisibleNeurons, (TElement) 1))
+            using (var rand = GPU.UniformDistribution(GPURAND, numberOfSamples, NumVisibleNeurons, (TElement)1))
             {
-                return ((IBasicRbmCuda<TElement>) this).Reconstruct(rand);
+                return ((IBasicRbmCuda<TElement>)this).Reconstruct(rand);
             }
         }
 
@@ -392,7 +392,7 @@ namespace SimpleRBM.Cuda
 
             int numCols = allData.GetLength(1);
             int i;
-
+            int numExamples = allData.GetLength(0);
             var partitions = new List<Tuple<Matrix2D<TElement>, Matrix2D<TElement>>>();
             var transposedPartitions = new List<Matrix2D<TElement>>();
             using (Matrix2D<TElement> dataBlock = GPU.AllocateNoSet<TElement>(allData.GetLength(0), numCols + 1))
@@ -416,10 +416,10 @@ namespace SimpleRBM.Cuda
 
             var sw = new Stopwatch();
 
-            for (i = 0;; i++)
+            for (i = 0; ; i++)
             {
                 sw.Restart();
-                error = partitions.Sum(part => GreedyTrainInternal(part.Item1, part.Item2, i, learningRateCalculator));
+                error = partitions.Sum(part => GreedyTrainInternal(part.Item1, part.Item2, i, numExamples, learningRateCalculator));
 
                 RaiseEpochEnd(i, error);
 
@@ -452,7 +452,6 @@ namespace SimpleRBM.Cuda
             int numExamples = visibleData.GetLength(0);
             int numCols = visibleData.GetLength(1);
             int i;
-
             using (Matrix2D<TElement> data = GPU.AllocateNoSet<TElement>(numExamples, numCols + 1))
             {
                 data.InsertValuesFrom(0, 1, visibleData);
@@ -463,12 +462,12 @@ namespace SimpleRBM.Cuda
                 {
                     var sw = new Stopwatch();
 
-                    for (i = 0;; i++)
+                    for (i = 0; ; i++)
                     {
                         sw.Restart();
 
-                        error = GreedyTrainInternal(data, dataTransposed, i, learningRateCalculator);
-                       
+                        error = GreedyTrainInternal(data, dataTransposed, i, numExamples, learningRateCalculator);
+
                         RaiseEpochEnd(i, error);
 
                         if (exitEvaluator.Exit(i, error, sw.Elapsed))
@@ -484,12 +483,11 @@ namespace SimpleRBM.Cuda
 
 
         private TElement GreedyTrainInternal(Matrix2D<TElement> visibleDataWithBias,
-            Matrix2D<TElement> visibleDataWithBiasTansposed, int epoch,
+            Matrix2D<TElement> visibleDataWithBiasTansposed, int epoch, int numExamples,
             ILearningRateCalculator<TElement> learningRateCalculator)
         {
             TElement error = 0f;
 
-            int numExamples = visibleDataWithBias.GetLength(0);
 
 
 
@@ -501,7 +499,7 @@ namespace SimpleRBM.Cuda
 
                 using (
                     Matrix2D<TElement> uniformRandom = GPU.UniformDistribution(GPURAND, numExamples,
-                        NumHiddenNeurons + 1, (TElement) 1))
+                        NumHiddenNeurons + 1, (TElement)1))
                 {
                     posHiddenStates = posHiddenActivations.GreaterThan(uniformRandom);
                 }
@@ -535,13 +533,13 @@ namespace SimpleRBM.Cuda
                 posAssociations.SubtractInPlace(negAssociations);
 
 
-                posAssociations.MultiplyInPlace(learningRateCalculator.CalculateLearningRate(LayerIndex, epoch)/
+                posAssociations.MultiplyInPlace(learningRateCalculator.CalculateLearningRate(LayerIndex, epoch) /
                                                 numExamples);
 
                 posAssociations.AddInPlace(Weights);
 
                 Weights.UpdateWithMomentumInPlace(posAssociations,
-                    IsInitialized ? MOMENTUM : (TElement) 0.5);
+                    IsInitialized ? MOMENTUM : (TElement)0.5);
                 if (epoch > 5)
                     IsInitialized = true;
             }
@@ -549,7 +547,7 @@ namespace SimpleRBM.Cuda
             using (Matrix2D<TElement> delta = visibleDataWithBias.Subtract(negVisibleActivations))
             using (negVisibleActivations)
             {
-                delta.PowInPlace((TElement) 2.0);
+                delta.PowInPlace((TElement)2.0);
 
                 error = delta.Sum();
             }
@@ -578,7 +576,7 @@ namespace SimpleRBM.Cuda
 
                     using (
                         Matrix2D<TElement> uniformRandom = GPU.UniformDistribution(GPURAND, numExamples,
-                            NumHiddenNeurons + 1, (TElement) 1))
+                            NumHiddenNeurons + 1, (TElement)1))
                     {
                         posHiddenStates = posHiddenActivations.GreaterThan(uniformRandom);
                     }

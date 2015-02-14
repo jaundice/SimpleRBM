@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using SimpleRBM.Common;
 
 namespace SimpleRBM.Demo.IO
@@ -55,7 +57,7 @@ namespace SimpleRBM.Demo.IO
 
         void IDataIO<double, string>.PrintToConsole(double[,] arr)
         {
-            ((IDataIO<double, string>) this).PrintToConsole(arr, null, null, null, null, null);
+            ((IDataIO<double, string>)this).PrintToConsole(arr, null, null, null, null, null);
         }
 
         float[,] IDataIO<float, string>.ReadTrainingData(int skipRecords, int count, out string[] labels,
@@ -79,13 +81,15 @@ namespace SimpleRBM.Demo.IO
 
         void IDataIO<float, string>.PrintToConsole(float[,] arr)
         {
-            ((IDataIO<float, string>) this).PrintToConsole(arr, null, null, null, null, null);
+            ((IDataIO<float, string>)this).PrintToConsole(arr, null, null, null, null, null);
         }
 
         private T[,] Read<T>(string path, int skipRows, int count, Func<string, T> fieldParser, out string[] ids)
         {
-            var data = new T[count, FirstColumnIsLabel ? Headers.Length - 1 : Headers.Length];
-            ids = new string[count];
+            int cols = FirstColumnIsLabel ? Headers.Length - 1 : Headers.Length;
+
+            List<T[]> rows = new List<T[]>();
+            List<string> labels = new List<string>();
 
             using (FileStream fs = File.OpenRead(path))
             using (var r = new StreamReader(fs))
@@ -101,15 +105,31 @@ namespace SimpleRBM.Demo.IO
                 {
                     string[] parts = line.Split(',').ToArray();
                     if (FirstColumnIsLabel)
-                        ids[j] = parts[0];
-                    for (int k = 0; k < data.GetLength(1); k++)
+                        labels.Add(parts[0]);
+
+                    T[] row = new T[cols];
+                    for (int k = 0; k < row.GetLength(0); k++)
                     {
-                        data[j, k] = parts[k + readOffset] == "" ? default(T) : fieldParser(parts[k + readOffset]);
+                        row[k] = parts[k + readOffset] == "" ? default(T) : fieldParser(parts[k + readOffset]);
                     }
+                    rows.Add(row);
                 }
             }
 
+            var temp = rows.ToArray();
+
+            var data = new T[rows.Count, rows[0].Length];
+            Parallel.For(0, data.GetLength(0), i =>
+            {
+                for (var j = 0; j < data.GetLength(1); j++)
+                {
+                    data[i, j] = temp[i][j];
+                }
+            });
+
+            ids = labels.ToArray();
             return data;
+
         }
 
         private void PrintToConsole<T>(T[,] data, T[,] referenceData, string[] labels, ulong[][] keys)

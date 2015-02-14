@@ -115,7 +115,7 @@ using TElement = System.Single;
 using xxx = SimpleRBM.Cuda.CudaRbmF;
 
 #else
-using TElementType = System.Double;
+using TElement = System.Double;
 using xxx = SimpleRBM.Cuda.CudaRbmD;
 #endif
 
@@ -130,8 +130,7 @@ namespace CudaNN
 
         public CudaAdvancedRbmBinary(GPGPU gpu, GPGPURAND rand, int layerIndex, int numVisibleNeurons,
             int numHiddenNeurons, bool convertActivationsToStates,
-            /*TElementType epsilonw = (TElementType) 0.001, TElementType epsilonvb = (TElementType) 0.001,
-            TElementType epsilonhb = (TElementType) 0.001,*/ TElement weightcost = (TElement) 0.0002,
+            TElement weightcost = (TElement) 0.0002,
             TElement initialMomentum = (TElement) 0.5, TElement finalMomentum = (TElement) 0.9,
             TElement encodingNoiseLevel = (TElement) 1, TElement decodingNoiseLevel = (TElement) 1)
             : base(
@@ -206,7 +205,7 @@ namespace CudaNN
         {
             var state = State;
             Wake();
-
+            int numcases = data.GetLength(0);
 
             exitConditionEvaluator.Start();
             var datasets = PartitionDataAsMatrices(data, batchSize);
@@ -218,7 +217,7 @@ namespace CudaNN
                 {
                     sw.Restart();
                     var error =
-                        datasets.Sum(block => BatchedTrainEpoch(block.Item1, block.Item2, block.Item3, epoch,
+                        datasets.Sum(block => BatchedTrainEpoch(block.Item1, block.Item2, block.Item3, epoch,numcases,
                             weightLearningRateCalculator, hidBiasLearningRateCalculator, visBiasLearningRateCalculator));
 
                     OnEpochComplete(new EpochEventArgs<TElement>()
@@ -254,7 +253,7 @@ namespace CudaNN
         {
             var state = State;
             Wake();
-
+            int numcases = data.GetLength(0);
             exitConditionEvaluator.Start();
             var sw = new Stopwatch();
             using (Matrix2D<TElement> dataTransposed = data.Transpose())
@@ -265,7 +264,7 @@ namespace CudaNN
                 for (epoch = 0; ; epoch++)
                 {
                     sw.Restart();
-                    error = BatchedTrainEpoch(data, dataTransposed, posvisact, epoch,
+                    error = BatchedTrainEpoch(data, dataTransposed, posvisact, epoch,numcases,
                         weightLearningRateCalculator, hidBiasLearningRateCalculator, visBiasLearningRateCalculator);
 
                     OnEpochComplete(new EpochEventArgs<TElement>()
@@ -290,12 +289,11 @@ namespace CudaNN
         }
 
         private TElement BatchedTrainEpoch(Matrix2D<TElement> data, Matrix2D<TElement> dataTransposed,
-            Matrix2D<TElement> posvisact, int epoch,
+            Matrix2D<TElement> posvisact, int epoch, int numcases,
             ILearningRateCalculator<TElement> weightLearningRateCalculator,
             ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
             ILearningRateCalculator<TElement> visBiasLearningRateCalculator)
         {
-            int numcases = data.GetLength(0);
             TElement error;
 
 
@@ -406,7 +404,7 @@ namespace CudaNN
 
 
             exitConditionEvaluator.Start();
-
+            int numcases = data.GetLength(0);
 
             List<Tuple<float[,], float[,], float[,]>> datasets;
 
@@ -427,7 +425,7 @@ namespace CudaNN
                         using (var d = AsCuda.GPU.Upload(block.Item1))
                         using (var t = AsCuda.GPU.Upload(block.Item2))
                         using (var p = AsCuda.GPU.Upload(block.Item3))
-                            return BatchedTrainEpoch(d, t, p, epoch,
+                            return BatchedTrainEpoch(d, t, p, epoch,numcases,
                                 weightLearningRateCalculator, hidBiasLearningRateCalculator,
                                 visBiasLearningRateCalculator);
                     });

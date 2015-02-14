@@ -38,11 +38,8 @@ namespace CudaNN
         private static void Main(string[] args)
         {
             string demo = Demos.Data;
-            int numTrainingExamples = 185946;
-            //int numTrainingExamples = 1000;
-            //int numTrainingExamples = 10;
-            //int numTrainingExamples = 200;
 
+            int numTrainingExamples;
 
             GPGPU dev;
             GPGPURAND rand;
@@ -58,16 +55,19 @@ namespace CudaNN
             {
                 case "Faces":
                     {
+                        numTrainingExamples = 20;
                         FacesDemo(dev, rand, numTrainingExamples, pathBase);
                         break;
                     }
                 case "Data":
                     {
+                        numTrainingExamples = 185946;
                         CsvDemo(dev, rand, numTrainingExamples, pathBase);
                         break;
                     }
                 case "Kaggle":
                     {
+                        numTrainingExamples = 40000;
                         KaggleDemo(dev, rand, numTrainingExamples, pathBase);
                         break;
                     }
@@ -82,7 +82,7 @@ namespace CudaNN
 
             using (var net = new CudaAdvancedNetwork(new CudaAdvancedRbmBase[]
             {
-                new CudaAdvancedRbmBinary(dev, rand, 0, 178, 120, false, encodingNoiseLevel: (TElement) 0.5),
+                new CudaAdvancedRbmBinary(dev, rand, 0, 178, 120, false),
                 new CudaAdvancedRbmBinary(dev, rand, 1, 120, 150, true),
                 new CudaAdvancedRbmBinary(dev, rand, 2, 150, 20, true)
             }))
@@ -97,7 +97,7 @@ namespace CudaNN
 
                 net.EpochComplete += (a, b) =>
                 {
-                    if (b.Epoch % 500 == 0)
+                    if (b.Epoch % 100 == 0)
                     {
                         var recon = ((CudaAdvancedNetwork)a).Reconstruct(tdata, b.Layer);
                         SaveImages(pathBase, string.Format("{0}_{1}_{{0}}_Reconstruction.jpg", b.Layer, b.Epoch), recon);
@@ -147,8 +147,10 @@ namespace CudaNN
 
             using (var net = new CudaAdvancedNetwork(new CudaAdvancedRbmBase[]
             {
-                new CudaAdvancedRbmBinary(dev, rand, 0, 250*250, 2000, false, encodingNoiseLevel: (TElement) 0.9),
-                new CudaAdvancedRbmBinary(dev, rand, 1, 2000, 4000, true),
+                //new CudaAdvancedRbmLinearHidden(dev, rand, 0, 250*250, 800, finalMomentum:(TElement)0.7), 
+                new CudaAdvancedRbmBinary(dev, rand, 0, 250*250, 1000, false),
+                //new CudaAdvancedRbmBinary(dev, rand, 0, 250*250, 1000, true),
+                new CudaAdvancedRbmBinary(dev, rand, 1, 1000, 4000, true),
                 new CudaAdvancedRbmBinary(dev, rand, 2, 4000, 4000, true)
             }))
             {
@@ -226,11 +228,11 @@ namespace CudaNN
                 };
 
                 net.GreedyBatchedSupervisedTrain(dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded),
-                    coded, 200,
+                    coded, 4000,
                     new ManualKeyPressExitEvaluatorFactory<TElement>(0.0005f, 3920),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.03, 0.9999),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.03, 0.9999),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.03, 0.9999));
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999));
 
                 int[] testSrcLabels;
                 TElement[,] testSourceCoded;

@@ -28,11 +28,12 @@ namespace SimpleRBM.Cuda
             return output;
         }
 
-        public static void MultiplyInPlace(this Matrix2D<TElement> self, TElement scalar)
+        public static Matrix2D<TElement> MultiplyInPlace(this Matrix2D<TElement> self, TElement scalar)
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
             self.GPU.Launch(grid, block, Matrix2DCuda.MultiplyScalarInPlaceF, self.Matrix, scalar);
+            return self;
         }
 
         public static Matrix2D<TElement> Multiply(this Matrix2D<TElement> self, Matrix2D<TElement> other)
@@ -93,25 +94,28 @@ namespace SimpleRBM.Cuda
             return res;
         }
 
-        public static void LogisticInPlace(this Matrix2D<TElement> self)
+        public static Matrix2D<TElement> LogisticInPlace(this Matrix2D<TElement> self)
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
             self.GPU.Launch(grid, block, ActivationFunctionsCuda.LogisticInPlaceF, self.Matrix);
+            return self;
         }
 
-        public static void TanhInPlace(this Matrix2D<TElement> self)
+        public static Matrix2D<TElement> TanhInPlace(this Matrix2D<TElement> self)
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
             self.GPU.Launch(grid, block, ActivationFunctionsCuda.TanhInPlaceF, self.Matrix);
+            return self;
         }
 
-        public static void SoftPlusInPlace(this Matrix2D<TElement> self)
+        public static Matrix2D<TElement> SoftPlusInPlace(this Matrix2D<TElement> self)
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
             self.GPU.Launch(grid, block, ActivationFunctionsCuda.SoftPlusInPlaceF, self.Matrix);
+            return self;
         }
 
         public static Matrix2D<TElement> Exponents(this Matrix2D<TElement> self)
@@ -245,12 +249,13 @@ namespace SimpleRBM.Cuda
             return res;
         }
 
-        public static void SubtractInPlace(this Matrix2D<TElement> self, Matrix2D<TElement> other)
+        public static Matrix2D<TElement> SubtractInPlace(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
 
             self.GPU.Launch(grid, block, Matrix2DCuda.SubtractInPlaceF, self.Matrix, other.Matrix);
+            return self;
         }
 
         public static Matrix2D<TElement> Add(this Matrix2D<TElement> self, Matrix2D<TElement> other)
@@ -263,12 +268,13 @@ namespace SimpleRBM.Cuda
             return res;
         }
 
-        public static void AddInPlace(this Matrix2D<TElement> self, Matrix2D<TElement> other)
+        public static Matrix2D<TElement> AddInPlace(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
 
             self.GPU.Launch(grid, block, Matrix2DCuda.AddInPlaceF, self.Matrix, other.Matrix);
+            return self;
         }
 
         public static Matrix2D<TElement> UpdateWithMomentum(this Matrix2D<TElement> self, Matrix2D<TElement> other,
@@ -283,12 +289,13 @@ namespace SimpleRBM.Cuda
             return res;
         }
 
-        public static void UpdateWithMomentumInPlace(this Matrix2D<TElement> self, Matrix2D<TElement> other, TElement momentum)
+        public static Matrix2D<TElement> UpdateWithMomentumInPlace(this Matrix2D<TElement> self, Matrix2D<TElement> other, TElement momentum)
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
 
             self.GPU.Launch(grid, block, Matrix2DCuda.UpdateWithMomentumInPlaceF, self.Matrix, other.Matrix, momentum);
+            return self;
         }
 
         public static Matrix2D<TElement> Pow(this Matrix2D<TElement> self, TElement power)
@@ -301,12 +308,13 @@ namespace SimpleRBM.Cuda
             return res;
         }
 
-        public static void PowInPlace(this Matrix2D<TElement> self, TElement power)
+        public static Matrix2D<TElement> PowInPlace(this Matrix2D<TElement> self, TElement power)
         {
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
 
             self.GPU.Launch(grid, block, Matrix2DCuda.PowInPlaceF, self.Matrix, power);
+            return self;
         }
 
         public static Matrix2D<TElement> Upload(this GPGPU gpu, TElement[,] source)

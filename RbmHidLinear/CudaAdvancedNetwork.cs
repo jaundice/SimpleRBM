@@ -530,7 +530,6 @@ namespace CudaNN
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
         {
-            //todo: consider managing batch partitions here in main memory allowing for bigger datasets but at the expense of more copying to and from the gpu
             using (var d = Machines[0].GPU.Upload(data))
             {
                 AsCuda.GreedyBatchedTrain(d, batchSize, exitConditionFactory, weightLearningRateCalculatorFactory,
@@ -544,10 +543,9 @@ namespace CudaNN
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
         {
-            //todo: consider managing batch partitions here in main memory allowing for bigger datasets but at the expense of more copying to and from the gpu
             using (var d = Machines[0].GPU.Upload(data))
             using (var l = Machines[0].GPU.Upload(labels))
-                AsCuda.GreedyBatchedSupervisedTrain(d, l, batchSize, exitConditionFactory,
+                AsCuda.GreedyBatchedSupervisedTrainMem(d, l, batchSize, exitConditionFactory,
                     weightLearningRateCalculatorFactory, hidBiasLearningRateCalculatorFactory,
                     visBiasLearningRateCalculatorFactory);
         }
@@ -641,7 +639,6 @@ namespace CudaNN
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
         {
-            //todo: consider managing batch partitions here in main memory allowing for bigger datasets but at the expense of more copying to and from the gpu
             using (var d = Machines[0].GPU.Upload(data))
             using (var l = Machines[0].GPU.Upload(labels))
                 AsCuda.GreedyBatchedSupervisedTrainMem(d, l, batchSize, exitConditionFactory,
