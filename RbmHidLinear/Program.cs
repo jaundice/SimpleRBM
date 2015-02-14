@@ -55,13 +55,13 @@ namespace CudaNN
             {
                 case "Faces":
                     {
-                        numTrainingExamples = 20;
+                        numTrainingExamples = 750;
                         FacesDemo(dev, rand, numTrainingExamples, pathBase);
                         break;
                     }
                 case "Data":
                     {
-                        numTrainingExamples = 185946;
+                        numTrainingExamples = 185945;
                         CsvDemo(dev, rand, numTrainingExamples, pathBase);
                         break;
                     }
@@ -108,9 +108,9 @@ namespace CudaNN
                 net.GreedyBatchedTrain(d.ReadTestData(0, numTrainingExamples),
                     10000,
                     new ManualKeyPressExitEvaluatorFactory<TElement>(10f, 5000),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.001, 0.999),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.001, 0.99999),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.001, 0.99999));
+                    new ConstantLearningRateFactory<TElement>(0.0001),
+                    new ConstantLearningRateFactory<TElement>(0.0001),
+                     new ConstantLearningRateFactory<TElement>(0.0001));
 
                 var testData = d.ReadTrainingData(numTrainingExamples, 200, out lbl, out coded);
 
@@ -123,7 +123,7 @@ namespace CudaNN
 
                 string[] labels;
                 TElement[,] lcoded;
-                var allDataToCode = d2.ReadTrainingData(0, 185946, out labels, out lcoded);
+                var allDataToCode = d2.ReadTrainingData(0, 185945, out labels, out lcoded);
                 var encoded = net.Encode(allDataToCode);
                 var kkey = KeyEncoder.CreateBinaryStringKeys(encoded);
 
@@ -154,7 +154,7 @@ namespace CudaNN
                 new CudaAdvancedRbmBinary(dev, rand, 2, 4000, 4000, true)
             }))
             {
-                net.SetDefaultMachineState(SuspendState.Suspended);//keep data in main memory as much as possible
+                net.SetDefaultMachineState(SuspendState.Suspended); //keep data in main memory as much as possible
                 string[] lbl;
                 TElement[,] coded;
                 net.EpochComplete += (a, b) =>
@@ -168,11 +168,11 @@ namespace CudaNN
                 var training = dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded);
                 SaveImages(pathBase, "TrainingData_{0}.jpg", training);
                 //batch the data into main memory
-                net.GreedyBatchedTrainMem(training, 20,
+                net.GreedyBatchedTrainMem(training, 200,
                     new ManualKeyPressExitEvaluatorFactory<TElement>(0.0005f, 10000),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999));
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.999999),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.999999),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.999999));
 
                 var testData = dataProvider.ReadTrainingData(numTrainingExamples, 200, out lbl, out coded);
 
@@ -227,7 +227,8 @@ namespace CudaNN
                     }
                 };
 
-                net.GreedyBatchedSupervisedTrain(dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded),
+                net.GreedyBatchedSupervisedTrain(
+                    dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded),
                     coded, 4000,
                     new ManualKeyPressExitEvaluatorFactory<TElement>(0.0005f, 3920),
                     new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999),

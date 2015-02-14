@@ -20,7 +20,7 @@ namespace SimpleRBM.Demo.IO
                 using (FileStream fs = File.OpenRead(trainingPath))
                 using (var r = new StreamReader(fs))
                 {
-                    Headers = r.ReadLine().Split(',').ToArray();
+                    Headers = r.ReadLine().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToArray();
                     r.Close();
                     fs.Close();
                 }
