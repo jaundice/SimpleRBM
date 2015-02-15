@@ -37,7 +37,7 @@ namespace CudaNN
 
         private static void Main(string[] args)
         {
-            string demo = Demos.Data;
+            string demo = Demos.Faces;
 
             int numTrainingExamples;
 
@@ -107,12 +107,12 @@ namespace CudaNN
                 //batch the data in gpu memory
                 net.GreedyBatchedTrain(d.ReadTestData(0, numTrainingExamples),
                     10000,
-                    new ManualKeyPressExitEvaluatorFactory<TElement>((TElement)0.005, 10000),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.999999, 0.000001),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.999999, 0.000001),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.999999, 0.000001));
+                    new ManualKeyPressExitEvaluatorFactory<TElement>((TElement)0.005, 50000),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001));
 
-                var testData = d.ReadTrainingData(numTrainingExamples, 200, out lbl, out coded);
+                var testData = d.ReadTrainingData(0, 200, out lbl, out coded);
 
                 var reconstructions = net.Reconstruct(testData);
 
@@ -165,14 +165,21 @@ namespace CudaNN
                         SaveImages(pathBase, string.Format("{0}_{1}_{{0}}_Daydream.jpg", b.Layer, b.Epoch), dreams);
                     }
                 };
+
+                net.LayerTrainComplete += (a, b) =>
+                {
+                    var dreams = ((CudaAdvancedNetwork)a).Daydream(200, b.Layer);
+                    SaveImages(pathBase, string.Format("{0}_{1}_{{0}}_TrainEndDaydream.jpg", b.Layer, b.Epoch), dreams);
+                };
+
                 var training = dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded);
                 SaveImages(pathBase, "TrainingData_{0}.jpg", training);
                 //batch the data into main memory
                 net.GreedyBatchedTrainMem(training, 200,
                     new ManualKeyPressExitEvaluatorFactory<TElement>(0.0005f, 10000),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.999999, 0.000001),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.999999, 0.000001),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.999999, 0.000001));
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001),
+                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001));
 
                 var testData = dataProvider.ReadTrainingData(numTrainingExamples, 200, out lbl, out coded);
 
@@ -283,6 +290,9 @@ namespace CudaNN
             Console.WriteLine("Compiling CUDA module");
 
             eArchitecture arch = dev.GetArchitecture();
+            if ((uint)arch > 291U)
+                arch = eArchitecture.sm_35;
+
             ePlatform plat = Environment.Is64BitProcess ? ePlatform.x64 : ePlatform.x86;
 
             if (plat == ePlatform.x64)

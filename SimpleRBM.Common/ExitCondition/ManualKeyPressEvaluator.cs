@@ -27,7 +27,7 @@ namespace SimpleRBM.Common.ExitCondition
         {
             T tempLowest = _lowestErrorSeen;
 
-            if ( Comparer<T>.Default.Compare(lastError, _minError) < 0)
+            if (Comparer<T>.Default.Compare(lastError, _minError) < 0)
             {
                 src.Cancel();
                 _exit = true;
@@ -36,12 +36,21 @@ namespace SimpleRBM.Common.ExitCondition
             {
                 _lowestErrorSeen = lastError;
             }
-            else if(epochNumber > _maxEpochs)
+            else if (epochNumber > _maxEpochs)
             {
                 _exitOnNextLowest = true;
-                Console.WriteLine("Max epochs passed. Exiting next time error drops below {0:F6}", _lowestErrorSeen);
+                if (epochNumber > _maxEpochs + 1000)
+                {
+                    _exit = true;
+                    Console.WriteLine("Max epochs passed and no improvement in error within 1000 extra epochs. Aborting");
+                }
+                else
+                {
+                    if (epochNumber == _maxEpochs + 1 || epochNumber % 20 == 0)
+                        Console.WriteLine("Max epochs passed. Exiting next time error drops below {0:F6}", _lowestErrorSeen);
+                }
             }
-            
+
             if (Comparer<T>.Default.Compare(lastError, _lowestErrorSeen) < 0)
             {
                 _lowestErrorSeen = lastError;
@@ -57,11 +66,11 @@ namespace SimpleRBM.Common.ExitCondition
                 _epochsSinceLastErrorImprovement++;
             }
 
-            if (_exit || epochNumber%20 == 0)
+            if (_exit || epochNumber % 20 == 0)
                 Console.WriteLine("Epoch: {0}\tLayer: {1}\tError: {2:F6}\tElapsed: {3}\tdelta: {4:F6}\tepochs since improvement: {5}", epochNumber,
                     _layerDepth, lastError, elapsedTime,
-                    (double) Convert.ChangeType(tempLowest, typeof (double)) -
-                    (double) Convert.ChangeType(lastError, typeof (double)), _epochsSinceLastErrorImprovement);
+                    (double)Convert.ChangeType(tempLowest, typeof(double)) -
+                    (double)Convert.ChangeType(lastError, typeof(double)), _epochsSinceLastErrorImprovement);
 
             return _exit;
         }

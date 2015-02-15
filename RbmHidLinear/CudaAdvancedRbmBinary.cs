@@ -213,12 +213,13 @@ namespace CudaNN
             {
 
                 Stopwatch sw = new Stopwatch();
-                for (var epoch = 0; ; epoch++)
+                int epoch;
+                TElement error;
+                for (epoch = 0; ; epoch++)
                 {
                     sw.Restart();
-                    var error =
-                        datasets.Sum(block => BatchedTrainEpoch(block.Item1, block.Item2, block.Item3, epoch,numcases,
-                            weightLearningRateCalculator, hidBiasLearningRateCalculator, visBiasLearningRateCalculator));
+                    error = datasets.Sum(block => BatchedTrainEpoch(block.Item1, block.Item2, block.Item3, epoch,numcases,
+                        weightLearningRateCalculator, hidBiasLearningRateCalculator, visBiasLearningRateCalculator));
 
                     OnEpochComplete(new EpochEventArgs<TElement>()
                     {
@@ -230,6 +231,13 @@ namespace CudaNN
                     if (exitConditionEvaluator.Exit(epoch, error, sw.Elapsed))
                         break;
                 }
+
+                OnTrainComplete(new EpochEventArgs<TElement>()
+                {
+                    Epoch = epoch,
+                    Error = error,
+                    Layer = LayerIndex
+                });
             }
             finally
             {
@@ -416,19 +424,20 @@ namespace CudaNN
             Wake();
 
             Stopwatch sw = new Stopwatch();
-            for (var epoch = 0; ; epoch++)
+            int epoch;
+            TElement error;
+            for (epoch = 0; ; epoch++)
             {
                 sw.Restart();
-                var error =
-                    datasets.Sum(block =>
-                    {
-                        using (var d = AsCuda.GPU.Upload(block.Item1))
-                        using (var t = AsCuda.GPU.Upload(block.Item2))
-                        using (var p = AsCuda.GPU.Upload(block.Item3))
-                            return BatchedTrainEpoch(d, t, p, epoch,numcases,
-                                weightLearningRateCalculator, hidBiasLearningRateCalculator,
-                                visBiasLearningRateCalculator);
-                    });
+                error = datasets.Sum(block =>
+                {
+                    using (var d = AsCuda.GPU.Upload(block.Item1))
+                    using (var t = AsCuda.GPU.Upload(block.Item2))
+                    using (var p = AsCuda.GPU.Upload(block.Item3))
+                        return BatchedTrainEpoch(d, t, p, epoch,numcases,
+                            weightLearningRateCalculator, hidBiasLearningRateCalculator,
+                            visBiasLearningRateCalculator);
+                });
 
                 OnEpochComplete(new EpochEventArgs<TElement>()
                 {
@@ -441,7 +450,12 @@ namespace CudaNN
                     break;
             }
 
-
+            OnTrainComplete(new EpochEventArgs<TElement>()
+            {
+                Epoch = epoch,
+                Error = error,
+                Layer = LayerIndex
+            });
             exitConditionEvaluator.Stop();
             SetState(state);
         }
