@@ -105,12 +105,13 @@ namespace CudaNN
                 };
 
                 //batch the data in gpu memory
-                net.GreedyBatchedTrain(d.ReadTestData(0, numTrainingExamples),
-                    10000,
-                    new ManualKeyPressExitEvaluatorFactory<TElement>((TElement)0.005, 50000),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001));
+                using (var greedyTracker = new EpochErrorFileTracker<TElement>(Path.Combine(pathBase, "GreedyTrainError.log")))
+                    net.GreedyBatchedTrain(d.ReadTestData(0, numTrainingExamples),
+                        10000,
+                        new ManualKeyPressExitEvaluatorFactory<TElement>(greedyTracker, (TElement)0.005, 50000),
+                        new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001),
+                        new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001),
+                        new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001));
 
                 var testData = d.ReadTrainingData(0, 200, out lbl, out coded);
 
@@ -175,11 +176,12 @@ namespace CudaNN
                 var training = dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded);
                 SaveImages(pathBase, "TrainingData_{0}.jpg", training);
                 //batch the data into main memory
-                net.GreedyBatchedTrainMem(training, 200,
-                    new ManualKeyPressExitEvaluatorFactory<TElement>(0.0005f, 10000),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001));
+                using (var greedyTracker = new EpochErrorFileTracker<TElement>(Path.Combine(pathBase, "GreedyTrainError.log")))
+                    net.GreedyBatchedTrainMem(training, 200,
+                        new ManualKeyPressExitEvaluatorFactory<TElement>(greedyTracker, 0.0005f, 50000),
+                        new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001),
+                        new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001),
+                        new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001));
 
                 var testData = dataProvider.ReadTrainingData(numTrainingExamples, 200, out lbl, out coded);
 
@@ -233,14 +235,14 @@ namespace CudaNN
                         SaveImages(pathBase, string.Format("{0}_{1}_DayDream_{{0}}.jpg", b.Layer, b.Epoch), daydream);
                     }
                 };
-
-                net.GreedyBatchedSupervisedTrain(
-                    dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded),
-                    coded, 4000,
-                    new ManualKeyPressExitEvaluatorFactory<TElement>(0.0005f, 3920),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999, 0.000001),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999, 0.000001),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999, 0.000001));
+                using (var greedyTracker = new EpochErrorFileTracker<TElement>(Path.Combine(pathBase, "GreedyTrainError.log")))
+                    net.GreedyBatchedSupervisedTrain(
+                        dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded),
+                        coded, 4000,
+                        new ManualKeyPressExitEvaluatorFactory<TElement>(greedyTracker, 0.0005f, 3920),
+                        new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999, 0.000001),
+                        new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999, 0.000001),
+                        new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999, 0.000001));
 
                 int[] testSrcLabels;
                 TElement[,] testSourceCoded;

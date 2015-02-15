@@ -12,7 +12,7 @@ namespace SimpleRBM.Demo.Demo
     //very experimental
     public class AudioDemoApp : IDemo
     {
-        public void Execute<TDataElement, TLabel>(IDeepBeliefNetworkFactory<TDataElement> dbnFactory,
+        public void Execute<TDataElement, TLabel>(string pathBase, IDeepBeliefNetworkFactory<TDataElement> dbnFactory,
             ILayerDefinition[] defaultLayerSizes, IDataIO<TDataElement, TLabel> dataProvider,
             ILearningRateCalculatorFactory<TDataElement> preTrainLearningRateCalculatorFactory,
             IExitConditionEvaluatorFactory<TDataElement> preTrainExitConditionEvaluatorFactory,
@@ -50,7 +50,6 @@ namespace SimpleRBM.Demo.Demo
                     companionDatasetExitConditionEvaluatorFactory.Dbn = (IDeepBeliefNetworkExtended<TDataElement>) dbn;
                     companionDatasetExitConditionEvaluatorFactory.TestData = dataProvider.ReadTestData(0, 400);
                 }
-                string pathBase = Path.Combine(Environment.CurrentDirectory, Guid.NewGuid().ToString());
                 Directory.CreateDirectory(pathBase);
                 Directory.CreateDirectory(Path.Combine(pathBase, "Original"));
                 if (dbn is IDeepBeliefNetworkExtended<TDataElement>)

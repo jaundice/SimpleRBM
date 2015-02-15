@@ -11,7 +11,7 @@ namespace SimpleRBM.Demo.Demo
 {
     public class DataDemo : IDemo
     {
-        public void Execute<TDataElement, TLabel>(IDeepBeliefNetworkFactory<TDataElement> dbnFactory,
+        public void Execute<TDataElement, TLabel>(string pathBase, IDeepBeliefNetworkFactory<TDataElement> dbnFactory,
             ILayerDefinition[] defaultLayerSizes, IDataIO<TDataElement, TLabel> dataProvider,
             ILearningRateCalculatorFactory<TDataElement> preTrainLearningRateCalculatorFactory,
             IExitConditionEvaluatorFactory<TDataElement> preTrainExitConditionEvaluatorFactory,
@@ -43,7 +43,6 @@ namespace SimpleRBM.Demo.Demo
                 }
 
 
-                string pathBase = Path.Combine(Environment.CurrentDirectory, Guid.NewGuid().ToString());
                 Directory.CreateDirectory(pathBase);
                 Directory.CreateDirectory(Path.Combine(pathBase, "Original"));
 

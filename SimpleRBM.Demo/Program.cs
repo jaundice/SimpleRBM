@@ -2,6 +2,7 @@
 
 using System;
 using System.Configuration;
+using System.IO;
 using System.Linq;
 using SimpleRBM.Common;
 using SimpleRBM.Common.ExitCondition;
@@ -242,14 +243,19 @@ namespace SimpleRBM.Demo
             int trainingSize,
             int skipTrainingRecords, bool classify) where TDataElementType : struct, IComparable<TDataElementType>
         {
-            demo.Execute(dbnFactory,
-                defaultLayerSizes,
-                data,
-                preTrainLearningRateCalculatorFactory,
-                new ManualKeyPressExitEvaluatorFactory<TDataElementType>(0.0005, 20000),
-                fineTrainLearningRateCalculatorFactory,
-                new ManualKeyPressExitEvaluatorFactory<TDataElementType>(0.0005, 100),
-                trainingSize, skipTrainingRecords, classify);
+            var pathBase = Path.Combine(Environment.CurrentDirectory, DateTime.Now.ToString("u").Replace(':', '-'));
+
+
+            using (var greedyTracker = new EpochErrorFileTracker<TDataElementType>(Path.Combine(Environment.CurrentDirectory, "GreedyTrainError.log")))
+            using (var fineTracker = new EpochErrorFileTracker<TDataElementType>(Path.Combine(Environment.CurrentDirectory, "FineTrainError.log")))
+                demo.Execute(pathBase, dbnFactory,
+                    defaultLayerSizes,
+                    data,
+                    preTrainLearningRateCalculatorFactory,
+                    new ManualKeyPressExitEvaluatorFactory<TDataElementType>(greedyTracker, 0.0005, 20000),
+                    fineTrainLearningRateCalculatorFactory,
+                    new ManualKeyPressExitEvaluatorFactory<TDataElementType>(fineTracker, 0.0005, 100),
+                    trainingSize, skipTrainingRecords, classify);
         }
     }
 }

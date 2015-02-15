@@ -5,7 +5,7 @@ namespace SimpleRBM.Demo
 {
     internal interface IDemo
     {
-        void Execute<TDataElement, TLabel>(IDeepBeliefNetworkFactory<TDataElement> dbnFactory,
+        void Execute<TDataElement, TLabel>(string pathBase, IDeepBeliefNetworkFactory<TDataElement> dbnFactory,
             ILayerDefinition[] defaultLayerSizes, IDataIO<TDataElement, TLabel> dataProvider,
             ILearningRateCalculatorFactory<TDataElement> preTrainLearningRateCalculatorFactory,
             IExitConditionEvaluatorFactory<TDataElement> preTrainExitConditionEvaluatorFactory,

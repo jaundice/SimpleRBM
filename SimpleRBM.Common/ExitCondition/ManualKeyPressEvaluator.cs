@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,16 +16,20 @@ namespace SimpleRBM.Common.ExitCondition
         private T _lowestErrorSeen;
         private CancellationTokenSource src;
         private int _epochsSinceLastErrorImprovement = 0;
+        private IEpochErrorTracker<T> _epochErrorTracker;
 
-        public ManualKeyPressEvaluator(int layerDepth, int maxEpochs, T minError)
+        public ManualKeyPressEvaluator(IEpochErrorTracker<T> epochErrorTracker, int layerDepth, int maxEpochs, T minError)
         {
             _maxEpochs = maxEpochs;
             _minError = minError;
             _layerDepth = layerDepth;
+            _epochErrorTracker = epochErrorTracker;
         }
 
         public bool Exit(int epochNumber, T lastError, TimeSpan elapsedTime)
         {
+            _epochErrorTracker.LogEpochError(_layerDepth, epochNumber, lastError);
+
             T tempLowest = _lowestErrorSeen;
 
             if (Comparer<T>.Default.Compare(lastError, _minError) < 0)
