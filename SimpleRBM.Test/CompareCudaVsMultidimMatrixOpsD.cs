@@ -34,8 +34,8 @@ namespace SimpleRBM.Test
             eArchitecture arch = _dev.GetArchitecture();
             ePlatform plat = Environment.Is64BitProcess ? ePlatform.x64 : ePlatform.x86;
 
-            if (plat == ePlatform.x64)
-                throw new Exception("CUDA Random will fail currently on x64");
+            //if (plat == ePlatform.x64)
+            //    throw new Exception("CUDA Random will fail currently on x64");
 
             CudafyModule mod = CudafyTranslator.Cudafy(
                 plat,

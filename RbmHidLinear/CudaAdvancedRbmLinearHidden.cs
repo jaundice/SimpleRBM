@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.Serialization;
 using Cudafy.Host;
 using Cudafy.Maths.RAND;
 /*
@@ -129,6 +130,7 @@ using xxx = SimpleRBM.Cuda.CudaRbmD;
 
 namespace CudaNN
 {
+    [Serializable]
     public class CudaAdvancedRbmLinearHidden : CudaAdvancedRbmBase
     {
         public CudaAdvancedRbmLinearHidden(GPGPU gpu, GPGPURAND rand, int layerIndex, int numVisibleNeurons,
@@ -141,6 +143,12 @@ namespace CudaNN
         {
         }
 
+
+        public CudaAdvancedRbmLinearHidden(SerializationInfo info, StreamingContext context, GPGPU gpu, GPGPURAND rand)
+            : base(info, context, gpu, rand)
+        {
+            
+        }
 
         public override Matrix2D<TElement> Encode(Matrix2D<TElement> data)
         {

@@ -74,9 +74,23 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Cudafy.NET, Version=1.27.5314.36419, Culture=neutral, PublicKeyToken=63a4c9931616906b, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\CUDAfy.NET.1.27.5314.36419\lib\net40\Cudafy.NET.dll</HintPath>
+    <Reference Include="Cloo">
+      <HintPath>..\CudafyV1.28CustomBuild\Cloo.dll</HintPath>
+    </Reference>
+    <Reference Include="CUDA.NET">
+      <HintPath>..\CudafyV1.28CustomBuild\CUDA.NET.dll</HintPath>
+    </Reference>
+    <Reference Include="Cudafy">
+      <HintPath>..\CudafyV1.28CustomBuild\Cudafy.dll</HintPath>
+    </Reference>
+    <Reference Include="Cudafy.Host">
+      <HintPath>..\CudafyV1.28CustomBuild\Cudafy.Host.dll</HintPath>
+    </Reference>
+    <Reference Include="Cudafy.Math">
+      <HintPath>..\CudafyV1.28CustomBuild\Cudafy.Math.dll</HintPath>
+    </Reference>
+    <Reference Include="Cudafy.Translator">
+      <HintPath>..\CudafyV1.28CustomBuild\Cudafy.Translator.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -122,23 +136,60 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\CudafyV1.28CustomBuild\cudafycl.AnyCPU.exe">
+      <Link>cudafycl.AnyCPU.exe</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\CudafyV1.28CustomBuild\cudafycl.AnyCPU.pdb">
+      <Link>cudafycl.AnyCPU.pdb</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\CudafyV1.28CustomBuild\cudafycl.x86.exe">
+      <Link>cudafycl.x86.exe</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\CudafyV1.28CustomBuild\cudafycl.x86.pdb">
+      <Link>cudafycl.x86.pdb</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\CudafyV1.28CustomBuild\CudafyViewer.AnyCPU.exe">
+      <Link>CudafyViewer.AnyCPU.exe</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\CudafyV1.28CustomBuild\CudafyViewer.AnyCPU.pdb">
+      <Link>CudafyViewer.AnyCPU.pdb</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\CudafyV1.28CustomBuild\CudafyViewer.x86.exe">
+      <Link>CudafyViewer.x86.exe</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\CudafyV1.28CustomBuild\CudafyViewer.x86.pdb">
+      <Link>CudafyViewer.x86.pdb</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="optdigits-tra.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Readme\CUDA.NET.Readme.txt" />
-    <Content Include="Readme\CUDAfy-License.txt" />
-    <Content Include="Readme\example_source_code.cs.txt" />
-    <Content Include="Readme\ILSpy-license.txt" />
-    <Content Include="Readme\README.txt" />
-    <Content Include="Tools\cudafycl.exe" />
-    <Content Include="Tools\cudafyclx86.exe" />
-    <Content Include="Tools\CudafyViewer.exe" />
-    <Content Include="Tools\CudafyViewerx86.exe" />
-    <Content Include="Tools\place_these_executables_in_same_folder_as_Cudafy.NET.dll.txt" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\CudafyV1.28CustomBuild\cudafycl.AnyCPU.exe.config">
+      <Link>cudafycl.AnyCPU.exe.config</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\CudafyV1.28CustomBuild\cudafycl.x86.exe.config">
+      <Link>cudafycl.x86.exe.config</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\CudafyV1.28CustomBuild\CudafyViewer.AnyCPU.exe.config">
+      <Link>CudafyViewer.AnyCPU.exe.config</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\CudafyV1.28CustomBuild\CudafyViewer.x86.exe.config">
+      <Link>CudafyViewer.x86.exe.config</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="App.config" />
-    <None Include="packages.config" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

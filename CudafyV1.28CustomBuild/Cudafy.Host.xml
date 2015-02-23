@@ -1,0 +1,3948 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Cudafy.Host</name>
+    </assembly>
+    <members>
+        <member name="T:Cudafy.Host.CudafyHost">
+            <summary>
+            CudafyHost contains high level management operations.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.CudafyHost.GetDeviceProperties(Cudafy.eGPUType,System.Boolean)">
+            <summary>
+            Gets the device properties.
+            </summary>
+            <param name="type">The type of GPU.</param>
+            <param name="useAdvanced">Whether to get the additional device settings via the cudart dll.</param>
+            <returns>Device properties for all devices of the specified type.</returns>
+        </member>
+        <member name="M:Cudafy.Host.CudafyHost.GetDeviceCount(Cudafy.eGPUType)">
+            <summary>
+            Gets the device count.
+            </summary>
+            <param name="type">The type of device.</param>
+            <returns>Number of devices of type specified.</returns>
+        </member>
+        <member name="M:Cudafy.Host.CudafyHost.GetDevice(Cudafy.eGPUType,System.Int32)">
+            <summary>
+            Gets device of type specified from the cache. Creates one if it does not already exist.
+            Sets the current context to the returned device.
+            </summary>
+            <param name="type">The target type.</param>
+            <param name="deviceId">The device id.</param>
+            <returns>GPGPU instance.</returns>
+        </member>
+        <member name="M:Cudafy.Host.CudafyHost.GetDevice(Cudafy.eArchitecture,System.Int32)">
+            <summary>
+            Gets the GPU from cache of type implied by specified architecture. Creates one if it does not already exist.
+            Sets the current context to the returned device.
+            </summary>
+            <param name="arch">Architecture type.</param>
+            <param name="deviceId">The device id.</param>
+            <returns>GPGPU instance.</returns>
+        </member>
+        <member name="M:Cudafy.Host.CudafyHost.DeviceCreated(Cudafy.eGPUType,System.Int32)">
+            <summary>
+            Checks if the specified device has already been created and added to the cache.
+            </summary>
+            <param name="type">The type.</param>
+            <param name="deviceId">The device id.</param>
+            <returns>True if created, else false.</returns>
+        </member>
+        <member name="M:Cudafy.Host.CudafyHost.GetGPGPU(Cudafy.eGPUType,System.Int32)">
+            <summary>
+            Obsolete. Use GetDevice instead.
+            </summary>
+            <param name="type">The target type.</param>
+            <param name="deviceId">The device id.</param>
+            <returns>GPGPU instance.</returns>
+        </member>
+        <member name="M:Cudafy.Host.CudafyHost.CreateDevice(Cudafy.eGPUType,System.Int32)">
+            <summary>
+            Creates a new GPGPU and adds to cache. If GPGPU already exists then it is first destroyed and removed from cache.
+            </summary>
+            <param name="type">The target type.</param>
+            <param name="deviceId">The device id.</param>
+            <returns>GPGPU instance.</returns>
+        </member>
+        <member name="M:Cudafy.Host.CudafyHost.RemoveDevice(Cudafy.Host.GPGPU)">
+            <summary>
+            Removes the specified GPGPU from the cache.
+            </summary>
+            <param name="gpu">The gpu.</param>
+            <returns>True if gpu was removed, else false.</returns>
+        </member>
+        <member name="M:Cudafy.Host.CudafyHost.ClearDevices">
+            <summary>
+            Clears all gpus from the cache.
+            </summary>
+            <returns>The number of gpus removed.</returns>
+        </member>
+        <member name="M:Cudafy.Host.CudafyHost.ClearAllDeviceMemories">
+            <summary>
+            Clears all created device memories.
+            </summary>
+        </member>
+        <member name="T:Cudafy.Host.CudaGPU">
+            <summary>
+            Represents a Cuda GPU.
+            </summary>
+        </member>
+        <member name="T:Cudafy.Host.GPGPU">
+            <summary>
+            Abstract base class for General Purpose GPUs.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.#ctor(System.Int32)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Host.GPGPU"/> class.
+            </summary>
+            <param name="deviceId">The device id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Finalize">
+            <summary>
+            Releases unmanaged resources and performs other cleanup operations before the
+            <see cref="T:Cudafy.Host.GPGPU"/> is reclaimed by garbage collection.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Dispose(System.Boolean)">
+            <summary>
+            Releases unmanaged and - optionally - managed resources
+            </summary>
+            <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Dispose">
+            <summary>
+            Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+            </summary>
+        </member>
+        <member name="F:Cudafy.Host.GPGPU._lock">
+            <summary>
+            Internal use.
+            </summary>
+        </member>
+        <member name="F:Cudafy.Host.GPGPU._deviceMemory">
+            <summary>
+            Stores pointers to data on the device.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Lock">
+            <summary>
+            Locks this instance.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Unlock">
+            <summary>
+            Unlocks this instance.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.EnableMultithreading">
+            <summary>
+            Allows multiple threads to access this GPU.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DisableMultithreading">
+            <summary>
+            Called once multiple threads have completed work.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.EnablePeerAccess(Cudafy.Host.GPGPU)">
+            <summary>
+            Enables peer access from within a kernel. 
+            </summary>
+            <param name="peer">Peer to access. This is a one-way relationship.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DisablePeerAccess(Cudafy.Host.GPGPU)">
+            <summary>
+            Disables peer access.
+            </summary>
+            <param name="peer">Accessible peer to disable access to.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CanAccessPeer(Cudafy.Host.GPGPU)">
+            <summary>
+            Use this to check if device supports direct access from kernel to another device.
+            </summary>
+            <param name="peer">Peer to access.</param>
+            <returns>True if access is possible, else false.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyDeviceToDevice``1(``0[],System.Int32,Cudafy.Host.GPGPU,``0[],System.Int32,System.Int32)">
+            <summary>
+            Copies from one device to another device. Depending on whether RDMA is supported the transfer may or may not be via CPU and system memory.
+            </summary>
+            <typeparam name="T">Data </typeparam>
+            <param name="src"></param>
+            <param name="srcOffset"></param>
+            <param name="peer"></param>
+            <param name="dst"></param>
+            <param name="dstOffset"></param>
+            <param name="count"></param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyDeviceToDeviceAsync``1(``0[],System.Int32,Cudafy.Host.GPGPU,``0[],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Copies from one device to another device. Depending on whether RDMA is supported the transfer may or may not be via CPU and system memory.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="src">Source data.</param>
+            <param name="srcOffset">Source array.</param>
+            <param name="peer">Target device.</param>
+            <param name="dst">Destination array.</param>
+            <param name="dstOffset">Destination offset.</param>
+            <param name="count">Number of samples.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCopyDeviceToDevice``1(System.Array,System.Int32,Cudafy.Host.GPGPU,System.Array,System.Int32,System.Int32)">
+            <summary>
+            Does copy to peer asynchronously.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="srcDevArray">The SRC dev array.</param>
+            <param name="srcOffset">The SRC offset.</param>
+            <param name="peer">The peer.</param>
+            <param name="dstDevArray">The DST dev array.</param>
+            <param name="dstOffet">The DST offet.</param>
+            <param name="count">The count.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCopyDeviceToDeviceAsync``1(System.Array,System.Int32,Cudafy.Host.GPGPU,System.Array,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Does copy to peer asynchronously.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="srcDevArray">The SRC dev array.</param>
+            <param name="srcOffset">The SRC offset.</param>
+            <param name="peer">The peer.</param>
+            <param name="dstDevArray">The DST dev array.</param>
+            <param name="dstOffet">The DST offet.</param>
+            <param name="count">The count.</param>
+            <param name="stream">Stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.SetCurrentContext">
+            <summary>
+            Sets the current context to the context associated with this device when it was created.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CreateStream(System.Int32)">
+            <summary>
+            Explicitly creates a stream.
+            </summary>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Launch">
+            <summary>
+            Gets the dynamic launcher with grid and block sizes equal to 1.
+            Allows GPU functions to be called using dynamic language run-time. For example:
+            gpgpu.Launch().myGPUFunction(x, y, res)         
+            </summary>
+            <returns>Dynamic launcher</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Launch(Cudafy.dim3,Cudafy.dim3,System.Int32)">
+            <summary>
+            Gets the dynamic launcher.
+            Allows GPU functions to be called using dynamic language run-time. For example:
+            gpgpu.Launch(new dim3(8,8), new dim3(8,8)).myGPUFunction(x, y, res)   
+            </summary>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="streamId">The stream id or -1 for synchronous.</param>
+            <returns>Dynamic launcher</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.AddToDeviceMemory(System.Object,Cudafy.Host.DevicePtrEx)">
+            <summary>
+            Adds to device memory.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="value">The value.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.GetDeviceMemoryPointers">
+            <summary>
+            Gets the device memory pointers.
+            </summary>
+            <returns>All data pointers currently on device.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.GetDeviceMemoryPointer(Cudafy.Host.DevicePtrEx)">
+            <summary>
+            Gets the device memory pointer.
+            </summary>
+            <param name="ptrEx">The pointer.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.GetDeviceMemoryFromIntPtr(System.IntPtr)">
+            <summary>
+            Gets the device memory from IntPtr.
+            </summary>
+            <param name="ptr">The PTR.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.GetDeviceMemory(System.Object)">
+            <summary>
+            Gets the device memory for key specified.
+            </summary>
+            <param name="devArray">The dev array.</param>
+            <returns>Device memory</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.TryGetDeviceMemory(System.Object)">
+            <summary>
+            Tries to get the device memory.
+            </summary>
+            <param name="devArray">The dev array.</param>
+            <returns>Device memory or null if not found.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DeviceMemoryValueExists(System.Object)">
+            <summary>
+            Checks if specified device memory value exists.
+            </summary>
+            <param name="val">The device memory instance.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.GetDeviceMemories">
+            <summary>
+            Gets the device memories.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.ClearDeviceMemory">
+            <summary>
+            Clears the device memory.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.RemoveFromDeviceMemory(System.Object)">
+            <summary>
+            Removes from device memory.
+            </summary>
+            <param name="key">The key.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.RemoveFromDeviceMemoryEx(Cudafy.Host.DevicePtrEx)">
+            <summary>
+            Removes from device memory based on specified pointer.
+            </summary>
+            <param name="ptrEx">The PTR ex.</param>
+        </member>
+        <member name="F:Cudafy.Host.GPGPU._streams">
+            <summary>
+            Stores streams.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.GetDeviceProperties(System.Boolean)">
+            <summary>
+            Gets the device properties.
+            </summary>
+            <param name="useAdvanced">States whether to get advanced properties.</param>
+            <returns>Device properties.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.GetFunctionNames">
+            <summary>
+            Gets the names of all global functions.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.GetStream(System.Int32)">
+            <summary>
+            Gets the stream object.
+            </summary>
+            <param name="streamId">The stream id.</param>
+            <returns>Stream object.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToConstantMemory``1(``0[],``0[])">
+            <summary>
+            Copies to constant memory.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="devArray">The device array.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToConstantMemory``1(``0[0:,0:],``0[0:,0:])">
+            <summary>
+            Copies to constant memory.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="devArray">The device array.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToConstantMemory``1(``0[0:,0:,0:],``0[0:,0:,0:])">
+            <summary>
+            Copies to constant memory.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="devArray">The device array.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToConstantMemory``1(``0[],System.Int32,``0[],System.Int32,System.Int32)">
+            <summary>
+            Copies to constant memory.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The device array.</param>
+            <param name="devOffset">The device offset.</param>
+            <param name="count">The number of element to copy.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToConstantMemoryAsync``1(System.IntPtr,System.Int32,``0[],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Copies to constant memory async.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The dev offset.</param>
+            <param name="count">The count.</param>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToConstantMemoryAsync``1(``0[],System.Int32,``0[],System.Int32,System.Int32,System.Int32,System.IntPtr)">
+            <summary>
+            Copies to constant memory asynchronously using smart copy.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The dev offset.</param>
+            <param name="count">The count.</param>
+            <param name="streamId">The stream id.</param>
+            <param name="stagingPost">The staging post.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToConstantMemoryAsync``1(System.IntPtr,System.Int32,``0[0:,0:],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Copies to constant memory async.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The dev offset.</param>
+            <param name="count">The count.</param>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToConstantMemoryAsync``1(System.IntPtr,System.Int32,``0[0:,0:,0:],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Copies to constant memory async.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The dev offset.</param>
+            <param name="count">The count.</param>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.InitializeCopyToConstantMemory(System.Array,System.Int32,System.Array,System.Int32,System.Int32@)">
+            <summary>
+            Initializes the copy to constant memory.
+            </summary>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The dev offset.</param>
+            <param name="count">The count.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.GetDeviceCount">
+            <summary>
+            Gets the device count.
+            </summary>
+            <returns>Number of devices of this type.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Synchronize">
+            <summary>
+            Synchronizes context.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.StartTimer">
+            <summary>
+            Starts the timer.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.StopTimer">
+            <summary>
+            Stops the timer.
+            </summary>
+            <returns>Elapsed time.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.LoadModule(System.String)">
+            <summary>
+            Loads module from file.
+            </summary>
+            <param name="filename">The filename.</param>
+        </member>
+        <member name="F:Cudafy.Host.GPGPU._modules">
+            <summary>
+            Internal use.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.GetMemberNames">
+            <summary>
+            Gets the names of all members in all loaded modules.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.IsModuleLoaded(System.String)">
+            <summary>
+            Determines whether a module is loaded with the specified name.
+            </summary>
+            <param name="moduleName">Name of the module.</param>
+            <returns>
+              <c>true</c> if module loaded; otherwise, <c>false</c>.
+            </returns>
+        </member>
+        <member name="F:Cudafy.Host.GPGPU._module">
+            <summary>
+            Internal use.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CheckForDuplicateMembers(Cudafy.CudafyModule)">
+            <summary>
+            Internal use. Checks for duplicate members.
+            </summary>
+            <param name="module">The module.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.LoadModule(Cudafy.CudafyModule,System.Boolean)">
+            <summary>
+            Loads module from module instance optionally unloading all already loaded modules. To load the same module to different GPUs you need
+            to first Clone the module with cudafyModuleInstance.Clone().
+            </summary>
+            <param name="module">The module.</param>
+            <param name="unload">If true then unload any currently loaded modules first.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.UnloadModule(Cudafy.CudafyModule)">
+            <summary>
+            Unloads the specified module.
+            </summary>
+            <param name="module">Module to unload.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.UnloadModule">
+            <summary>
+            Unloads the current module.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.UnloadModules">
+            <summary>
+            Unloads all modules.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.LaunchAsync``1(Cudafy.dim3,Cudafy.dim3,System.Int32,System.Action{Cudafy.GThread,``0},``0)">
+            <summary>
+            Safe launches the specified action.
+            </summary>
+            <typeparam name="T1">The type.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="streamId">Stream id.</param>
+            <param name="action">The action.</param>
+            <param name="t1">First argument.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.LaunchAsync``2(Cudafy.dim3,Cudafy.dim3,System.Int32,System.Action{Cudafy.GThread,``0,``1},``0,``1)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="streamId">Stream id.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.LaunchAsync``3(Cudafy.dim3,Cudafy.dim3,System.Int32,System.Action{Cudafy.GThread,``0,``1,``2},``0,``1,``2)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.LaunchAsync``4(Cudafy.dim3,Cudafy.dim3,System.Int32,System.Action{Cudafy.GThread,``0,``1,``2,``3},``0,``1,``2,``3)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="streamId">Stream id.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.LaunchAsync``5(Cudafy.dim3,Cudafy.dim3,System.Int32,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4},``0,``1,``2,``3,``4)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="streamId">Stream id.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.LaunchAsync``6(Cudafy.dim3,Cudafy.dim3,System.Int32,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4,``5},``0,``1,``2,``3,``4,``5)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <typeparam name="T6">The type of the 6.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="streamId">Stream id.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+            <param name="t6">The t6.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.LaunchAsync``7(Cudafy.dim3,Cudafy.dim3,System.Int32,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4,``5,``6},``0,``1,``2,``3,``4,``5,``6)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <typeparam name="T6">The type of the 6.</typeparam>
+            <typeparam name="T7">The type of the 7.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="streamId">Stream id.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+            <param name="t6">The t6.</param>
+            <param name="t7">The t7.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.LaunchAsync``8(Cudafy.dim3,Cudafy.dim3,System.Int32,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4,``5,``6,``7},``0,``1,``2,``3,``4,``5,``6,``7)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <typeparam name="T6">The type of the 6.</typeparam>
+            <typeparam name="T7">The type of the 7.</typeparam>
+            <typeparam name="T8">The type of the 8.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="streamId">Stream id.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+            <param name="t6">The t6.</param>
+            <param name="t7">The t7.</param>
+            <param name="t8">The t8.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.LaunchAsync``9(Cudafy.dim3,Cudafy.dim3,System.Int32,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4,``5,``6,``7,``8},``0,``1,``2,``3,``4,``5,``6,``7,``8)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <typeparam name="T6">The type of the 6.</typeparam>
+            <typeparam name="T7">The type of the 7.</typeparam>
+            <typeparam name="T8">The type of the 8.</typeparam>
+            <typeparam name="T9">The type of the 9.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="streamId">Stream id.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+            <param name="t6">The t6.</param>
+            <param name="t7">The t7.</param>
+            <param name="t8">The t8.</param>
+            <param name="t9">The t9.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.LaunchAsync``10(Cudafy.dim3,Cudafy.dim3,System.Int32,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4,``5,``6,``7,``8,``9},``0,``1,``2,``3,``4,``5,``6,``7,``8,``9)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <typeparam name="T6">The type of the 6.</typeparam>
+            <typeparam name="T7">The type of the 7.</typeparam>
+            <typeparam name="T8">The type of the 8.</typeparam>
+            <typeparam name="T9">The type of the 9.</typeparam>
+            <typeparam name="T10">The type of the 10.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="streamId">Stream id.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+            <param name="t6">The t6.</param>
+            <param name="t7">The t7.</param>
+            <param name="t8">The t8.</param>
+            <param name="t9">The t9.</param>
+            <param name="t10">The T10.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.LaunchAsync``11(Cudafy.dim3,Cudafy.dim3,System.Int32,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4,``5,``6,``7,``8,``9,``10},``0,``1,``2,``3,``4,``5,``6,``7,``8,``9,``10)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <typeparam name="T6">The type of the 6.</typeparam>
+            <typeparam name="T7">The type of the 7.</typeparam>
+            <typeparam name="T8">The type of the 8.</typeparam>
+            <typeparam name="T9">The type of the 9.</typeparam>
+            <typeparam name="T10">The type of the 10.</typeparam>
+            <typeparam name="T11">The type of the 11.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="streamId">Stream id.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+            <param name="t6">The t6.</param>
+            <param name="t7">The t7.</param>
+            <param name="t8">The t8.</param>
+            <param name="t9">The t9.</param>
+            <param name="t10">The T10.</param>
+            <param name="t11">The T11.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.LaunchAsync``12(Cudafy.dim3,Cudafy.dim3,System.Int32,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4,``5,``6,``7,``8,``9,``10,``11},``0,``1,``2,``3,``4,``5,``6,``7,``8,``9,``10,``11)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <typeparam name="T6">The type of the 6.</typeparam>
+            <typeparam name="T7">The type of the 7.</typeparam>
+            <typeparam name="T8">The type of the 8.</typeparam>
+            <typeparam name="T9">The type of the 9.</typeparam>
+            <typeparam name="T10">The type of the 10.</typeparam>
+            <typeparam name="T11">The type of the 11.</typeparam>
+            <typeparam name="T12">The type of the 12.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="streamId">The stream id.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+            <param name="t6">The t6.</param>
+            <param name="t7">The t7.</param>
+            <param name="t8">The t8.</param>
+            <param name="t9">The t9.</param>
+            <param name="t10">The T10.</param>
+            <param name="t11">The T11.</param>
+            <param name="t12">The T12.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.LaunchAsync``13(Cudafy.dim3,Cudafy.dim3,System.Int32,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4,``5,``6,``7,``8,``9,``10,``11,``12},``0,``1,``2,``3,``4,``5,``6,``7,``8,``9,``10,``11,``12)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <typeparam name="T6">The type of the 6.</typeparam>
+            <typeparam name="T7">The type of the 7.</typeparam>
+            <typeparam name="T8">The type of the 8.</typeparam>
+            <typeparam name="T9">The type of the 9.</typeparam>
+            <typeparam name="T10">The type of the 10.</typeparam>
+            <typeparam name="T11">The type of the 11.</typeparam>
+            <typeparam name="T12">The type of the 12.</typeparam>
+            <typeparam name="T13">The type of the 13.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="streamId">Stream id.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+            <param name="t6">The t6.</param>
+            <param name="t7">The t7.</param>
+            <param name="t8">The t8.</param>
+            <param name="t9">The t9.</param>
+            <param name="t10">The T10.</param>
+            <param name="t11">The T11.</param>
+            <param name="t12">The T12.</param>
+            <param name="t13">The T13.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.LaunchAsync``14(Cudafy.dim3,Cudafy.dim3,System.Int32,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4,``5,``6,``7,``8,``9,``10,``11,``12,``13},``0,``1,``2,``3,``4,``5,``6,``7,``8,``9,``10,``11,``12,``13)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <typeparam name="T6">The type of the 6.</typeparam>
+            <typeparam name="T7">The type of the 7.</typeparam>
+            <typeparam name="T8">The type of the 8.</typeparam>
+            <typeparam name="T9">The type of the 9.</typeparam>
+            <typeparam name="T10">The type of the 10.</typeparam>
+            <typeparam name="T11">The type of the 11.</typeparam>
+            <typeparam name="T12">The type of the 12.</typeparam>
+            <typeparam name="T13">The type of the 13.</typeparam>
+            <typeparam name="T14">The type of the 14.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="streamId">Stream id.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+            <param name="t6">The t6.</param>
+            <param name="t7">The t7.</param>
+            <param name="t8">The t8.</param>
+            <param name="t9">The t9.</param>
+            <param name="t10">The T10.</param>
+            <param name="t11">The T11.</param>
+            <param name="t12">The T12.</param>
+            <param name="t13">The T13.</param>
+            <param name="t14">The T14.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.LaunchAsync``15(Cudafy.dim3,Cudafy.dim3,System.Int32,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4,``5,``6,``7,``8,``9,``10,``11,``12,``13,``14},``0,``1,``2,``3,``4,``5,``6,``7,``8,``9,``10,``11,``12,``13,``14)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <typeparam name="T6">The type of the 6.</typeparam>
+            <typeparam name="T7">The type of the 7.</typeparam>
+            <typeparam name="T8">The type of the 8.</typeparam>
+            <typeparam name="T9">The type of the 9.</typeparam>
+            <typeparam name="T10">The type of the 10.</typeparam>
+            <typeparam name="T11">The type of the 11.</typeparam>
+            <typeparam name="T12">The type of the 12.</typeparam>
+            <typeparam name="T13">The type of the 13.</typeparam>
+            <typeparam name="T14">The type of the 14.</typeparam>
+            <typeparam name="T15">The type of the 15.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="streamId">Stream id.</param>
+            <param name="action">The action.</param>
+            <param name="streamId">Stream number.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+            <param name="t6">The t6.</param>
+            <param name="t7">The t7.</param>
+            <param name="t8">The t8.</param>
+            <param name="t9">The t9.</param>
+            <param name="t10">The T10.</param>
+            <param name="t11">The T11.</param>
+            <param name="t12">The T12.</param>
+            <param name="t13">The T13.</param>
+            <param name="t14">The T14.</param>
+            <param name="t15">The T15.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Launch``1(Cudafy.dim3,Cudafy.dim3,System.Action{Cudafy.GThread,``0},``0)">
+            <summary>
+            Safe launches the specified action.
+            </summary>
+            <typeparam name="T1">The type.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="action">The action.</param>
+            <param name="t1">First argument.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Launch``2(Cudafy.dim3,Cudafy.dim3,System.Action{Cudafy.GThread,``0,``1},``0,``1)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Launch``3(Cudafy.dim3,Cudafy.dim3,System.Action{Cudafy.GThread,``0,``1,``2},``0,``1,``2)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Launch``4(Cudafy.dim3,Cudafy.dim3,System.Action{Cudafy.GThread,``0,``1,``2,``3},``0,``1,``2,``3)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Launch``5(Cudafy.dim3,Cudafy.dim3,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4},``0,``1,``2,``3,``4)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Launch``6(Cudafy.dim3,Cudafy.dim3,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4,``5},``0,``1,``2,``3,``4,``5)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <typeparam name="T6">The type of the 6.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+            <param name="t6">The t6.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Launch``7(Cudafy.dim3,Cudafy.dim3,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4,``5,``6},``0,``1,``2,``3,``4,``5,``6)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <typeparam name="T6">The type of the 6.</typeparam>
+            <typeparam name="T7">The type of the 7.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+            <param name="t6">The t6.</param>
+            <param name="t7">The t7.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Launch``8(Cudafy.dim3,Cudafy.dim3,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4,``5,``6,``7},``0,``1,``2,``3,``4,``5,``6,``7)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <typeparam name="T6">The type of the 6.</typeparam>
+            <typeparam name="T7">The type of the 7.</typeparam>
+            <typeparam name="T8">The type of the 8.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+            <param name="t6">The t6.</param>
+            <param name="t7">The t7.</param>
+            <param name="t8">The t8.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Launch``9(Cudafy.dim3,Cudafy.dim3,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4,``5,``6,``7,``8},``0,``1,``2,``3,``4,``5,``6,``7,``8)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <typeparam name="T6">The type of the 6.</typeparam>
+            <typeparam name="T7">The type of the 7.</typeparam>
+            <typeparam name="T8">The type of the 8.</typeparam>
+            <typeparam name="T9">The type of the 9.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+            <param name="t6">The t6.</param>
+            <param name="t7">The t7.</param>
+            <param name="t8">The t8.</param>
+            <param name="t9">The t9.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Launch``10(Cudafy.dim3,Cudafy.dim3,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4,``5,``6,``7,``8,``9},``0,``1,``2,``3,``4,``5,``6,``7,``8,``9)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <typeparam name="T6">The type of the 6.</typeparam>
+            <typeparam name="T7">The type of the 7.</typeparam>
+            <typeparam name="T8">The type of the 8.</typeparam>
+            <typeparam name="T9">The type of the 9.</typeparam>
+            <typeparam name="T10">The type of the 10.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+            <param name="t6">The t6.</param>
+            <param name="t7">The t7.</param>
+            <param name="t8">The t8.</param>
+            <param name="t9">The t9.</param>
+            <param name="t10">The T10.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Launch``11(Cudafy.dim3,Cudafy.dim3,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4,``5,``6,``7,``8,``9,``10},``0,``1,``2,``3,``4,``5,``6,``7,``8,``9,``10)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <typeparam name="T6">The type of the 6.</typeparam>
+            <typeparam name="T7">The type of the 7.</typeparam>
+            <typeparam name="T8">The type of the 8.</typeparam>
+            <typeparam name="T9">The type of the 9.</typeparam>
+            <typeparam name="T10">The type of the 10.</typeparam>
+            <typeparam name="T11">The type of the 11.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+            <param name="t6">The t6.</param>
+            <param name="t7">The t7.</param>
+            <param name="t8">The t8.</param>
+            <param name="t9">The t9.</param>
+            <param name="t10">The T10.</param>
+            <param name="t11">The T11.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Launch``13(Cudafy.dim3,Cudafy.dim3,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4,``5,``6,``7,``8,``9,``10,``11,``12},``0,``1,``2,``3,``4,``5,``6,``7,``8,``9,``10,``11,``12)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <typeparam name="T6">The type of the 6.</typeparam>
+            <typeparam name="T7">The type of the 7.</typeparam>
+            <typeparam name="T8">The type of the 8.</typeparam>
+            <typeparam name="T9">The type of the 9.</typeparam>
+            <typeparam name="T10">The type of the 10.</typeparam>
+            <typeparam name="T11">The type of the 11.</typeparam>
+            <typeparam name="T12">The type of the 12.</typeparam>
+            <typeparam name="T13">The type of the 13.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+            <param name="t6">The t6.</param>
+            <param name="t7">The t7.</param>
+            <param name="t8">The t8.</param>
+            <param name="t9">The t9.</param>
+            <param name="t10">The T10.</param>
+            <param name="t11">The T11.</param>
+            <param name="t12">The T12.</param>
+            <param name="t13">The T13.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Launch``14(Cudafy.dim3,Cudafy.dim3,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4,``5,``6,``7,``8,``9,``10,``11,``12,``13},``0,``1,``2,``3,``4,``5,``6,``7,``8,``9,``10,``11,``12,``13)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <typeparam name="T6">The type of the 6.</typeparam>
+            <typeparam name="T7">The type of the 7.</typeparam>
+            <typeparam name="T8">The type of the 8.</typeparam>
+            <typeparam name="T9">The type of the 9.</typeparam>
+            <typeparam name="T10">The type of the 10.</typeparam>
+            <typeparam name="T11">The type of the 11.</typeparam>
+            <typeparam name="T12">The type of the 12.</typeparam>
+            <typeparam name="T13">The type of the 13.</typeparam>
+            <typeparam name="T14">The type of the 14.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+            <param name="t6">The t6.</param>
+            <param name="t7">The t7.</param>
+            <param name="t8">The t8.</param>
+            <param name="t9">The t9.</param>
+            <param name="t10">The T10.</param>
+            <param name="t11">The T11.</param>
+            <param name="t12">The T12.</param>
+            <param name="t13">The T13.</param>
+            <param name="t14">The T14.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Launch``15(Cudafy.dim3,Cudafy.dim3,System.Action{Cudafy.GThread,``0,``1,``2,``3,``4,``5,``6,``7,``8,``9,``10,``11,``12,``13,``14},``0,``1,``2,``3,``4,``5,``6,``7,``8,``9,``10,``11,``12,``13,``14)">
+            <summary>
+            Launches the specified grid size.
+            </summary>
+            <typeparam name="T1">The type of the 1.</typeparam>
+            <typeparam name="T2">The type of the 2.</typeparam>
+            <typeparam name="T3">The type of the 3.</typeparam>
+            <typeparam name="T4">The type of the 4.</typeparam>
+            <typeparam name="T5">The type of the 5.</typeparam>
+            <typeparam name="T6">The type of the 6.</typeparam>
+            <typeparam name="T7">The type of the 7.</typeparam>
+            <typeparam name="T8">The type of the 8.</typeparam>
+            <typeparam name="T9">The type of the 9.</typeparam>
+            <typeparam name="T10">The type of the 10.</typeparam>
+            <typeparam name="T11">The type of the 11.</typeparam>
+            <typeparam name="T12">The type of the 12.</typeparam>
+            <typeparam name="T13">The type of the 13.</typeparam>
+            <typeparam name="T14">The type of the 14.</typeparam>
+            <typeparam name="T15">The type of the 15.</typeparam>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="action">The action.</param>
+            <param name="t1">The t1.</param>
+            <param name="t2">The t2.</param>
+            <param name="t3">The t3.</param>
+            <param name="t4">The t4.</param>
+            <param name="t5">The t5.</param>
+            <param name="t6">The t6.</param>
+            <param name="t7">The t7.</param>
+            <param name="t8">The t8.</param>
+            <param name="t9">The t9.</param>
+            <param name="t10">The T10.</param>
+            <param name="t11">The T11.</param>
+            <param name="t12">The T12.</param>
+            <param name="t13">The T13.</param>
+            <param name="t14">The T14.</param>
+            <param name="t15">The T15.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Launch(Cudafy.dim3,Cudafy.dim3,System.String,System.Object[])">
+            <summary>
+            Launches the specified kernel.
+            </summary>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="methodName">Name of the method.</param>
+            <param name="arguments">The arguments.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.LaunchAsync(Cudafy.dim3,Cudafy.dim3,System.Int32,System.String,System.Object[])">
+            <summary>
+            Launches the specified kernel.
+            </summary>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="streamId">Stream id.</param>
+            <param name="methodName">Name of the method.</param>
+            <param name="arguments">The arguments.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoLaunch(Cudafy.dim3,Cudafy.dim3,System.Int32,Cudafy.KernelMethodInfo,System.Object[])">
+            <summary>
+            Does the launch.
+            </summary>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="streamId">Stream id, or -1 for non-async.</param>
+            <param name="gpuMI">The gpu MI.</param>
+            <param name="arguments">The arguments.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCopyToConstantMemory``1(System.Array,System.Int32,System.Array,System.Int32,System.Int32,Cudafy.KernelConstantInfo)">
+            <summary>
+            Does the copy to constant memory.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The dev offset.</param>
+            <param name="count">The count.</param>
+            <param name="ci">The ci.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCopyToConstantMemoryAsync``1(System.IntPtr,System.Int32,System.Array,System.Int32,System.Int32,Cudafy.KernelConstantInfo,System.Int32)">
+            <summary>
+            Does the copy to constant memory async.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The dev offset.</param>
+            <param name="count">The count.</param>
+            <param name="ci">The ci.</param>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCopyToDevice``1(System.Array,System.Int32,System.Array,System.Int32,System.Int32)">
+            <summary>
+            Does the copy to device.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The dev offset.</param>
+            <param name="count">The count.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCopyFromDevice``1(System.Array,System.Array)">
+            <summary>
+            Does the copy from device.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="hostArray">The host array.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCopyFromDevice``1(System.Array,System.Int32,System.Array,System.Int32,System.Int32)">
+            <summary>
+            Does the copy from device.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The dev offset.</param>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="count">The count.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCopyToDeviceAsync``1(System.IntPtr,System.Int32,System.Array,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Does the copy to device async.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The dev offset.</param>
+            <param name="count">The count.</param>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCopyToDeviceAsync``1(System.IntPtr,System.Int32,Cudafy.Host.DevicePtrEx,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Does the copy to device async.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The dev offset.</param>
+            <param name="count">The count.</param>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCopyToDeviceAsync``1(System.Array,System.Int32,System.Array,System.Int32,System.Int32,System.Int32,System.IntPtr,System.Boolean)">
+            <summary>
+            Does the copy to device async.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The dev offset.</param>
+            <param name="count">The count.</param>
+            <param name="streamId">The stream id.</param>
+            <param name="stagingPost">The staging post.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCopyFromDeviceAsync``1(System.Array,System.Int32,System.IntPtr,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Performs an asynchronous data transfer.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The dev offset.</param>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="count">The count.</param>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCopyFromDeviceAsync``1(Cudafy.Host.DevicePtrEx,System.Int32,System.IntPtr,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Performs an asynchronous data transfer.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The dev offset.</param>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="count">The count.</param>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCopyFromDeviceAsync``1(System.Array,System.Int32,System.Array,System.Int32,System.Int32,System.Int32,System.IntPtr)">
+            <summary>
+            Performs an asynchronous data transfer.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The dev offset.</param>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="count">The count.</param>
+            <param name="streamId">The stream id.</param>
+            <param name="stagingPost">The staging post.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToDevice``1(``0[],``0[])">
+            <summary>
+            Copies to preallocated array on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="devArray">The device array.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToDevice``1(``0[],System.Int32,``0[],System.Int32,System.Int32)">
+            <summary>
+            Copies to preallocated array on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The device array.</param>
+            <param name="devOffset">The device offset.</param>
+            <param name="count">The number of elements.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToDevice``1(System.IntPtr,System.Int32,``0[],System.Int32,System.Int32)">
+            <summary>
+            Copies to preallocated array on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The device array.</param>
+            <param name="devOffset">The device offset.</param>
+            <param name="count">The number of elements.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToDeviceAsync``1(``0[],System.Int32,``0[],System.Int32,System.Int32,System.Int32,System.IntPtr)">
+            <summary>
+            Copies to device asynchronously making use of the previously allocated staging post.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The device array.</param>
+            <param name="devOffset">The device offset.</param>
+            <param name="count">Number of elements.</param>
+            <param name="streamId">The stream id.</param>
+            <param name="stagingPost">The staging post of equal or greater size to count. Use HostAllocate to create.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyFromDeviceAsync``1(``0[],System.Int32,``0[],System.Int32,System.Int32,System.Int32,System.IntPtr)">
+            <summary>
+            Copies from device asynchronously making use of the previously allocated staging post.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The device array.</param>
+            <param name="devOffset">The device offset.</param>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="count">Number of elements.</param>
+            <param name="streamId">The stream id.</param>
+            <param name="stagingPost">The staging post of equal or greater size to count. Use HostAllocate to create.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToDeviceAsync``1(System.IntPtr,System.Int32,``0[],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Copies asynchronously to preallocated array on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The device array.</param>
+            <param name="devOffset">The device offset.</param>
+            <param name="count">The number of elements.</param>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToDeviceAsync``1(System.IntPtr,System.Int32,Cudafy.Host.DevicePtrEx,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Copies asynchronously to preallocated array on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The device array.</param>
+            <param name="devOffset">The device offset.</param>
+            <param name="count">The number of elements.</param>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToDeviceAsync``1(System.IntPtr,System.Int32,``0[0:,0:],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Copies asynchronously to preallocated array on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The device array.</param>
+            <param name="devOffset">The device offset.</param>
+            <param name="count">The number of elements.</param>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToDeviceAsync``1(System.IntPtr,System.Int32,``0[0:,0:,0:],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Copies asynchronously to preallocated array on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The device array.</param>
+            <param name="devOffset">The device offset.</param>
+            <param name="count">The number of elements.</param>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyFromDevice``1(``0[],System.Int32,``0[],System.Int32,System.Int32)">
+            <summary>
+            Copies from device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The device array.</param>
+            <param name="devOffset">The device offset.</param>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="count">The number of elements.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyFromDevice``1(``0[],System.Int32,System.IntPtr,System.Int32,System.Int32)">
+            <summary>
+            Copies from device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The device offset.</param>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="count">The number of elements.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyFromDeviceAsync``1(``0[],System.Int32,System.IntPtr,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Copies from device asynchronously.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The device offset.</param>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="count">The number of elements.</param>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyFromDeviceAsync``1(Cudafy.Host.DevicePtrEx,System.Int32,System.IntPtr,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Copies from device asynchronously.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The device offset.</param>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="count">The number of elements.</param>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyFromDeviceAsync``1(``0[0:,0:],System.Int32,System.IntPtr,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Copies from device asynchronously.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The device offset.</param>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="count">The number of elements.</param>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyFromDeviceAsync``1(``0[0:,0:,0:],System.Int32,System.IntPtr,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Copies from device asynchronously.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The device offset.</param>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="count">The number of elements.</param>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.SynchronizeStream(System.Int32)">
+            <summary>
+            Synchronizes the stream.
+            </summary>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.HostAllocate``1(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Performs a default host memory allocation.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="x">The x size.</param>
+            <param name="y">The y size.</param>
+            <param name="z">The z size.</param>
+            <returns>Pointer to allocated memory.</returns>
+            <remarks>Remember to free this memory with HostFree.</remarks>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.HostAllocate``1(System.Int32,System.Int32)">
+            <summary>
+            Performs a default host memory allocation.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="x">The x size.</param>
+            <param name="y">The y size.</param>
+            <returns>Pointer to allocated memory.</returns>
+            <remarks>Remember to free this memory with HostFree.</remarks>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.HostAllocate``1(System.Int32)">
+            <summary>
+            Performs a default host memory allocation.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="x">The x size.</param>
+            <returns>
+            Pointer to allocated memory.
+            </returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.HostFree(System.IntPtr)">
+            <summary>
+            Frees memory allocated by HostAllocate.
+            </summary>
+            <param name="ptr">The pointer.</param>
+            <exception cref="T:Cudafy.Host.CudafyHostException">Pointer not found.</exception>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.HostFreeAll">
+            <summary>
+            Frees all memory allocated by HostAllocate.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyMemory(System.IntPtr,System.IntPtr,System.UInt32)">
+            <summary>
+            Copies memory on host using native CopyMemory function from kernel32.dll.
+            </summary>
+            <param name="Destination">The destination.</param>
+            <param name="Source">The source.</param>
+            <param name="Length">The length.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.GetValue``1(``0[],System.Int32)">
+            <summary>
+            Gets the value at specified index.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="x">The x.</param>
+            <returns>Value at index.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.GetValue``1(``0[0:,0:],System.Int32,System.Int32)">
+            <summary>
+            Gets the value at specified index.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.GetValue``1(``0[0:,0:,0:],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Gets the value.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <param name="z">The z.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``2(``0[],System.Int32)">
+            <summary>
+            Casts the specified dev array.
+            </summary>
+            <typeparam name="T">Type of dev array.</typeparam>
+            <typeparam name="U">Type to cast to.</typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="n">The number of samples.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``1(``0[0:,0:],System.Int32)">
+            <summary>
+            Casts the specified dev array to 1D.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="n">The number of samples.</param>
+            <returns>1D array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``2(``0[0:,0:],System.Int32)">
+            <summary>
+            Casts the specified dev array.
+            </summary>
+            <typeparam name="T">Type of dev array.</typeparam>
+            <typeparam name="U">Type to cast to.</typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="n">The n.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``1(``0[],System.Int32,System.Int32)">
+            <summary>
+            Casts the specified dev array to 2D.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``2(``0[],System.Int32,System.Int32)">
+            <summary>
+            Casts the specified dev array.
+            </summary>
+            <typeparam name="T">Type of dev array.</typeparam>
+            <typeparam name="U">Type to cast to.</typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``1(``0[],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Casts the specified dev array to 3D.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <param name="z">The z.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``2(``0[],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Casts the specified dev array.
+            </summary>
+            <typeparam name="T">Type of dev array.</typeparam>
+            <typeparam name="U">Type to cast to.</typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <param name="z">The z.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``1(``0[0:,0:,0:],System.Int32)">
+            <summary>
+            Casts the specified dev array to 1D.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="n">The n.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``2(``0[0:,0:,0:],System.Int32)">
+            <summary>
+            Casts the specified dev array.
+            </summary>
+            <typeparam name="T">Type of dev array.</typeparam>
+            <typeparam name="U">Type to cast to.</typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="n">The n.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``1(System.Int32,``0[],System.Int32)">
+            <summary>
+            Casts the specified offset.
+            </summary>
+            <typeparam name="T">Type of dev array.</typeparam>
+            <param name="offset">The offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="n">The n.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``2(System.Int32,``0[],System.Int32)">
+            <summary>
+            Casts the specified offset.
+            </summary>
+            <typeparam name="T">Type of dev array.</typeparam>
+            <typeparam name="U">Type to cast to.</typeparam>
+            <param name="offset">The offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="n">The n.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``1(System.Int32,``0[0:,0:],System.Int32)">
+            <summary>
+            Casts the specified dev array to 1D.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="offset">Offset into dev array.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="n">The number of samples.</param>
+            <returns>1D array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``2(System.Int32,``0[0:,0:],System.Int32)">
+            <summary>
+            Casts the specified offset.
+            </summary>
+            <typeparam name="T">Type of dev array.</typeparam>
+            <typeparam name="U">Type to cast to.</typeparam>
+            <param name="offset">The offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="n">The n.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``1(System.Int32,``0[0:,0:],System.Int32,System.Int32)">
+            <summary>
+            Casts the specified offset.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="offset">The offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``2(System.Int32,``0[0:,0:],System.Int32,System.Int32)">
+            <summary>
+            Casts the specified offset.
+            </summary>
+            <typeparam name="T">Type of dev array.</typeparam>
+            <typeparam name="U">Type to cast to.</typeparam>
+            <param name="offset">The offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``1(System.Int32,``0[],System.Int32,System.Int32)">
+            <summary>
+            Casts the specified dev array to 2D.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="offset">Offset into dev array.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``2(System.Int32,``0[],System.Int32,System.Int32)">
+            <summary>
+            Casts the specified offset.
+            </summary>
+            <typeparam name="T">Type of dev array.</typeparam>
+            <typeparam name="U">Type to cast to.</typeparam>
+            <param name="offset">The offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``1(System.Int32,``0[0:,0:,0:],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Casts the specified offset.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="offset">The offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <param name="z">The z.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``2(System.Int32,``0[0:,0:,0:],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Casts the specified offset.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <typeparam name="U"></typeparam>
+            <param name="offset">The offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <param name="z">The z.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``1(System.Int32,``0[],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Casts the specified dev array to 3D.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="offset">Offset into dev array.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <param name="z">The z.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``2(System.Int32,``0[],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Casts the specified offset.
+            </summary>
+            <typeparam name="T">Type of dev array.</typeparam>
+            <typeparam name="U">Type to cast to.</typeparam>
+            <param name="offset">The offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <param name="z">The z.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``1(System.Int32,``0[0:,0:,0:],System.Int32)">
+            <summary>
+            Casts the specified dev array to 1D.
+            </summary>
+            <typeparam name="T">Type of dev array.</typeparam>
+            <param name="offset">Offset into dev array.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="n">The n.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Cast``2(System.Int32,``0[0:,0:,0:],System.Int32)">
+            <summary>
+            Casts the specified dev array to 1D.
+            </summary>
+            <typeparam name="T">Type of source array.</typeparam>
+            <typeparam name="U">Type of destination array.</typeparam>
+            <param name="offset">Offset into dev array.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="n">The n.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCast``2(System.Int32,System.Array,System.Int32)">
+            <summary>
+            Does the cast.
+            </summary>
+            <typeparam name="T">Type of source array.</typeparam>
+            <typeparam name="U">Type of result array.</typeparam>
+            <param name="offset">Offset into dev array.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="n">The n.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCast``2(System.Int32,System.Array,System.Int32,System.Int32)">
+            <summary>
+            Does the cast.
+            </summary>
+            <typeparam name="T">Type of source array.</typeparam>
+            <typeparam name="U">Type of result array.</typeparam>
+            <param name="offset">Offset into dev array.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCast``2(System.Int32,System.Array,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Does the cast.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <typeparam name="U"></typeparam>
+            <param name="offset">Offset into dev array.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <param name="z">The z.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyOnHost``1(``0[],System.Int32,System.IntPtr,System.Int32,System.Int32)">
+            <summary>
+            Copies data on host.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="nativeHostArraySrc">The source native host array.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="hostAllocatedMemory">The destination host allocated memory.</param>
+            <param name="dstOffset">The destination offset.</param>
+            <param name="count">The number of elements.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyOnHost``1(``0[0:,0:],System.Int32,System.IntPtr,System.Int32,System.Int32)">
+            <summary>
+            Copies data on host.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="nativeHostArraySrc">The source native host array.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="hostAllocatedMemory">The destination host allocated memory.</param>
+            <param name="dstOffset">The destination offset.</param>
+            <param name="count">The number of elements.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyOnHost``1(``0[0:,0:,0:],System.Int32,System.IntPtr,System.Int32,System.Int32)">
+            <summary>
+            Copies data on host.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="nativeHostArraySrc">The source native host array.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="hostAllocatedMemory">The destination host allocated memory.</param>
+            <param name="dstOffset">The destination offset.</param>
+            <param name="count">The number of elements.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCopyOnHost``1(System.Array,System.Int32,System.IntPtr,System.Int32,System.Int32)">
+            <summary>
+            Does the copy on host.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="nativeHostArraySrc">The native host array SRC.</param>
+            <param name="srcOffset">The SRC offset.</param>
+            <param name="hostAllocatedMemory">The host allocated memory.</param>
+            <param name="dstOffset">The DST offset.</param>
+            <param name="count">The count.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyOnHost``1(System.IntPtr,System.Int32,``0[],System.Int32,System.Int32)">
+            <summary>
+            Copies data on host.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostAllocatedMemory">The source host allocated memory.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="nativeHostArrayDst">The destination native host array.</param>
+            <param name="dstOffset">The destination offset.</param>
+            <param name="count">The number of elements.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyOnHost``1(System.IntPtr,System.Int32,``0[0:,0:],System.Int32,System.Int32)">
+            <summary>
+            Copies data on host.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostAllocatedMemory">The source host allocated memory.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="nativeHostArrayDst">The destination native host array.</param>
+            <param name="dstOffset">The destination offset.</param>
+            <param name="count">The number of elements.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyOnHost``1(System.IntPtr,System.Int32,``0[0:,0:,0:],System.Int32,System.Int32)">
+            <summary>
+            Copies data on host.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostAllocatedMemory">The source host allocated memory.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="nativeHostArrayDst">The destination native host array.</param>
+            <param name="dstOffset">The destination offset.</param>
+            <param name="count">The number of elements.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCopyOnHost``1(System.IntPtr,System.Int32,System.Array,System.Int32,System.Int32)">
+            <summary>
+            Does the copy on host.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="hostAllocatedMemory">The host allocated memory.</param>
+            <param name="srcOffset">The SRC offset.</param>
+            <param name="nativeHostArrayDst">The native host array DST.</param>
+            <param name="dstOffset">The DST offset.</param>
+            <param name="count">The count.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCopy(System.Array,System.Int32,System.Array,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Does the copy.
+            </summary>
+            <param name="srcArray">The source array.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="dstArray">The destination array.</param>
+            <param name="dstOffset">The destination offset.</param>
+            <param name="count">The count.</param>
+            <param name="size">The size.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCopy``1(System.Array,System.Int32,System.Array,System.Int32,System.Int32)">
+            <summary>
+            Does the copy.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="srcArray">The source array.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="dstArray">The destination array.</param>
+            <param name="dstOffset">The destination offset.</param>
+            <param name="count">The count.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCopy(System.Array,System.Int32,System.Array,System.Int32,System.Int32,System.Type)">
+            <summary>
+            Does the copy.
+            </summary>
+            <param name="srcArray">The source array.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="dstArray">The destination array.</param>
+            <param name="dstOffset">The destination offset.</param>
+            <param name="count">The count.</param>
+            <param name="type">The type.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DestroyStream(System.Int32)">
+            <summary>
+            Destroys the stream.
+            </summary>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DestroyStreams">
+            <summary>
+            Destroys all streams.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToDevice``1(``0[0:,0:],``0[0:,0:])">
+            <summary>
+            Copies to preallocated array on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="devArray">The device array.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToDevice``1(``0[0:,0:,0:],``0[0:,0:,0:])">
+            <summary>
+            Copies to preallocated array on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="devArray">The device array.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToDevice(System.String)">
+            <summary>
+            Allocates Unicode character array on device, copies to device and returns pointer.
+            </summary>
+            <param name="text">The text.</param>
+            <returns>The device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToDevice``1(``0[])">
+            <summary>
+            Allocates array on device, copies to device and returns pointer.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <returns>The device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToDevice``1(``0[0:,0:])">
+            <summary>
+            Allocates array on device, copies to device and returns pointer.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <returns>The device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyToDevice``1(``0[0:,0:,0:])">
+            <summary>
+            Allocates array on device, copies to device and returns pointer.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <returns>The device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyFromDevice``1(``0[],``0@)">
+            <summary>
+            Copies from device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The device array.</param>
+            <param name="hostData">The host data.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyFromDevice``1(``0[],``0[])">
+            <summary>
+            Copies the complete device array to the host array.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The device array.</param>
+            <param name="hostArray">The host array.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyFromDevice``1(``0[0:,0:],``0[0:,0:])">
+            <summary>
+            Copies the complete device array to the host array.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The device array.</param>
+            <param name="hostArray">The host array.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyFromDevice``1(``0[0:,0:],System.Int32,``0[],System.Int32,System.Int32)">
+            <summary>
+            Copies from device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The device offset.</param>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="count">The number of elements.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyFromDevice``1(``0[0:,0:,0:],``0[0:,0:,0:])">
+            <summary>
+            Copies the complete device array to the host array.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The device array.</param>
+            <param name="hostArray">The host array.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyOnDevice``1(``0[],``0[])">
+            <summary>
+            Copies between preallocated arrays on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="srcDevArray">The source device array.</param>
+            <param name="dstDevArray">The destination device array.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyOnDevice``1(``0[],System.Int32,``0[],System.Int32,System.Int32)">
+            <summary>
+            Copies between preallocated arrays on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="srcDevArray">The source device array.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="dstDevArray">The destination device array.</param>
+            <param name="dstOffset">The destination offet.</param>
+            <param name="count">The number of element.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyOnDevice``1(Cudafy.Host.DevicePtrEx,System.Int32,Cudafy.Host.DevicePtrEx,System.Int32,System.Int32)">
+            <summary>
+            Copies between preallocated arrays on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="srcDevArray">The source device array.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="dstDevArray">The destination device array.</param>
+            <param name="dstOffset">The destination offet.</param>
+            <param name="count">The number of element.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyOnDeviceAsync``1(``0[],System.Int32,``0[],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Copies between preallocated arrays on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="srcDevArray">The source device array.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="dstDevArray">The destination device array.</param>
+            <param name="dstOffset">The destination offet.</param>
+            <param name="count">The number of element.</param>
+            <param name="streamId">Stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyOnDeviceAsync``1(Cudafy.Host.DevicePtrEx,System.Int32,Cudafy.Host.DevicePtrEx,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Copies between preallocated arrays on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="srcDevArray">The source device array.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="dstDevArray">The destination device array.</param>
+            <param name="dstOffset">The destination offet.</param>
+            <param name="count">The number of element.</param>
+            <param name="streamId">Stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyOnDevice``1(``0[0:,0:],System.Int32,``0[0:,0:],System.Int32,System.Int32)">
+            <summary>
+            Copies between preallocated arrays on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="srcDevArray">The source device array.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="dstDevArray">The destination device array.</param>
+            <param name="dstOffset">The destination offet.</param>
+            <param name="count">The number of element.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.CopyOnDevice``1(``0[0:,0:,0:],System.Int32,``0[0:,0:,0:],System.Int32,System.Int32)">
+            <summary>
+            Copies between preallocated arrays on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="srcDevArray">The source device array.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="dstDevArray">The destination device array.</param>
+            <param name="dstOffset">The destination offet.</param>
+            <param name="count">The number of element.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoCopyOnDevice``1(System.Array,System.Int32,System.Array,System.Int32,System.Int32)">
+            <summary>
+            Copies between preallocated arrays on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="srcDevArray">The source device array.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="dstDevArray">The destination device array.</param>
+            <param name="dstOffet">The destination offet.</param>
+            <param name="count">The number of element.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.EnableSmartCopy">
+            <summary>
+            Enables smart copy. The overloads of CopyToDeviceAsync and CopyFromDeviceAsync using pinned memory staging posts
+            is now possible. If multithreading is not enabled this will be done automatically.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DisableSmartCopy">
+            <summary>
+            Disables smart copy and multithreading if this was set automatically during smart copy enable.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Allocate``1">
+            <summary>
+            Allocates on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <returns>Device array of length 1.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Allocate``1(System.Int32)">
+            <summary>
+            Allocates array on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="x">Length of 1D array.</param>
+            <returns>Device array of length x.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Allocate``1(System.Int32,System.Int32)">
+            <summary>
+            Allocates array on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="x">The x dimension.</param>
+            <param name="y">The y dimension.</param>
+            <returns>2D device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Allocate``1(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Allocates array on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="x">The x dimension.</param>
+            <param name="y">The y dimension.</param>
+            <param name="z">The z dimension.</param>
+            <returns>3D device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Allocate``1(``0[])">
+            <summary>
+            Allocates array on device of same size as supplied host array.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <returns>1D device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Allocate``1(``0[0:,0:])">
+            <summary>
+            Allocates array on device of same size as supplied host array.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <returns>1D device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Allocate``1(``0[0:,0:,0:])">
+            <summary>
+            Allocates array on device of same size as supplied host array.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <returns>1D device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Set``1(``0[])">
+            <summary>
+            Sets the specified device array to zero.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The device array.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Set``1(``0[0:,0:])">
+            <summary>
+            Sets the specified device array to zero.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The device array.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Set``1(``0[0:,0:,0:])">
+            <summary>
+            Sets the specified device array to zero.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The device array.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Set``1(``0[],System.Int32,System.Int32)">
+            <summary>
+            Sets the specified device array to zero.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The device array.</param>
+            <param name="offset">The offset.</param>
+            <param name="count">The number of elements.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Set``1(``0[0:,0:],System.Int32,System.Int32)">
+            <summary>
+            Sets the specified device array to zero.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The device array.</param>
+            <param name="offset">The offset.</param>
+            <param name="count">The number of elements.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Set``1(``0[0:,0:,0:],System.Int32,System.Int32)">
+            <summary>
+            Sets the specified device array to zero.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="devArray">The device array.</param>
+            <param name="offset">The offset.</param>
+            <param name="count">The number of elements.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.DoSet``1(System.Array,System.Int32,System.Int32)">
+            <summary>
+            Does the set.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="offset">The offset.</param>
+            <param name="count">The count.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.Free(System.Object)">
+            <summary>
+            Frees the specified data array on device.
+            </summary>
+            <param name="devArray">The device array to free.</param>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.FreeAll">
+            <summary>
+            Frees all data arrays on device.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.VerifyMembersAreOnGPU(System.Object[])">
+            <summary>
+            Verifies launch arguments are on GPU and are supported.
+            </summary>
+            <param name="args">The arguments.</param>
+            <exception cref="T:System.ArgumentException">Argument is either not on GPU or not supported.</exception>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.VerifyOnGPU(System.Object)">
+            <summary>
+            Verifies the specified data is on GPU.
+            </summary>
+            <param name="data">The data.</param>
+            <exception cref="T:Cudafy.Host.CudafyHostException">Data is not on GPU.</exception>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.IsOnGPU(System.Object)">
+            <summary>
+            Determines whether the specified data is on GPU.
+            </summary>
+            <param name="data">The data.</param>
+            <returns>
+            	<c>true</c> if the specified data is on GPU; otherwise, <c>false</c>.
+            </returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.GetGPUData(System.Object)">
+            <summary>
+            Gets the pointer to the native GPU data.
+            </summary>
+            <param name="data">The data.</param>
+            <returns>Pointer to the actual data.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.MSizeOf(System.Type)">
+            <summary>
+            Gets the size of the type specified. Note that this differs from Marshal.SizeOf for System.Char (it returns 2 instead of 1).
+            </summary>
+            <param name="t">The type to get the size of.</param>
+            <returns>Size of type in bytes.</returns>
+        </member>
+        <member name="M:Cudafy.Host.GPGPU.GetDriverVersion">
+            <summary>
+            Gets the version.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Cudafy.Host.GPGPU.DeviceId">
+            <summary>
+            Gets the device id.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Host.GPGPU.IsDisposed">
+            <summary>
+            Gets a value indicating whether this instance is disposed.
+            </summary>
+            <value>
+            	<c>true</c> if this instance is disposed; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPU.IsLocked">
+            <summary>
+            Gets a value indicating whether this instance is locked.
+            </summary>
+            <value>
+              <c>true</c> if this instance is locked; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPU.IsMultithreadingEnabled">
+            <summary>
+            Gets a value indicating whether this instance has multithreading enabled.
+            </summary>
+            <value>
+            	<c>true</c> if this instance is multithreading enabled; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPU.IsCurrentContext">
+            <summary>
+            Gets a value indicating whether this instance is current context. You must ensure this is true before 
+            attempting communication with device.
+            </summary>
+            <value>
+            	<c>true</c> if this instance is current context; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPU.FreeMemory">
+            <summary>
+            Gets the free memory.
+            </summary>
+            <value>The free memory.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPU.TotalMemory">
+            <summary>
+            Gets the total memory.
+            </summary>
+            <value>The total memory.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPU.Modules">
+            <summary>
+            Gets the modules.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Host.GPGPU.CurrentModule">
+            <summary>
+            Gets the current module.
+            </summary>
+            <value>The current module.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPU.IsSmartCopyEnabled">
+            <summary>
+            Gets a value indicating whether this instance is smart copy enabled.
+            </summary>
+            <value>
+            	<c>true</c> if this instance is smart copy enabled; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPU.SupportsSmartCopy">
+            <summary>
+            Gets or sets a value indicating whether device supports smart copy.
+            </summary>
+            <value>
+              <c>true</c> if supports smart copy; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.#ctor(System.Int32)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Host.CudaGPU"/> class.
+            </summary>
+            <param name="deviceId">The device id.</param>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.EnablePeerAccess(Cudafy.Host.GPGPU)">
+            <summary>
+            Enables peer access from within a kernel. Only supported on Tesla devices and Linux or Windows TCC.
+            </summary>
+            <param name="peer">Peer to access. This is a one-way relationship.</param>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.DisablePeerAccess(Cudafy.Host.GPGPU)">
+            <summary>
+            Disables peer access.
+            </summary>
+            <param name="peer">Accessible peer to disable access to.</param>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.CanAccessPeer(Cudafy.Host.GPGPU)">
+            <summary>
+            Use this to check if device supports direct access from kernel to another device.
+            Only supported on Tesla devices and Linux or Windows TCC.
+            </summary>
+            <param name="peer">Peer to access.</param>
+            <returns>
+            True if access is possible, else false.
+            </returns>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.GetStream(System.Int32)">
+            <summary>
+            Gets the CUstream object identified by streamId.
+            </summary>
+            <param name="streamId">The stream id.</param>
+            <returns>CUstream object.</returns>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.Lock">
+            <summary>
+            Locks this instance.
+            </summary>
+            <exception cref="T:Cudafy.Host.CudafyHostException">Multithreading is not enabled.</exception>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.Unlock">
+            <summary>
+            Unlocks this instance.
+            </summary>
+            <exception cref="T:Cudafy.Host.CudafyHostException">Device is not locked.</exception>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.EnableMultithreading">
+            <summary>
+            Allows multiple threads to access this GPU.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.DisableMultithreading">
+            <summary>
+            Called once multiple threads have completed work.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.SetCurrentContext">
+            <summary>
+            Sets the current context to the context associated with this device when it was created.
+            Use of this method is vitally important when working with multiple GPUs.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.GetDeviceProperties(System.Boolean)">
+            <summary>
+            Gets the device properties.
+            </summary>
+            <param name="useAdvanced">If true then also get properties via cudart.dll (e.g. MultiProcessorCount).</param>
+            <returns>Device properties instance.</returns>
+            <exception cref="T:Cudafy.Host.CudafyHostException">Failed to get properties.</exception>
+            <exception cref="T:System.DllNotFoundException">Library named cudart.dll is needed for advanced properties and was not found.</exception>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.Synchronize">
+            <summary>
+            Synchronizes context.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.StartTimer">
+            <summary>
+            Starts the timer.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.StopTimer">
+            <summary>
+            Stops the timer.
+            </summary>
+            <returns>Elapsed time.</returns>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.CreateStream(System.Int32)">
+            <summary>
+            Explicitly creates a stream.
+            </summary>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.DoLaunch(Cudafy.dim3,Cudafy.dim3,System.Int32,Cudafy.KernelMethodInfo,System.Object[])">
+            <summary>
+            Does the launch.
+            </summary>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="streamId">Stream id, or -1 for non-async.</param>
+            <param name="gpuMethodInfo">The gpu method info.</param>
+            <param name="arguments">The arguments.</param>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.SynchronizeStream(System.Int32)">
+            <summary>
+            Synchronizes the stream.
+            </summary>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.DestroyStream(System.Int32)">
+            <summary>
+            Destroys the stream.
+            </summary>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.DestroyStreams">
+            <summary>
+            Destroys all streams.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.HostAllocate``1(System.Int32)">
+            <summary>
+            Performs a default host memory allocation.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="x">The x size.</param>
+            <returns>
+            Pointer to allocated memory.
+            </returns>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.HostFree(System.IntPtr)">
+            <summary>
+            Frees memory allocated by HostAllocate.
+            </summary>
+            <param name="ptr">The pointer.</param>
+            <exception cref="T:Cudafy.Host.CudafyHostException">Pointer not found.</exception>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.HostFreeAll">
+            <summary>
+            Frees all memory allocated by HostAllocate. Disables smart copy.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.CopyToDevice``1(``0[])">
+            <summary>
+            Allocates array on device, copies to device and returns pointer.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <returns>The device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.CopyToDevice``1(``0[0:,0:])">
+            <summary>
+            Allocates array on device, copies to device and returns pointer.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <returns>The device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.CopyToDevice``1(``0[0:,0:,0:])">
+            <summary>
+            Allocates array on device, copies to device and returns pointer.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray"></param>
+            <returns>The device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.CopyOnDevice``1(``0[],``0[])">
+            <summary>
+            Copies between preallocated arrays on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="srcDevArray">The source device array.</param>
+            <param name="dstDevArray">The destination device array.</param>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.DoCopyOnDevice``1(Cudafy.Host.DevicePtrEx,System.Int32,Cudafy.Host.DevicePtrEx,System.Int32,System.Int32)">
+            <summary>
+            Copies between preallocated arrays on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="srcDevArray">The source device array.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="dstDevArray">The destination device array.</param>
+            <param name="dstOffet">The destination offet.</param>
+            <param name="count">The number of element.</param>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.Allocate``1">
+            <summary>
+            Allocates on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <returns>Device array of length 1.</returns>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.Allocate``1(System.Int32)">
+            <summary>
+            Allocates array on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="x">Length of 1D array.</param>
+            <returns>Device array of length x.</returns>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.Allocate``1(System.Int32,System.Int32)">
+            <summary>
+            Allocates array on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="x">The x dimension.</param>
+            <param name="y">The y dimension.</param>
+            <returns>2D device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.Allocate``1(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Allocates array on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="x">The x dimension.</param>
+            <param name="y">The y dimension.</param>
+            <param name="z">The z dimension.</param>
+            <returns>3D device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.Allocate``1(``0[])">
+            <summary>
+            Allocates array on device of same size as supplied host array.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <returns>1D device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.Free(System.Object)">
+            <summary>
+            Frees the specified data array on device.
+            </summary>
+            <param name="devArray">The device array to free.</param>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.FreeAll">
+            <summary>
+            Frees all data arrays on device.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.GetDeviceCount">
+            <summary>
+            Gets the device count.
+            </summary>
+            <returns>Number of Cuda devices in system.</returns>
+        </member>
+        <member name="M:Cudafy.Host.CudaGPU.GetGPUData(System.Object)">
+            <summary>
+            Gets the pointer to the native GPU data.
+            </summary>
+            <param name="data">The data.</param>
+            <returns>
+            Pointer to the actual data. This can be cast to GASS.CUDA.Types.CUdeviceptr.
+            </returns>
+        </member>
+        <member name="P:Cudafy.Host.CudaGPU.IsLocked">
+            <summary>
+            Gets a value indicating whether this instance is locked.
+            </summary>
+            <value>
+              <c>true</c> if this instance is locked; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.CudaGPU.IsMultithreadingEnabled">
+            <summary>
+            Gets a value indicating whether this instance has multithreading enabled.
+            </summary>
+            <value>
+            	<c>true</c> if this instance is multithreading enabled; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.CudaGPU.IsCurrentContext">
+            <summary>
+            Gets a value indicating whether this instance is current context. You must ensure this is true before
+            attempting communication with device.
+            </summary>
+            <value>
+            	<c>true</c> if this instance is current context; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.CudaGPU.CudaDotNet">
+            <summary>
+            Gets the CUDA.NET handle. You can cast this to CUDA in the GASS.CUDA namespace.
+            See http://www.hoopoe-cloud.com/Solutions/CUDA.NET/Default.aspx
+            </summary>
+        </member>
+        <member name="P:Cudafy.Host.CudaGPU.FreeMemory">
+            <summary>
+            Gets the free memory.
+            </summary>
+            <value>The free memory.</value>
+        </member>
+        <member name="P:Cudafy.Host.CudaGPU.TotalMemory">
+            <summary>
+            Gets the total memory.
+            </summary>
+            <value>
+            The total memory.
+            </value>
+        </member>
+        <member name="T:Cudafy.Host.CUDevicePtrEx">
+            <summary>
+            Internal use.
+            </summary>
+        </member>
+        <member name="T:Cudafy.Host.DevicePtrEx">
+            <summary>
+            Base class for Device data pointers
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.DevicePtrEx.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Host.DevicePtrEx"/> class.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.DevicePtrEx.GetOffset1D(System.Int32)">
+            <summary>
+            Gets the offset1 D.
+            </summary>
+            <param name="x">The x.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.DevicePtrEx.GetOffset1D(System.Int32,System.Int32)">
+            <summary>
+            Gets the offset1 D.
+            </summary>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.DevicePtrEx.GetOffset1D(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Gets the offset1 D.
+            </summary>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <param name="z">The z.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.DevicePtrEx.GetDimensions">
+            <summary>
+            Gets the dimensions.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.DevicePtrEx.AddChild(Cudafy.Host.DevicePtrEx)">
+            <summary>
+            Adds the child.
+            </summary>
+            <param name="ptrEx">The PTR ex.</param>
+        </member>
+        <member name="M:Cudafy.Host.DevicePtrEx.RemoveChildren">
+            <summary>
+            Removes the children.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.DevicePtrEx.GetAllChildren">
+            <summary>
+            Gets all children.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Cudafy.Host.DevicePtrEx.XSize">
+            <summary>
+            Gets the size of the X.
+            </summary>
+            <value>
+            The size of the X.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.DevicePtrEx.YSize">
+            <summary>
+            Gets the size of the Y.
+            </summary>
+            <value>
+            The size of the Y.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.DevicePtrEx.ZSize">
+            <summary>
+            Gets the size of the Z.
+            </summary>
+            <value>
+            The size of the Z.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.DevicePtrEx.Dimensions">
+            <summary>
+            Gets the number of dimensions (rank).
+            </summary>
+        </member>
+        <member name="P:Cudafy.Host.DevicePtrEx.TotalSize">
+            <summary>
+            Gets the total size.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Host.DevicePtrEx.Pointer">
+            <summary>
+            Gets the pointer when overridden.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Host.DevicePtrEx.Offset">
+            <summary>
+            Gets or sets the offset.
+            </summary>
+            <value>
+            The offset.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.DevicePtrEx.Disposed">
+            <summary>
+            Gets or sets a value indicating whether this <see cref="T:Cudafy.Host.DevicePtrEx"/> is disposed.
+            </summary>
+            <value>
+              <c>true</c> if disposed; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.DevicePtrEx.Children">
+            <summary>
+            Gets the level 1 children.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Host.DevicePtrEx.CreatedFromCast">
+            <summary>
+            Gets a value indicating whether created from cast.
+            </summary>
+            <value>
+              <c>true</c> if created from cast; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="M:Cudafy.Host.CUDevicePtrEx.#ctor(GASS.CUDA.Types.CUdeviceptr,System.Nullable{GASS.CUDA.Types.CUcontext})">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Host.CUDevicePtrEx"/> class.
+            </summary>
+            <param name="devPtr">The dev PTR.</param>
+            <param name="context">The context.</param>       
+        </member>
+        <member name="M:Cudafy.Host.CUDevicePtrEx.#ctor(GASS.CUDA.Types.CUdeviceptr,System.Int32,System.Nullable{GASS.CUDA.Types.CUcontext})">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Host.CUDevicePtrEx"/> class.
+            </summary>
+            <param name="devPtr">The dev PTR.</param>
+            <param name="xSize">Size of the x.</param>
+            <param name="context">The context.</param>     
+        </member>
+        <member name="M:Cudafy.Host.CUDevicePtrEx.Cast``1(Cudafy.Host.CUDevicePtrEx,System.Int32,System.Int32)">
+            <summary>
+            Casts the specified pointer.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="ptrEx">The pointer.</param>
+            <param name="offset">The offset.</param>
+            <param name="xSize">Size of the x.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.CUDevicePtrEx.#ctor(GASS.CUDA.Types.CUdeviceptr,System.Int32,System.Int32,System.Nullable{GASS.CUDA.Types.CUcontext})">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Host.CUDevicePtrEx"/> class.
+            </summary>
+            <param name="devPtr">The dev PTR.</param>
+            <param name="xSize">Size of the x.</param>
+            <param name="ySize">Size of the y.</param>
+            <param name="context">The context.</param>       
+        </member>
+        <member name="M:Cudafy.Host.CUDevicePtrEx.Cast``1(Cudafy.Host.CUDevicePtrEx,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Casts the specified pointer.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="ptrEx">The pointer.</param>
+            <param name="offset">The offset.</param>
+            <param name="xSize">Size of the x.</param>
+            <param name="ySize">Size of the y.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.CUDevicePtrEx.#ctor(GASS.CUDA.Types.CUdeviceptr,System.Int32,System.Int32,System.Int32,System.Nullable{GASS.CUDA.Types.CUcontext})">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Host.CUDevicePtrEx"/> class.
+            </summary>
+            <param name="devPtr">The dev PTR.</param>
+            <param name="xSize">Size of the x.</param>
+            <param name="ySize">Size of the y.</param>
+            <param name="zSize">Size of the z.</param>
+            <param name="context">The context.</param>       
+        </member>
+        <member name="M:Cudafy.Host.CUDevicePtrEx.Cast``1(Cudafy.Host.CUDevicePtrEx,System.Int32,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Casts the specified pointer.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="ptrEx">The pointer.</param>
+            <param name="offset">The offset.</param>
+            <param name="xSize">Size of the x.</param>
+            <param name="ySize">Size of the y.</param>
+            <param name="zSize">Size of the z.</param>
+            <returns></returns>
+        </member>
+        <member name="P:Cudafy.Host.CUDevicePtrEx.DevPtr">
+            <summary>
+            Gets the dev PTR.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Host.CUDevicePtrEx.Pointer">
+            <summary>
+            Gets the IntPtr in DevPtr.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Host.CUDevicePtrEx.Context">
+            <summary>
+            Gets the context.
+            </summary>
+        </member>
+        <member name="T:Cudafy.Host.DeviceTypeInfo">
+            <summary>
+            For a class, and instance of which we want to move onto the Device, we create a new representation of the instance on the device.
+            This is the DeviceType, which basically has reference type fields replaced by IntPtrs to device memory.
+            </summary>
+        </member>
+        <member name="T:Cudafy.Host.DeviceClassHelper">
+            <summary>
+            Helper that can create an instance of a class or struct on the device, given an instance of
+            a Cudafyable class on the CPU.
+            Any reference type members of the class become pointers to the member (in device memory). 
+            Any value type members must be blittable.
+            A one-to-one map of objects on the host and objects on the device is maintained so that instances that share an array on
+            the host share the same array on the device.
+            </summary>
+        </member>
+        <member name="F:Cudafy.Host.DeviceClassHelper.deviceObjectFromHostObject">
+            <summary>
+            This provides a mapping of the host object to the object that encapsulates the device pointer (via _deviceMemory).
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.DeviceClassHelper.TryGetDeviceObjectFromHostObject(Cudafy.Host.GPGPU,System.Object)">
+            <summary>
+            Returns the device object that is mapped to the host object.
+            </summary>
+            <param name="gpu"></param>
+            <param name="hostObject"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.DeviceClassHelper.TryGetDeviceMemoryFromHostObject(Cudafy.Host.GPGPU,System.Object)">
+            <summary>
+            Returns the device pointer for the device object that is mapped to the host object.
+            </summary>
+            <param name="gpu"></param>
+            <param name="hostObject"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.DeviceClassHelper.CreateDeviceObject``1(Cudafy.Host.GPGPU,``0)">
+            <summary>
+            Creates a version of hostObject on the device with any fields which are reference types converted
+            to pointers to device memory (IntPtrs) and any arrays copied to the device.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="gpu"></param>
+            <param name="hostObject"></param>
+            <returns>THe device object (that can then be used in kernal calls).</returns>
+        </member>
+        <member name="M:Cudafy.Host.DeviceClassHelper.UpdateFromDevice``1(Cudafy.Host.GPGPU,``0)">
+            <summary>
+            Update any array fields of an object where the arrays are on the device. 
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.DeviceClassHelper.CopyReferenceTypeFieldsToDevice``1(Cudafy.Host.GPGPU,``0)">
+            <summary>
+            Copies any reference type fields (e.g. arrays) of the object to the device.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.DeviceClassHelper.CreateDeviceType(System.Type)">
+            <summary>
+            Create type that contains pointers to device arrays.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.DeviceClassHelper.GetFieldsStandardLayout(System.Type)">
+            <summary>
+            Get fields in the same order in which these would appear in memory for the device object (i.e. standard layout rules).
+            </summary>
+            <param name="type"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Cudafy.Host.DynamicLauncher">
+            <summary>
+            Allows GPU functions to be called using dynamic language run-time. For example:
+            gpgpu.Launch(16, 16).myGPUFunction(x, y, res)
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.DynamicLauncher.#ctor(Cudafy.Host.GPGPU)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Host.DynamicLauncher"/> class.
+            </summary>
+            <param name="gpu">The gpu.</param>
+        </member>
+        <member name="M:Cudafy.Host.DynamicLauncher.TryInvokeMember(System.Dynamic.InvokeMemberBinder,System.Object[],System.Object@)">
+            <summary>
+            Provides the implementation for operations that invoke a member. Classes derived from the <see cref="T:System.Dynamic.DynamicObject"/> class can override this method to specify dynamic behavior for operations such as calling a method.
+            </summary>
+            <param name="binder">Provides information about the dynamic operation. The binder.Name property provides the name of the member on which the dynamic operation is performed. For example, for the statement sampleObject.SampleMethod(100), where sampleObject is an instance of the class derived from the <see cref="T:System.Dynamic.DynamicObject"/> class, binder.Name returns "SampleMethod". The binder.IgnoreCase property specifies whether the member name is case-sensitive.</param>
+            <param name="args">The arguments that are passed to the object member during the invoke operation. For example, for the statement sampleObject.SampleMethod(100), where sampleObject is derived from the <see cref="T:System.Dynamic.DynamicObject"/> class, <paramref name="args"/> is equal to 100.</param>
+            <param name="result">The result of the member invocation.</param>
+            <returns>
+            true if the operation is successful; otherwise, false. If this method returns false, the run-time binder of the language determines the behavior. (In most cases, a language-specific run-time exception is thrown.)
+            </returns>
+        </member>
+        <member name="M:Cudafy.Host.DynamicLauncher.GetDynamicMemberNames">
+            <summary>
+            Returns the enumeration of all global functions.
+            </summary>
+            <returns>
+            A sequence that contains global function names.
+            </returns>
+        </member>
+        <member name="P:Cudafy.Host.DynamicLauncher.GPU">
+            <summary>
+            Gets the GPU.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Host.DynamicLauncher.GridSize">
+            <summary>
+            Gets or sets the size of the grid.
+            </summary>
+            <value>
+            The size of the grid.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.DynamicLauncher.BlockSize">
+            <summary>
+            Gets or sets the size of the block.
+            </summary>
+            <value>
+            The size of the block.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.DynamicLauncher.StreamId">
+            <summary>
+            Gets or sets the stream id.
+            </summary>
+            <value>
+            The stream id.
+            </value>
+        </member>
+        <member name="T:Cudafy.Host.EmulatedGPU">
+            <summary>
+            Represents an emulated Cuda GPU.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.#ctor(System.Int32)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Host.EmulatedGPU"/> class.
+            </summary>
+            <param name="deviceId">The device id.</param>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.GetDeviceProperties(System.Boolean)">
+            <summary>
+            Gets the device properties.
+            </summary>
+            <returns>Device properties instance.</returns>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.GetDeviceCount">
+            <summary>
+            Gets the device count.
+            </summary>
+            <returns>Number of devices of this type.</returns>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.Synchronize">
+            <summary>
+            Synchronizes context.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.DoLaunch(Cudafy.dim3,Cudafy.dim3,System.Int32,Cudafy.KernelMethodInfo,System.Object[])">
+            <summary>
+            Does the launch.
+            </summary>
+            <param name="gridSize">Size of the grid.</param>
+            <param name="blockSize">Size of the block.</param>
+            <param name="streamId">Stream id, or -1 for non-async.</param>
+            <param name="gpuMethodInfo">The gpu method info.</param>
+            <param name="arguments">The arguments.</param>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.DoCopyToConstantMemory``1(System.Array,System.Int32,System.Array,System.Int32,System.Int32,Cudafy.KernelConstantInfo)">
+            <summary>
+            Does the copy to constant memory.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The dev offset.</param>
+            <param name="count">The count.</param>
+            <param name="ci">The ci.</param>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.DoCopyToDevice``1(System.Array,System.Int32,System.Array,System.Int32,System.Int32)">
+            <summary>
+            Does the copy to device.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The dev offset.</param>
+            <param name="count">The count.</param>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.DoCopyFromDevice``1(System.Array,System.Int32,System.Array,System.Int32,System.Int32)">
+            <summary>
+            Does the copy from device.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The dev offset.</param>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="count">The count.</param>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.DoCopyToDeviceAsync``1(System.IntPtr,System.Int32,Cudafy.Host.DevicePtrEx,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Does the copy to device async.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The dev offset.</param>
+            <param name="count">The count.</param>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.DoCopyFromDeviceAsync``1(Cudafy.Host.DevicePtrEx,System.Int32,System.IntPtr,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Does the copy from device async.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="devOffset">The dev offset.</param>
+            <param name="hostArray">The host array.</param>
+            <param name="hostOffset">The host offset.</param>
+            <param name="count">The count.</param>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.DoCopyFromDevice``1(System.Array,System.Array)">
+            <summary>
+            Does the copy from device.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="hostArray">The host array.</param>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.CopyToDevice``1(``0[])">
+            <summary>
+            Allocates array on device, copies to device and returns pointer.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <returns>The device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.CopyToDevice``1(``0[0:,0:])">
+            <summary>
+            Allocates array on device, copies to device and returns pointer.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <returns>The device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.CopyToDevice``1(``0[0:,0:,0:])">
+            <summary>
+            Allocates array on device, copies to device and returns pointer.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray"></param>
+            <returns>The device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.Allocate``1(System.Int32)">
+            <summary>
+            Allocates array on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="x">Length of 1D array.</param>
+            <returns>Device array of length x.</returns>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.Allocate``1(System.Int32,System.Int32)">
+            <summary>
+            Allocates array on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="x">The x dimension.</param>
+            <param name="y">The y dimension.</param>
+            <returns>2D device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.Allocate``1(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Allocates array on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="x">The x dimension.</param>
+            <param name="y">The y dimension.</param>
+            <param name="z">The z dimension.</param>
+            <returns>3D device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.Allocate``1(``0[])">
+            <summary>
+            Allocates array on device of same size as supplied host array.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <returns>1D device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.Allocate``1(``0[0:,0:])">
+            <summary>
+            Allocates array on device of same size as supplied host array.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <returns>2D device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.Allocate``1(``0[0:,0:,0:])">
+            <summary>
+            Allocates array on device of same size as supplied host array.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="hostArray">The host array.</param>
+            <returns>3D device array.</returns>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.DoSet``1(System.Array,System.Int32,System.Int32)">
+            <summary>
+            Does the set.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="devArray">The dev array.</param>
+            <param name="offset">The offset.</param>
+            <param name="count">The count.</param>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.Free(System.Object)">
+            <summary>
+            Frees the specified data array on device.
+            </summary>
+            <param name="devArray">The device array to free.</param>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.CopyOnDevice``1(``0[],``0[])">
+            <summary>
+            Copies between preallocated arrays on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="srcDevArray">The source device array.</param>
+            <param name="dstDevArray">The destination device array.</param>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.DoCopyOnDevice``1(System.Array,System.Int32,System.Array,System.Int32,System.Int32)">
+            <summary>
+            Copies between preallocated arrays on device.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="srcDevArray">The source device array.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="dstDevArray">The destination device array.</param>
+            <param name="dstOffet">The destination offet.</param>
+            <param name="count">The number of element.</param>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.SynchronizeStream(System.Int32)">
+            <summary>
+            Synchronizes the stream.
+            </summary>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.DestroyStream(System.Int32)">
+            <summary>
+            Destroys the stream.
+            </summary>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.EmulatedGPU.DestroyStreams">
+            <summary>
+            Destroys all streams.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Host.EmulatedGPU.FreeMemory">
+            <summary>
+            Gets the free memory.
+            </summary>
+            <value>The free memory.</value>
+        </member>
+        <member name="P:Cudafy.Host.EmulatedGPU.TotalMemory">
+            <summary>
+            Gets the total memory.
+            </summary>
+            <value>
+            The total memory.
+            </value>
+        </member>
+        <member name="T:Cudafy.Host.EmuDevicePtrEx">
+            <summary>
+            Internal use.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.EmuDevicePtrEx.#ctor(System.Int32,System.Array,System.Int32[])">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Host.EmuDevicePtrEx"/> class.
+            </summary>
+            <param name="offset">Offset in samples.</param>
+            <param name="devPtr">The dev pointer.</param>
+            <param name="dimensions">The dimensions.</param>
+        </member>
+        <member name="M:Cudafy.Host.EmuDevicePtrEx.GetDevPtrPtr(System.Int64)">
+            <summary>
+            Gets the native pointer to the data. FreeHandle() must be called afterwards.
+            </summary>
+            <param name="offset">Offset in bytes.</param>
+            <returns>Pointer</returns>
+        </member>
+        <member name="M:Cudafy.Host.EmuDevicePtrEx.FreeHandle">
+            <summary>
+            Frees the handle allocated by GetDevPtrPtr
+            </summary>
+        </member>
+        <member name="P:Cudafy.Host.EmuDevicePtrEx.DevPtr">
+            <summary>
+            Gets the dev PTR.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Host.EmuDevicePtrEx.OffsetBytes">
+            <summary>
+            Gets the offset in bytes.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Host.EmuDevicePtrEx.Pointer">
+            <summary>
+            Gets the native pointer.
+            </summary>
+        </member>
+        <member name="T:Cudafy.Host.CudafyHostException">
+            <summary>
+            Exceptions for host.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.CudafyHostException.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Host.CudafyHostException"/> class.
+            </summary>
+            <param name="message">The message.</param>
+        </member>
+        <member name="M:Cudafy.Host.CudafyHostException.#ctor(System.Exception,System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Host.CudafyHostException"/> class.
+            </summary>
+            <param name="inner">The inner.</param>
+            <param name="message">The message.</param>
+        </member>
+        <member name="M:Cudafy.Host.CudafyHostException.#ctor(System.String,System.Object[])">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Host.CudafyHostException"/> class.
+            </summary>
+            <param name="errMsg">The err MSG.</param>
+            <param name="args">The args.</param>
+        </member>
+        <member name="M:Cudafy.Host.CudafyHostException.#ctor(System.Exception,System.String,System.Object[])">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Host.CudafyHostException"/> class.
+            </summary>
+            <param name="inner">The inner exception.</param>
+            <param name="errMsg">The err message.</param>
+            <param name="args">The parameters.</param>
+        </member>
+        <member name="T:Cudafy.Host.IntPtrEx">
+            <summary>
+            Extension methods for IntPtr to allow easy access to values. Typically used with HostAllocated memory.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.IntPtrEx.AddOffset``1(System.IntPtr,System.Int64)">
+            <summary>
+            Allows for x86 AND x64 pointer arithmetic
+            </summary>
+            <typeparam name="T">type pointed to</typeparam>
+            <param name="pt"></param>
+            <param name="offset">Offsets the prt by a number of bytes equal to offset+sizeof(T)</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Host.IntPtrEx.Set(System.IntPtr,System.Int32,System.Int32)">
+            <summary>
+            Sets the specified value.
+            </summary>
+            <param name="ptr">The host allocated memory.</param>
+            <param name="offset">The offset.</param>
+            <param name="value">The value.</param>
+        </member>
+        <member name="M:Cudafy.Host.IntPtrEx.Set(System.IntPtr,System.Int32,System.UInt32)">
+            <summary>
+            Sets the specified value.
+            </summary>
+            <param name="ptr">The host allocated memory.</param>
+            <param name="offset">The offset.</param>
+            <param name="value">The value.</param>
+        </member>
+        <member name="M:Cudafy.Host.IntPtrEx.Set(System.IntPtr,System.Int32,System.Int64)">
+            <summary>
+            Sets the specified host allocated memory.
+            </summary>
+            <param name="ptr">The host allocated memory.</param>
+            <param name="offset">The offset.</param>
+            <param name="value">The value.</param>
+        </member>
+        <member name="M:Cudafy.Host.IntPtrEx.Set(System.IntPtr,System.Int32,System.UInt64)">
+            <summary>
+            Sets the specified value.
+            </summary>
+            <param name="ptr">The host allocated memory.</param>
+            <param name="offset">The offset.</param>
+            <param name="value">The value.</param>
+        </member>
+        <member name="M:Cudafy.Host.IntPtrEx.Set(System.IntPtr,System.Int32,System.Single)">
+            <summary>
+            Sets the specified value.
+            </summary>
+            <param name="ptr">The host allocated memory.</param>
+            <param name="offset">The offset.</param>
+            <param name="value">The value.</param>
+        </member>
+        <member name="M:Cudafy.Host.IntPtrEx.Set(System.IntPtr,System.Int32,System.Double)">
+            <summary>
+            Sets the specified value.
+            </summary>
+            <param name="ptr">The host allocated memory.</param>
+            <param name="offset">The offset.</param>
+            <param name="value">The value.</param>
+        </member>
+        <member name="M:Cudafy.Host.IntPtrEx.Write``1(System.IntPtr,``0[],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Writes the specified data array to the IntPtr.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="ptr">The host allocated memory.</param>
+            <param name="srcData">The source data.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="dstOffset">The destination offset.</param>
+            <param name="count">The number of elements (set to zero for automatic).</param>
+        </member>
+        <member name="M:Cudafy.Host.IntPtrEx.Write``1(System.IntPtr,``0[0:,0:],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Writes the specified data array to the IntPtr.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="ptr">The host allocated memory.</param>
+            <param name="srcData">The source data.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="dstOffset">The destination offset.</param>
+            <param name="count">The number of elements (set to zero for automatic).</param>
+        </member>
+        <member name="M:Cudafy.Host.IntPtrEx.Write``1(System.IntPtr,``0[0:,0:,0:],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Writes the specified data array to the IntPtr.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="ptr">The host allocated memory.</param>
+            <param name="srcData">The source data.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="dstOffset">The destination offset.</param>
+            <param name="count">The number of elements (set to zero for automatic).</param>
+        </member>
+        <member name="M:Cudafy.Host.IntPtrEx.Read``1(System.IntPtr,``0[],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Reads from the IntPtr to the specified data array.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="ptr">The host allocated memory.</param>
+            <param name="dstData">The destination data.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="dstOffset">The destination offset.</param>
+            <param name="count">The number of elements (set to zero for automatic).</param>
+        </member>
+        <member name="M:Cudafy.Host.IntPtrEx.Read``1(System.IntPtr,``0[0:,0:],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Reads from the IntPtr to the specified data array.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="ptr">The host allocated memory.</param>
+            <param name="dstData">The destination data.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="dstOffset">The destination offset.</param>
+            <param name="count">The number of elements (set to zero for automatic).</param>
+        </member>
+        <member name="M:Cudafy.Host.IntPtrEx.Read``1(System.IntPtr,``0[0:,0:,0:],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Reads from the IntPtr to the specified data array.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="ptr">The host allocated memory.</param>
+            <param name="dstData">The destination data.</param>
+            <param name="srcOffset">The source offset.</param>
+            <param name="dstOffset">The destination offset.</param>
+            <param name="count">The number of elements (set to zero for automatic).</param>
+        </member>
+        <!-- Badly formed XML comment ignored for member "F:Cudafy.Host.ePointerAttribute.MemoryType" -->
+        <!-- Badly formed XML comment ignored for member "F:Cudafy.Host.ePointerAttribute.DevicePointer" -->
+        <!-- Badly formed XML comment ignored for member "F:Cudafy.Host.ePointerAttribute.HostPointer" -->
+        <!-- Badly formed XML comment ignored for member "F:Cudafy.Host.ePointerAttribute.P2PTokens" -->
+        <member name="T:Cudafy.Host.GPGPUProperties">
+            <summary>
+            Represents the generic properties of a GPGPU device. Not all properties will be relevant
+            to a particular GPGPU device.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.SupportsDoublePrecision">
+            <summary>
+            Gets a value indicating whether device supports code containing double precision.
+            Although early CUDA devices do not support double, it is still possible to write code containing doubles.
+            For many AMD GPUs this is not the case.
+            </summary>
+            <value>
+            	<c>true</c> if supports double precision; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.IsSimulated">
+            <summary>
+            Gets a value indicating whether this instance is simulated or emulated.
+            </summary>
+            <value>
+            	<c>true</c> if this instance is simulated or emulated; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.Capability">
+            <summary>
+            Gets the capability.
+            </summary>
+            <value>The capability.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.Name">
+            <summary>
+            Gets the name.
+            </summary>
+            <value>The name.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.PlatformName">
+            <summary>
+            Gets the name of the platform.
+            </summary>
+            <value>
+            The name of the platform.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.DeviceId">
+            <summary>
+            Gets the device id.
+            </summary>
+            <value>The device id.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.TotalMemory">
+            <summary>
+            Gets the total memory.
+            </summary>
+            <value>The total memory.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.ClockRate">
+            <summary>
+            Gets the clock rate.
+            </summary>
+            <value>The clock rate.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.MaxGridSize">
+            <summary>
+            Gets the max size of the grid.
+            </summary>
+            <value>The max size of the grid.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.MaxThreadsSize">
+            <summary>
+            Gets the max number of threads.
+            </summary>
+            <value>The max number of threads.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.MaxThreadsPerBlock">
+            <summary>
+            Gets the max number of threads per block.
+            </summary>
+            <value>The max number of threads per block.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.MemoryPitch">
+            <summary>
+            Gets the memory pitch.
+            </summary>
+            <value>The memory pitch.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.RegistersPerBlock">
+            <summary>
+            Gets the registers per block.
+            </summary>
+            <value>The registers per block.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.SharedMemoryPerBlock">
+            <summary>
+            Gets the shared memory per block.
+            </summary>
+            <value>The shared memory per block.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.WarpSize">
+            <summary>
+            Gets the size of the warp.
+            </summary>
+            <value>The size of the warp.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.TotalConstantMemory">
+            <summary>
+            Gets the total constant memory.
+            </summary>
+            <value>The total constant memory.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.TextureAlignment">
+            <summary>
+            Gets the texture alignment.
+            </summary>
+            <value>The texture alignment.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.UseAdvanced">
+            <summary>
+            Gets a value indicating whether advanced was used.
+            </summary>
+            <value>
+              <c>true</c> if advanced used; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.MultiProcessorCount">
+            <summary>
+            Gets the multi processor count. UseAdvanced must be set to true.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.MaxThreadsPerMultiProcessor">
+            <summary>
+            Gets the max number of threads per multi processor. UseAdvanced must be set to true.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.CanMapHostMemory">
+            <summary>
+            Gets a value indicating whether this instance can map host memory.
+            </summary>
+            <value>
+            	<c>true</c> if this instance can map host memory; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.ConcurrentKernels">
+            <summary>
+            Gets the number of concurrent kernels.
+            </summary>
+            <value>The concurrent kernels.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.ComputeMode">
+            <summary>
+            Gets the compute mode.
+            </summary>
+            <value>The compute mode.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.DeviceOverlap">
+            <summary>
+            Gets a value indicating whether device overlap supported.
+            </summary>
+            <value><c>true</c> if device overlap supported; otherwise, <c>false</c>.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.ECCEnabled">
+            <summary>
+            Gets a value indicating whether ECC enabled.
+            </summary>
+            <value><c>true</c> if ECC enabled; otherwise, <c>false</c>.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.Integrated">
+            <summary>
+            Gets a value indicating whether GPU is integrated.
+            </summary>
+            <value><c>true</c> if integrated; otherwise, <c>false</c>.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.KernelExecTimeoutEnabled">
+            <summary>
+            Gets a value indicating whether kernel execution timeout enabled.
+            </summary>
+            <value>
+            	<c>true</c> if kernel execution timeout enabled; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.PciBusID">
+            <summary>
+            Gets the pci bus ID.
+            </summary>
+            <value>The pci bus ID.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.PciDeviceID">
+            <summary>
+            Gets the pci device ID.
+            </summary>
+            <value>The pci device ID.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.TotalGlobalMem">
+            <summary>
+            Gets the total global memory.
+            </summary>
+            <value>The total global memory.</value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.HighPerformanceDriver">
+            <summary>
+            Gets a value indicating whether device is using HighPerformanceDriver driver (tcc in Windows).
+            </summary>
+            <value>
+              <c>true</c> if performance driver; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.GPGPUProperties.AsynchEngineCount">
+            <summary>
+            Gets the number of asynchronous engines.
+            </summary>
+            <value>The number of asynchronous engines.</value>
+        </member>
+        <member name="M:Cudafy.Host.CL11_ex.EnqueueFillBuffer(Cloo.Bindings.CLCommandQueueHandle,Cloo.Bindings.CLMemoryHandle,System.IntPtr,System.IntPtr,System.IntPtr,System.IntPtr,System.Int32,Cloo.Bindings.CLEventHandle[],Cloo.Bindings.CLEventHandle[])">
+            <summary>
+            See the OpenCL specification.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.OpenCLDevice.#ctor(System.Int32)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Host.CudaGPU"/> class.
+            </summary>
+            <param name="deviceId">The device id.</param>
+        </member>
+        <member name="M:Cudafy.Host.OpenCLDevice.GetDeviceCount">
+            <summary>
+            Gets the device count.
+            </summary>
+            <returns>Number of Cuda devices in system.</returns>
+        </member>
+        <member name="M:Cudafy.Host.OpenCLDevice.GetStream(System.Int32,Cloo.ComputeCommandQueueFlags)">
+            <summary>
+            Gets the ComputeCommandQueue object identified by streamId.
+            </summary>
+            <param name="streamId">The stream id.</param>
+            <param name="flags">Extra flags for queue creation.</param>
+            <returns>ComputeCommandQueue object.</returns>
+        </member>
+        <member name="M:Cudafy.Host.OpenCLDevice.GetStream(System.Int32)">
+            <summary>
+            Gets the ComputeCommandQueue object identified by streamId.
+            </summary>
+            <param name="streamId">The stream id.</param>
+            <returns>ComputeCommandQueue object.</returns>
+        </member>
+        <member name="M:Cudafy.Host.OpenCLDevice.CreateStream(System.Int32)">
+            <summary>
+            Explicitly creates a stream.
+            </summary>
+            <param name="streamId">The stream id.</param>
+        </member>
+        <member name="M:Cudafy.Host.OpenCLDevice.CreateStream(System.Int32,Cloo.ComputeCommandQueueFlags)">
+            <summary>
+            Explicitly creates a stream.
+            </summary>
+            <param name="streamId">The stream id.</param>
+            <param name="flags">Extra flags for queue creation.</param>
+            <returns>Command queue.</returns>
+        </member>
+        <member name="M:Cudafy.Host.OpenCLDevice.HostAllocate``1(System.Int32)">
+            <summary>
+            Performs an aligned host memory allocation.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="x">The x size.</param>
+            <returns>
+            Pointer to allocated memory.
+            </returns>
+        </member>
+        <member name="P:Cudafy.Host.OpenCLDevice.SupportsSmartCopy">
+            <summary>
+            Gets or sets a value indicating whether device supports smart copy.
+            </summary>
+            <value>
+              <c>true</c> if supports smart copy; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.OpenCLDevice.FreeMemory">
+            <summary>
+            Gets the free memory available on device. Note that this is very approximate and does not
+            take into account any other applications including OS graphics that may be using the device.
+            It merely subtracts all allocated memory from the TotalMemory.
+            </summary>
+            <value>
+            The free memory.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.OpenCLDevice.MemsetArraySize">
+            <summary>
+            Gets or sets the size of the array used for Set operations in OpenCL 1.0 and 1.1 devices.
+            </summary>
+            <value>
+            The size of the memset array.
+            </value>
+        </member>
+        <member name="P:Cudafy.Host.CLDevicePtrExInter.DevPtr_base">
+            <summary>
+            stores the dev PTR in its base form without generic types.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Host.CLDevicePtrExInter.ElementSize">
+            <summary>
+            Gets or sets the size of the element.
+            </summary>
+            <value>
+            The size of the element.
+            </value>
+        </member>
+        <member name="T:Cudafy.Host.CLDevicePtrEx`1">
+            <summary>
+            Internal use.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Host.CLDevicePtrEx`1.#ctor(Cloo.ComputeBuffer{`0},Cloo.ComputeContext)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Host.CUDevicePtrEx"/> class.
+            </summary>
+            <param name="devPtr">The dev PTR.</param>
+            <param name="context">The context.</param>       
+        </member>
+        <member name="M:Cudafy.Host.CLDevicePtrEx`1.#ctor(Cloo.ComputeBuffer{`0},System.Int32,Cloo.ComputeContext)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Host.CUDevicePtrEx"/> class.
+            </summary>
+            <param name="devPtr">The dev PTR.</param>
+            <param name="xSize">Size of the x.</param>
+            <param name="context">The context.</param>     
+        </member>
+        <member name="M:Cudafy.Host.CLDevicePtrEx`1.#ctor(Cloo.ComputeBuffer{`0},System.Int32,System.Int32,Cloo.ComputeContext)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Host.CUDevicePtrEx"/> class.
+            </summary>
+            <param name="devPtr">The dev PTR.</param>
+            <param name="xSize">Size of the x.</param>
+            <param name="ySize">Size of the y.</param>
+            <param name="context">The context.</param>       
+        </member>
+        <member name="M:Cudafy.Host.CLDevicePtrEx`1.#ctor(Cloo.ComputeBuffer{`0},System.Int32,System.Int32,System.Int32,Cloo.ComputeContext)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Host.CUDevicePtrEx"/> class.
+            </summary>
+            <param name="devPtr">The dev PTR.</param>
+            <param name="xSize">Size of the x.</param>
+            <param name="ySize">Size of the y.</param>
+            <param name="zSize">Size of the z.</param>
+            <param name="context">The context.</param>       
+        </member>
+        <member name="P:Cudafy.Host.CLDevicePtrEx`1.DevPtr">
+            <summary>
+            Gets the dev PTR.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Host.CLDevicePtrEx`1.Pointer">
+            <summary>
+            Gets the IntPtr in DevPtr.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Host.CLDevicePtrEx`1.Context">
+            <summary>
+            Gets the context.
+            </summary>
+        </member>
+    </members>
+</doc>

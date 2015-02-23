@@ -37,7 +37,7 @@ namespace CudaNN
 
         private static void Main(string[] args)
         {
-            string demo = Demos.Faces;
+            string demo = Demos.Data;
 
             int numTrainingExamples;
 
@@ -55,7 +55,7 @@ namespace CudaNN
             {
                 case "Faces":
                     {
-                        numTrainingExamples = 750;
+                        numTrainingExamples = 700;
                         FacesDemo(dev, rand, numTrainingExamples, pathBase);
                         break;
                     }
@@ -82,9 +82,9 @@ namespace CudaNN
 
             using (var net = new CudaAdvancedNetwork(new CudaAdvancedRbmBase[]
             {
-                new CudaAdvancedRbmBinary(dev, rand, 0, 178, 120, false),
-                new CudaAdvancedRbmBinary(dev, rand, 1, 120, 150, true),
-                new CudaAdvancedRbmBinary(dev, rand, 2, 150, 20, true)
+                new CudaAdvancedRbmBinary(dev, rand, 0, 178, 150, false),
+                new CudaAdvancedRbmBinary(dev, rand, 1, 150, 150, true),
+                new CudaAdvancedRbmBinary(dev, rand, 2, 150, 15, true)
             }))
             {
                 net.SetDefaultMachineState(SuspendState.Active);
@@ -104,14 +104,35 @@ namespace CudaNN
                     }
                 };
 
+                net.LayerTrainComplete += (a, b) =>
+                {
+                    var m = ((ICudaNetwork<TElement>)a).Machines[b.Layer];
+                    m.Save(Path.Combine(pathBase, string.Format("Layer_{0}_{1}x{2}.dat", b.Layer, m.NumVisibleNeurons, m.NumHiddenNeurons)));
+                };
+
                 //batch the data in gpu memory
-                using (var greedyTracker = new EpochErrorFileTracker<TElement>(Path.Combine(pathBase, "GreedyTrainError.log")))
-                    net.GreedyBatchedTrain(d.ReadTestData(0, numTrainingExamples),
+                using (
+                    var greedyTracker =
+                        new EpochErrorFileTracker<TElement>(Path.Combine(pathBase, "GreedyTrainError.log")))
+                {
+                    string[] lbla;
+                    float[,] codeda;
+                    net.GreedyBatchedTrain(d.ReadTrainingData(0, numTrainingExamples, out lbla, out codeda),
                         10000,
                         new ManualKeyPressExitEvaluatorFactory<TElement>(greedyTracker, (TElement)0.005, 50000),
-                        new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001),
-                        new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001),
-                        new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001));
+                        new LayerSpecificLearningRateCalculatorFactory<TElement>(
+                            new LinearlyDecayingLearningRateFactory<TElement>(0.001, 0.9999, 0.000001),
+                            new LinearlyDecayingLearningRateFactory<TElement>(0.0005, 0.9999, 0.0000001),
+                            new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.0000001)),
+                        new LayerSpecificLearningRateCalculatorFactory<TElement>(
+                            new LinearlyDecayingLearningRateFactory<TElement>(0.001, 0.9999, 0.0000001),
+                            new LinearlyDecayingLearningRateFactory<TElement>(0.0005, 0.9999, 0.0000001),
+                            new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.0000001)),
+                        new LayerSpecificLearningRateCalculatorFactory<TElement>(
+                            new LinearlyDecayingLearningRateFactory<TElement>(0.001, 0.9999, 0.0000001),
+                            new LinearlyDecayingLearningRateFactory<TElement>(0.0005, 0.9999, 0.0000001),
+                            new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.0000001)));
+                }
 
                 var testData = d.ReadTrainingData(0, 200, out lbl, out coded);
 
@@ -164,19 +185,27 @@ namespace CudaNN
                     {
                         var dreams = ((CudaAdvancedNetwork)a).Daydream(10, b.Layer);
                         SaveImages(pathBase, string.Format("{0}_{1}_{{0}}_Daydream.jpg", b.Layer, b.Epoch), dreams);
+                        dreams = null;
                     }
                 };
 
                 net.LayerTrainComplete += (a, b) =>
                 {
+                    var m = ((ICudaNetwork<TElement>)a).Machines[b.Layer];
+                    m.Save(Path.Combine(pathBase, string.Format("Layer_{0}_{1}x{2}.dat", b.Layer, m.NumVisibleNeurons, m.NumHiddenNeurons)));
+
                     var dreams = ((CudaAdvancedNetwork)a).Daydream(200, b.Layer);
                     SaveImages(pathBase, string.Format("{0}_{1}_{{0}}_TrainEndDaydream.jpg", b.Layer, b.Epoch), dreams);
+                    dreams = null;
+ 
                 };
 
                 var training = dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded);
                 SaveImages(pathBase, "TrainingData_{0}.jpg", training);
                 //batch the data into main memory
-                using (var greedyTracker = new EpochErrorFileTracker<TElement>(Path.Combine(pathBase, "GreedyTrainError.log")))
+                using (
+                    var greedyTracker =
+                        new EpochErrorFileTracker<TElement>(Path.Combine(pathBase, "GreedyTrainError.log")))
                     net.GreedyBatchedTrainMem(training, 200,
                         new ManualKeyPressExitEvaluatorFactory<TElement>(greedyTracker, 0.0005f, 50000),
                         new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001),
@@ -235,7 +264,9 @@ namespace CudaNN
                         SaveImages(pathBase, string.Format("{0}_{1}_DayDream_{{0}}.jpg", b.Layer, b.Epoch), daydream);
                     }
                 };
-                using (var greedyTracker = new EpochErrorFileTracker<TElement>(Path.Combine(pathBase, "GreedyTrainError.log")))
+                using (
+                    var greedyTracker =
+                        new EpochErrorFileTracker<TElement>(Path.Combine(pathBase, "GreedyTrainError.log")))
                     net.GreedyBatchedSupervisedTrain(
                         dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded),
                         coded, 4000,
@@ -292,14 +323,19 @@ namespace CudaNN
             Console.WriteLine("Compiling CUDA module");
 
             eArchitecture arch = dev.GetArchitecture();
-            if ((uint)arch > 291U)
-                arch = eArchitecture.sm_35;
+            //if ((uint)arch > 291U)
+            //    arch = eArchitecture.sm_35;
 
             ePlatform plat = Environment.Is64BitProcess ? ePlatform.x64 : ePlatform.x86;
 
-            if (plat == ePlatform.x64)
-                throw new Exception("CUDA Random will fail currently on x64");
-            string kernelPath = Path.Combine(Environment.CurrentDirectory, "CudaKernels.kernel");
+            //force x86
+            //plat = ePlatform.x86;
+
+            //if (plat == ePlatform.x64)
+            //    throw new Exception("CUDA Random will fail currently on x64");
+
+            string kernelPath = Path.Combine(Environment.CurrentDirectory,
+                string.Format("CudaKernels_{0}.kernel", plat.ToString()));
 
             CudafyModule mod;
             if (File.Exists(kernelPath))
@@ -311,11 +347,11 @@ namespace CudaNN
             {
                 Console.WriteLine("Compiling cuda kernels");
                 mod = CudafyTranslator.Cudafy(
-                   plat,
-                   arch,
-                   typeof(ActivationFunctionsCuda),
-                   typeof(Matrix2DCuda)
-                   );
+                    plat,
+                    arch,
+                    typeof(ActivationFunctionsCuda),
+                    typeof(Matrix2DCuda)
+                    );
                 Console.WriteLine("Saving kernels to {0}", kernelPath);
                 mod.Serialize(kernelPath);
             }

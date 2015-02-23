@@ -24,6 +24,36 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleRBM.Test", "SimpleRBM
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CudaNN", "RbmHidLinear\CudaNN.csproj", "{971C0731-4C8B-4BC8-AAB9-EE683E19DFEB}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lib", "lib", "{0CB4A121-1519-4A06-A738-8DBA3F8CF053}"
+	ProjectSection(SolutionItems) = preProject
+		CudafyV1.28CustomBuild\Cloo.dll = CudafyV1.28CustomBuild\Cloo.dll
+		CudafyV1.28CustomBuild\Cloo.pdb = CudafyV1.28CustomBuild\Cloo.pdb
+		CudafyV1.28CustomBuild\Cloo.xml = CudafyV1.28CustomBuild\Cloo.xml
+		CudafyV1.28CustomBuild\CUDA.NET.dll = CudafyV1.28CustomBuild\CUDA.NET.dll
+		CudafyV1.28CustomBuild\CUDA.NET.pdb = CudafyV1.28CustomBuild\CUDA.NET.pdb
+		CudafyV1.28CustomBuild\Cudafy.dll = CudafyV1.28CustomBuild\Cudafy.dll
+		CudafyV1.28CustomBuild\Cudafy.Host.dll = CudafyV1.28CustomBuild\Cudafy.Host.dll
+		CudafyV1.28CustomBuild\Cudafy.Host.pdb = CudafyV1.28CustomBuild\Cudafy.Host.pdb
+		CudafyV1.28CustomBuild\Cudafy.Host.xml = CudafyV1.28CustomBuild\Cudafy.Host.xml
+		CudafyV1.28CustomBuild\Cudafy.Math.dll = CudafyV1.28CustomBuild\Cudafy.Math.dll
+		CudafyV1.28CustomBuild\Cudafy.Math.pdb = CudafyV1.28CustomBuild\Cudafy.Math.pdb
+		CudafyV1.28CustomBuild\Cudafy.pdb = CudafyV1.28CustomBuild\Cudafy.pdb
+		CudafyV1.28CustomBuild\Cudafy.Translator.dll = CudafyV1.28CustomBuild\Cudafy.Translator.dll
+		CudafyV1.28CustomBuild\Cudafy.Translator.pdb = CudafyV1.28CustomBuild\Cudafy.Translator.pdb
+		CudafyV1.28CustomBuild\cudafycl.AnyCPU.exe = CudafyV1.28CustomBuild\cudafycl.AnyCPU.exe
+		CudafyV1.28CustomBuild\cudafycl.AnyCPU.exe.config = CudafyV1.28CustomBuild\cudafycl.AnyCPU.exe.config
+		CudafyV1.28CustomBuild\cudafycl.AnyCPU.pdb = CudafyV1.28CustomBuild\cudafycl.AnyCPU.pdb
+		CudafyV1.28CustomBuild\cudafycl.x86.exe = CudafyV1.28CustomBuild\cudafycl.x86.exe
+		CudafyV1.28CustomBuild\cudafycl.x86.exe.config = CudafyV1.28CustomBuild\cudafycl.x86.exe.config
+		CudafyV1.28CustomBuild\cudafycl.x86.pdb = CudafyV1.28CustomBuild\cudafycl.x86.pdb
+		CudafyV1.28CustomBuild\CudafyViewer.AnyCPU.exe = CudafyV1.28CustomBuild\CudafyViewer.AnyCPU.exe
+		CudafyV1.28CustomBuild\CudafyViewer.AnyCPU.exe.config = CudafyV1.28CustomBuild\CudafyViewer.AnyCPU.exe.config
+		CudafyV1.28CustomBuild\CudafyViewer.AnyCPU.pdb = CudafyV1.28CustomBuild\CudafyViewer.AnyCPU.pdb
+		CudafyV1.28CustomBuild\CudafyViewer.x86.exe = CudafyV1.28CustomBuild\CudafyViewer.x86.exe
+		CudafyV1.28CustomBuild\CudafyViewer.x86.exe.config = CudafyV1.28CustomBuild\CudafyViewer.x86.exe.config
+		CudafyV1.28CustomBuild\CudafyViewer.x86.pdb = CudafyV1.28CustomBuild\CudafyViewer.x86.pdb
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

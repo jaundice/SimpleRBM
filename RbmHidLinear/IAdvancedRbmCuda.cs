@@ -56,5 +56,7 @@ namespace CudaNN
         void Dispose(bool disposing);
 
         void SetState(SuspendState state);
+
+        void Save(string path);
     }
 }

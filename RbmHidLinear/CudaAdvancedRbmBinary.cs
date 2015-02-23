@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.Serialization;
 using Cudafy.Host;
 using Cudafy.Maths.RAND;
 using SimpleRBM.Common;
@@ -121,7 +122,8 @@ using xxx = SimpleRBM.Cuda.CudaRbmD;
 
 namespace CudaNN
 {
-    public class CudaAdvancedRbmBinary : CudaAdvancedRbmBase
+    [Serializable]
+    public class CudaAdvancedRbmBinary : CudaAdvancedRbmBase, ISerializable
     {
         public bool ConvertActivationsToStates { get; protected set; }
 
@@ -141,6 +143,12 @@ namespace CudaNN
             ConvertActivationsToStates = convertActivationsToStates;
             _decodingNoiseLevel = decodingNoiseLevel;
             _encodingNoiseLevel = encodingNoiseLevel;
+        }
+
+        public CudaAdvancedRbmBinary(SerializationInfo info, StreamingContext context, GPGPU gpu, GPGPURAND rand)
+            : base(info, context, gpu, rand)
+        {
+            
         }
 
         public override Matrix2D<TElement> Encode(Matrix2D<TElement> data)

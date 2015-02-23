@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows.Markup;
 using SimpleRBM.Common;
 using SimpleRBM.Common.Save;
 using TElement = System.Single;

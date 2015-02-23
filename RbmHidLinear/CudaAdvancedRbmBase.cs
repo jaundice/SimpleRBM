@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 using Cudafy.Host;
 using Cudafy.Maths.RAND;
 using Mono.CSharp;
@@ -15,7 +18,8 @@ using TElement = System.Double;
 
 namespace CudaNN
 {
-    public abstract class CudaAdvancedRbmBase : IDisposable, IAdvancedRbmCuda<TElement>
+    [Serializable]
+    public abstract class CudaAdvancedRbmBase : IDisposable, IAdvancedRbmCuda<TElement>, ISerializable
     {
         private TElement _finalmomentum;
         private GPGPU _gpu;
@@ -74,6 +78,46 @@ namespace CudaNN
             _hidbiasinc = _gpu.AllocateAndSet<TElement>(1, _numHiddenNeurons);
 
             Suspend();
+        }/*
+                      info.AddValue("numVisNeurons", NumVisibleNeurons);
+            info.AddValue("numHidNeurons", NumHiddenNeurons);
+            info.AddValue("weightCost", WeightCost);
+            info.AddValue("initMomentum", InitialMomentum);
+            info.AddValue("finalMomentum", FinalMomentum);
+            info.AddValue("index", LayerIndex);
+            info.AddValue("state", State, typeof(SuspendState));
+
+            if (State == SuspendState.Suspended)
+            {
+                info.AddValue("hidBias", _cache[0], typeof(TElement[]));
+                info.AddValue("visBias", _cache[1], typeof(TElement[]));
+                info.AddValue("weights", _cache[2], typeof(TElement[]));
+                info.AddValue("hidBiasInc", _cache[3], typeof(TElement[]));
+                info.AddValue("visBiasInc", _cache[4], typeof(TElement[]));
+                info.AddValue("weightInc", _cache[5], typeof(TElement[]));
+
+            }
+          * */
+
+        protected CudaAdvancedRbmBase(SerializationInfo info, StreamingContext context, GPGPU gpu, GPGPURAND rand)
+        {
+            _gpu = gpu;
+            _rand = rand;
+            _numVisibleNeurons = info.GetInt32("numVisNeurons");
+            _numHiddenNeurons = info.GetInt32("numHidNeurons");
+            _weightcost = (TElement)info.GetValue("weightCost", typeof(TElement));
+            _initialmomentum = (TElement)info.GetValue("initMomentum", typeof(TElement));
+            _finalmomentum = (TElement)info.GetValue("finalMomentum", typeof(TElement));
+            _layerIndex = info.GetInt32("index");
+            var state = (SuspendState)info.GetValue("state", typeof(SuspendState));
+            _hiddenBiases = gpu.Upload((TElement[,])info.GetValue("hidBias", typeof(TElement[,])));
+            _visibleBiases = gpu.Upload((TElement[,])info.GetValue("visBias", typeof(TElement[,])));
+            _weights = gpu.Upload((TElement[,])info.GetValue("weights", typeof(TElement[,])));
+            _hidbiasinc = gpu.Upload((TElement[,])info.GetValue("hidBiasInc", typeof(TElement[,])));
+            _visbiasinc = gpu.Upload((TElement[,])info.GetValue("visBiasInc", typeof(TElement[,])));
+            _vishidinc = gpu.Upload((TElement[,])info.GetValue("weightInc", typeof(TElement[,])));
+
+            SetState(state);
         }
 
         public bool Disposed { get; protected set; }
@@ -374,7 +418,7 @@ namespace CudaNN
             return datasets;
         }
 
-        protected  virtual List<System.Tuple<TElement[,], TElement[,], TElement[,]>> PartitionDataAsArrays(
+        protected virtual List<System.Tuple<TElement[,], TElement[,], TElement[,]>> PartitionDataAsArrays(
             Matrix2D<TElement> data, int batchSize)
         {
             var datasets = new List<System.Tuple<TElement[,], TElement[,], TElement[,]>>();
@@ -395,6 +439,47 @@ namespace CudaNN
             }
 
             return datasets;
+        }
+
+        public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            info.AddValue("numVisNeurons", NumVisibleNeurons);
+            info.AddValue("numHidNeurons", NumHiddenNeurons);
+            info.AddValue("weightCost", WeightCost);
+            info.AddValue("initMomentum", InitialMomentum);
+            info.AddValue("finalMomentum", FinalMomentum);
+            info.AddValue("index", LayerIndex);
+            info.AddValue("state", State, typeof(SuspendState));
+
+            if (State == SuspendState.Suspended)
+            {
+                info.AddValue("hidBias", _cache[0], typeof(TElement[,]));
+                info.AddValue("visBias", _cache[1], typeof(TElement[,]));
+                info.AddValue("weights", _cache[2], typeof(TElement[,]));
+                info.AddValue("hidBiasInc", _cache[3], typeof(TElement[,]));
+                info.AddValue("visBiasInc", _cache[4], typeof(TElement[,]));
+                info.AddValue("weightInc", _cache[5], typeof(TElement[,]));
+
+            }
+            else
+            {
+                info.AddValue("hidBias", _hiddenBiases.CopyLocal(), typeof(TElement[,]));
+                info.AddValue("visBias", _visibleBiases.CopyLocal(), typeof(TElement[,]));
+                info.AddValue("weights", _weights.CopyLocal(), typeof(TElement[,]));
+                info.AddValue("hidBiasInc", _hidbiasinc.CopyLocal(), typeof(TElement[,]));
+                info.AddValue("visBiasInc", _visbiasinc.CopyLocal(), typeof(TElement[,]));
+                info.AddValue("weightInc", _vishidinc.CopyLocal(), typeof(TElement[,]));
+            }
+        }
+
+        public void Save(string path)
+        {
+            BinaryFormatter formatter = new BinaryFormatter();
+            using (var s = File.OpenWrite(path))
+            {
+                formatter.Serialize(s, this);
+                s.Flush(true);
+            }
         }
     }
 }
