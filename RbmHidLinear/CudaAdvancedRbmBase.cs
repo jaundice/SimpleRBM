@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using Cudafy.Host;
@@ -14,12 +15,12 @@ using TElement = System.Single;
 
 #else
 using TElement = System.Double;
+
 #endif
 
 namespace CudaNN
 {
-    [Serializable]
-    public abstract class CudaAdvancedRbmBase : IDisposable, IAdvancedRbmCuda<TElement>, ISerializable
+    public abstract class CudaAdvancedRbmBase : IDisposable, IAdvancedRbmCuda<TElement>
     {
         private TElement _finalmomentum;
         private GPGPU _gpu;
@@ -70,7 +71,7 @@ namespace CudaNN
             _rand = rand;
 
             _weights = _gpu.GuassianDistribution(_rand, _numVisibleNeurons, _numHiddenNeurons,
-                scale: (TElement)0.1);
+                scale: (TElement) 0.1);
             _hiddenBiases = _gpu.AllocateAndSet<TElement>(1, _numHiddenNeurons);
             _visibleBiases = _gpu.AllocateAndSet<TElement>(1, _numVisibleNeurons);
             _vishidinc = _gpu.AllocateAndSet<TElement>(_numVisibleNeurons, _numHiddenNeurons);
@@ -78,7 +79,7 @@ namespace CudaNN
             _hidbiasinc = _gpu.AllocateAndSet<TElement>(1, _numHiddenNeurons);
 
             Suspend();
-        }/*
+        } /*
                       info.AddValue("numVisNeurons", NumVisibleNeurons);
             info.AddValue("numHidNeurons", NumHiddenNeurons);
             info.AddValue("weightCost", WeightCost);
@@ -98,27 +99,6 @@ namespace CudaNN
 
             }
           * */
-
-        protected CudaAdvancedRbmBase(SerializationInfo info, StreamingContext context, GPGPU gpu, GPGPURAND rand)
-        {
-            _gpu = gpu;
-            _rand = rand;
-            _numVisibleNeurons = info.GetInt32("numVisNeurons");
-            _numHiddenNeurons = info.GetInt32("numHidNeurons");
-            _weightcost = (TElement)info.GetValue("weightCost", typeof(TElement));
-            _initialmomentum = (TElement)info.GetValue("initMomentum", typeof(TElement));
-            _finalmomentum = (TElement)info.GetValue("finalMomentum", typeof(TElement));
-            _layerIndex = info.GetInt32("index");
-            var state = (SuspendState)info.GetValue("state", typeof(SuspendState));
-            _hiddenBiases = gpu.Upload((TElement[,])info.GetValue("hidBias", typeof(TElement[,])));
-            _visibleBiases = gpu.Upload((TElement[,])info.GetValue("visBias", typeof(TElement[,])));
-            _weights = gpu.Upload((TElement[,])info.GetValue("weights", typeof(TElement[,])));
-            _hidbiasinc = gpu.Upload((TElement[,])info.GetValue("hidBiasInc", typeof(TElement[,])));
-            _visbiasinc = gpu.Upload((TElement[,])info.GetValue("visBiasInc", typeof(TElement[,])));
-            _vishidinc = gpu.Upload((TElement[,])info.GetValue("weightInc", typeof(TElement[,])));
-
-            SetState(state);
-        }
 
         public bool Disposed { get; protected set; }
 
@@ -236,11 +216,48 @@ namespace CudaNN
                 return Decode(res);
         }
 
-        public abstract void GreedyTrain(Matrix2D<TElement> data,
+        public virtual void GreedyTrain(Matrix2D<TElement> data,
             IExitConditionEvaluator<TElement> exitConditionEvaluator,
             ILearningRateCalculator<TElement> weightLearningRateCalculator,
             ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
-            ILearningRateCalculator<TElement> visBiasLearningRateCalculator);
+            ILearningRateCalculator<TElement> visBiasLearningRateCalculator)
+        {
+            var state = State;
+            Wake();
+            int numcases = data.GetLength(0);
+            exitConditionEvaluator.Start();
+            var sw = new Stopwatch();
+            using (Matrix2D<TElement> dataTransposed = data.Transpose())
+            using (Matrix2D<TElement> posvisact = data.SumColumns())
+            {
+                int epoch;
+                TElement error;
+                for (epoch = 0; ; epoch++)
+                {
+                    sw.Restart();
+                    error = BatchedTrainEpoch(data, dataTransposed, posvisact, epoch, numcases,
+                        weightLearningRateCalculator, hidBiasLearningRateCalculator, visBiasLearningRateCalculator);
+
+                    OnEpochComplete(new EpochEventArgs<TElement>()
+                    {
+                        Epoch = epoch,
+                        Error = error,
+                        Layer = LayerIndex
+                    });
+
+                    if (exitConditionEvaluator.Exit(epoch, error, sw.Elapsed))
+                        break;
+                }
+
+                OnTrainComplete(new EpochEventArgs<TElement>()
+                {
+                    Epoch = epoch,
+                    Error = error,
+                    Layer = LayerIndex
+                });
+            }
+            SetState(state);
+        }
 
         public void Dispose(bool disposing)
         {
@@ -290,11 +307,61 @@ namespace CudaNN
         }
 
 
-        public abstract void GreedyBatchedTrain(Matrix2D<TElement> data, int batchSize,
+        public virtual void GreedyBatchedTrain(Matrix2D<TElement> data, int batchSize,
             IExitConditionEvaluator<TElement> exitConditionEvaluator,
             ILearningRateCalculator<TElement> weightLearningRateCalculator,
             ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
-            ILearningRateCalculator<TElement> visBiasLearningRateCalculator);
+            ILearningRateCalculator<TElement> visBiasLearningRateCalculator)
+        {
+            var state = State;
+            Wake();
+            int numcases = data.GetLength(0);
+
+            exitConditionEvaluator.Start();
+            var datasets = PartitionDataAsMatrices(data, batchSize);
+            try
+            {
+                Stopwatch sw = new Stopwatch();
+                int epoch;
+                TElement error;
+                for (epoch = 0; ; epoch++)
+                {
+                    sw.Restart();
+                    error =
+                        datasets.Sum(block => BatchedTrainEpoch(block.Item1, block.Item2, block.Item3, epoch, numcases,
+                            weightLearningRateCalculator, hidBiasLearningRateCalculator, visBiasLearningRateCalculator));
+
+                    OnEpochComplete(new EpochEventArgs<TElement>()
+                    {
+                        Epoch = epoch,
+                        Error = error,
+                        Layer = LayerIndex
+                    });
+
+                    if (exitConditionEvaluator.Exit(epoch, error, sw.Elapsed))
+                        break;
+                }
+
+                OnTrainComplete(new EpochEventArgs<TElement>()
+                {
+                    Epoch = epoch,
+                    Error = error,
+                    Layer = LayerIndex
+                });
+            }
+            finally
+            {
+                foreach (var dataset in datasets)
+                {
+                    dataset.Item1.Dispose();
+                    dataset.Item2.Dispose();
+                    dataset.Item3.Dispose();
+                }
+            }
+
+            exitConditionEvaluator.Stop();
+            SetState(state);
+        }
 
         /// <summary>
         /// Same as GreedyBatchedTrain but the param data is disposed as soon as partitions are created to save gpu memory.
@@ -305,26 +372,78 @@ namespace CudaNN
         /// <param name="weightLearningRateCalculator"></param>
         /// <param name="hidBiasLearningRateCalculator"></param>
         /// <param name="visBiasLearningRateCalculator"></param>
-        public abstract void GreedyBatchedTrainMem(Matrix2D<TElement> data, int batchSize,
+        public virtual void GreedyBatchedTrainMem(Matrix2D<TElement> data, int batchSize,
             IExitConditionEvaluator<TElement> exitConditionEvaluator,
             ILearningRateCalculator<TElement> weightLearningRateCalculator,
             ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
-            ILearningRateCalculator<TElement> visBiasLearningRateCalculator);
+            ILearningRateCalculator<TElement> visBiasLearningRateCalculator)
+        {
+            var state = State;
+
+
+            exitConditionEvaluator.Start();
+            int numcases = data.GetLength(0);
+
+            List<System.Tuple<TElement[,], TElement[,], TElement[,]>> datasets;
+
+            Suspend(); //free memory for processing dataset
+            using (data)
+            {
+                datasets = PartitionDataAsArrays(data, batchSize);
+            }
+            Wake();
+
+            Stopwatch sw = new Stopwatch();
+            int epoch;
+            TElement error;
+            for (epoch = 0; ; epoch++)
+            {
+                sw.Restart();
+                error = datasets.Sum(block =>
+                {
+                    using (var d = AsCuda.GPU.Upload(block.Item1))
+                    using (var t = AsCuda.GPU.Upload(block.Item2))
+                    using (var p = AsCuda.GPU.Upload(block.Item3))
+                        return BatchedTrainEpoch(d, t, p, epoch, numcases,
+                            weightLearningRateCalculator, hidBiasLearningRateCalculator,
+                            visBiasLearningRateCalculator);
+                });
+
+                OnEpochComplete(new EpochEventArgs<TElement>()
+                {
+                    Epoch = epoch,
+                    Error = error,
+                    Layer = LayerIndex
+                });
+
+                if (exitConditionEvaluator.Exit(epoch, error, sw.Elapsed))
+                    break;
+            }
+
+            OnTrainComplete(new EpochEventArgs<TElement>()
+            {
+                Epoch = epoch,
+                Error = error,
+                Layer = LayerIndex
+            });
+            exitConditionEvaluator.Stop();
+            SetState(state);
+        }
 
 
         public SuspendState State { get; protected set; }
 
-        public Matrix2D<float> HiddenBiasInc
+        public Matrix2D<TElement> HiddenBiasInc
         {
             get { return _hidbiasinc; }
         }
 
-        public Matrix2D<float> VisibleBiasInc
+        public Matrix2D<TElement> VisibleBiasInc
         {
             get { return _visbiasinc; }
         }
 
-        public Matrix2D<float> WeightInc
+        public Matrix2D<TElement> WeightInc
         {
             get { return _vishidinc; }
         }
@@ -397,7 +516,14 @@ namespace CudaNN
             }
         }
 
-        protected virtual List<System.Tuple<Matrix2D<TElement>, Matrix2D<TElement>, Matrix2D<TElement>>> PartitionDataAsMatrices(
+        protected abstract TElement BatchedTrainEpoch(Matrix2D<TElement> data, Matrix2D<TElement> dataTransposed,
+            Matrix2D<TElement> posvisact,
+            int epoch, int numcases, ILearningRateCalculator<TElement> weightLearningRateCalculator,
+            ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
+            ILearningRateCalculator<TElement> visBiasLearningRateCalculator);
+
+        protected virtual List<System.Tuple<Matrix2D<TElement>, Matrix2D<TElement>, Matrix2D<TElement>>>
+            PartitionDataAsMatrices(
             Matrix2D<TElement> data, int batchSize)
         {
             var datasets = new List<System.Tuple<Matrix2D<TElement>, Matrix2D<TElement>, Matrix2D<TElement>>>();
@@ -441,45 +567,179 @@ namespace CudaNN
             return datasets;
         }
 
-        public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            info.AddValue("numVisNeurons", NumVisibleNeurons);
-            info.AddValue("numHidNeurons", NumHiddenNeurons);
-            info.AddValue("weightCost", WeightCost);
-            info.AddValue("initMomentum", InitialMomentum);
-            info.AddValue("finalMomentum", FinalMomentum);
-            info.AddValue("index", LayerIndex);
-            info.AddValue("state", State, typeof(SuspendState));
 
-            if (State == SuspendState.Suspended)
-            {
-                info.AddValue("hidBias", _cache[0], typeof(TElement[,]));
-                info.AddValue("visBias", _cache[1], typeof(TElement[,]));
-                info.AddValue("weights", _cache[2], typeof(TElement[,]));
-                info.AddValue("hidBiasInc", _cache[3], typeof(TElement[,]));
-                info.AddValue("visBiasInc", _cache[4], typeof(TElement[,]));
-                info.AddValue("weightInc", _cache[5], typeof(TElement[,]));
-
-            }
-            else
-            {
-                info.AddValue("hidBias", _hiddenBiases.CopyLocal(), typeof(TElement[,]));
-                info.AddValue("visBias", _visibleBiases.CopyLocal(), typeof(TElement[,]));
-                info.AddValue("weights", _weights.CopyLocal(), typeof(TElement[,]));
-                info.AddValue("hidBiasInc", _hidbiasinc.CopyLocal(), typeof(TElement[,]));
-                info.AddValue("visBiasInc", _visbiasinc.CopyLocal(), typeof(TElement[,]));
-                info.AddValue("weightInc", _vishidinc.CopyLocal(), typeof(TElement[,]));
-            }
-        }
-
-        public void Save(string path)
+        public virtual void Save(string path)
         {
             BinaryFormatter formatter = new BinaryFormatter();
+            var ss = new SurrogateSelector();
+            var rbmSurrogate = new RbmSurrogate(_gpu, _rand);
+            ss.AddSurrogate(typeof (CudaAdvancedRbmBinary), formatter.Context, rbmSurrogate);
+            ss.AddSurrogate(typeof (CudaAdvancedRbmLinearHidden), formatter.Context, rbmSurrogate);
+            formatter.SurrogateSelector = ss;
             using (var s = File.OpenWrite(path))
             {
                 formatter.Serialize(s, this);
                 s.Flush(true);
             }
+        }
+
+        public static IAdvancedRbmCuda<TElement> Deserialize(string path, GPGPU gpu, GPGPURAND rand)
+        {
+            BinaryFormatter formatter = new BinaryFormatter();
+            var ss = new SurrogateSelector();
+            var rbmSurrogate = new RbmSurrogate(gpu, rand);
+            ss.AddSurrogate(typeof (CudaAdvancedRbmBinary), formatter.Context, rbmSurrogate);
+            ss.AddSurrogate(typeof (CudaAdvancedRbmLinearHidden), formatter.Context, rbmSurrogate);
+            formatter.SurrogateSelector = ss;
+            using (var s = File.OpenRead(path))
+            {
+                return (IAdvancedRbmCuda<TElement>) formatter.Deserialize(s);
+            }
+        }
+
+        protected virtual void SaveSpecific(SerializationInfo info)
+        {
+        }
+
+        protected virtual void LoadSpecific(SerializationInfo info)
+        {
+        }
+
+        private class RbmSurrogate : ISerializationSurrogate
+        {
+            private GPGPU _gpu;
+            private GPGPURAND _rand;
+
+            public RbmSurrogate(GPGPU gpu, GPGPURAND rand)
+            {
+                this._gpu = gpu;
+                this._rand = rand;
+            }
+
+            public void GetObjectData(object obj, SerializationInfo info, StreamingContext context)
+            {
+                var rbm = (CudaAdvancedRbmBase) obj;
+
+                info.AddValue("numVisNeurons", rbm.NumVisibleNeurons);
+                info.AddValue("numHidNeurons", rbm.NumHiddenNeurons);
+                info.AddValue("weightCost", rbm.WeightCost);
+                info.AddValue("initMomentum", rbm.InitialMomentum);
+                info.AddValue("finalMomentum", rbm.FinalMomentum);
+                info.AddValue("index", rbm.LayerIndex);
+                info.AddValue("state", rbm.State, typeof (SuspendState));
+
+                if (rbm.State == SuspendState.Suspended)
+                {
+                    info.AddValue("hidBias", rbm._cache[0], typeof (TElement[,]));
+                    info.AddValue("visBias", rbm._cache[1], typeof (TElement[,]));
+                    info.AddValue("weights", rbm._cache[2], typeof (TElement[,]));
+                    info.AddValue("hidBiasInc", rbm._cache[3], typeof (TElement[,]));
+                    info.AddValue("visBiasInc", rbm._cache[4], typeof (TElement[,]));
+                    info.AddValue("weightInc", rbm._cache[5], typeof (TElement[,]));
+                }
+                else
+                {
+                    info.AddValue("hidBias", rbm._hiddenBiases.CopyLocal(), typeof (TElement[,]));
+                    info.AddValue("visBias", rbm._visibleBiases.CopyLocal(), typeof (TElement[,]));
+                    info.AddValue("weights", rbm._weights.CopyLocal(), typeof (TElement[,]));
+                    info.AddValue("hidBiasInc", rbm._hidbiasinc.CopyLocal(), typeof (TElement[,]));
+                    info.AddValue("visBiasInc", rbm._visbiasinc.CopyLocal(), typeof (TElement[,]));
+                    info.AddValue("weightInc", rbm._vishidinc.CopyLocal(), typeof (TElement[,]));
+                }
+
+                rbm.SaveSpecific(info);
+            }
+
+            public object SetObjectData(object obj, SerializationInfo info, StreamingContext context,
+                ISurrogateSelector selector)
+            {
+                var rbm = (CudaAdvancedRbmBase) obj;
+                rbm._gpu = _gpu;
+                rbm._rand = _rand;
+                rbm._numVisibleNeurons = info.GetInt32("numVisNeurons");
+                rbm._numHiddenNeurons = info.GetInt32("numHidNeurons");
+                rbm._weightcost = (TElement) info.GetValue("weightCost", typeof (TElement));
+                rbm._initialmomentum = (TElement) info.GetValue("initMomentum", typeof (TElement));
+                rbm._finalmomentum = (TElement) info.GetValue("finalMomentum", typeof (TElement));
+                rbm._layerIndex = info.GetInt32("index");
+                var state = (SuspendState) info.GetValue("state", typeof (SuspendState));
+                rbm._hiddenBiases = _gpu.Upload((TElement[,]) info.GetValue("hidBias", typeof (TElement[,])));
+                rbm._visibleBiases = _gpu.Upload((TElement[,]) info.GetValue("visBias", typeof (TElement[,])));
+                rbm._weights = _gpu.Upload((TElement[,]) info.GetValue("weights", typeof (TElement[,])));
+                rbm._hidbiasinc = _gpu.Upload((TElement[,]) info.GetValue("hidBiasInc", typeof (TElement[,])));
+                rbm._visbiasinc = _gpu.Upload((TElement[,]) info.GetValue("visBiasInc", typeof (TElement[,])));
+                rbm._vishidinc = _gpu.Upload((TElement[,]) info.GetValue("weightInc", typeof (TElement[,])));
+
+                rbm.LoadSpecific(info);
+
+                rbm.SetState(state);
+
+                return obj;
+            }
+        }
+
+
+        public virtual void GreedyBatchedTrainMem(IList<TElement[,]> batches,
+            IExitConditionEvaluator<TElement> exitConditionEvaluator,
+            ILearningRateCalculator<TElement> weightLearningRateCalculator,
+            ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
+            ILearningRateCalculator<TElement> visBiasLearningRateCalculator)
+        {
+            var state = State;
+
+
+            exitConditionEvaluator.Start();
+            int numcases = batches.Sum(a => a.GetLength(0));
+            Suspend();
+            var datasets = new List<System.Tuple<TElement[,], TElement[,], TElement[,]>>();
+            foreach (var batch in batches)
+            {
+                using(var d = _gpu.Upload(batch))
+                using(var t = d.Transpose())
+                using (var s = d.SumColumns())
+                {
+                    datasets.Add(Tuple.Create(batch, t.CopyLocal(), s.CopyLocal()));
+                }
+            }
+
+
+            Wake();
+
+            Stopwatch sw = new Stopwatch();
+            int epoch;
+            TElement error;
+            for (epoch = 0; ; epoch++)
+            {
+                sw.Restart();
+                error = datasets.Sum(block =>
+                {
+                    using (var d = AsCuda.GPU.Upload(block.Item1))
+                    using (var t = AsCuda.GPU.Upload(block.Item2))
+                    using (var p = AsCuda.GPU.Upload(block.Item3))
+                        return BatchedTrainEpoch(d, t, p, epoch, numcases,
+                            weightLearningRateCalculator, hidBiasLearningRateCalculator,
+                            visBiasLearningRateCalculator);
+                });
+
+                OnEpochComplete(new EpochEventArgs<TElement>()
+                {
+                    Epoch = epoch,
+                    Error = error,
+                    Layer = LayerIndex
+                });
+
+                if (exitConditionEvaluator.Exit(epoch, error, sw.Elapsed))
+                    break;
+            }
+
+            OnTrainComplete(new EpochEventArgs<TElement>()
+            {
+                Epoch = epoch,
+                Error = error,
+                Layer = LayerIndex
+            });
+            exitConditionEvaluator.Stop();
+            SetState(state);
         }
     }
 }

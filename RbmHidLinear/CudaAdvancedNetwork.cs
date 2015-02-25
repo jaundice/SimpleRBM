@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Cudafy.Host;
+using Cudafy.Maths.RAND;
 using SimpleRBM.Common;
 using SimpleRBM.Cuda;
 #if USEFLOAT
@@ -11,6 +13,7 @@ using xxx = SimpleRBM.Cuda.CudaRbmF;
 #else
 using TElement = System.Double;
 using xxx = SimpleRBM.Cuda.CudaRbmD;
+
 #endif
 
 namespace CudaNN
@@ -35,6 +38,13 @@ namespace CudaNN
             {
                 LayerTrainComplete(this, args);
             }
+        }
+
+        public CudaAdvancedNetwork(GPGPU gpu, GPGPURAND rand, string[] machineDataPaths)
+            : this(machineDataPaths.Select(a => CudaAdvancedRbmBase.Deserialize(a, gpu, rand))
+                .OrderBy(b => b.LayerIndex)
+                .ToList())
+        {
         }
 
         public CudaAdvancedNetwork(IEnumerable<IAdvancedRbmCuda<TElement>> machines)
@@ -265,9 +275,9 @@ namespace CudaNN
             using (
                 var rand = guassian
                     ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, (TElement) 0.5, (TElement) 0.2)
+                        Machines[0].NumVisibleNeurons, (TElement)0.5, (TElement)0.2)
                     : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, (TElement) 1))
+                        Machines[0].NumVisibleNeurons, (TElement)1))
             {
                 return AsCuda.Reconstruct(rand, maxDepth);
             }
@@ -291,9 +301,9 @@ namespace CudaNN
             using (
                 var rand = guassian
                     ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, (TElement) 0.5, (TElement) 0.2)
+                        Machines[0].NumVisibleNeurons, (TElement)0.5, (TElement)0.2)
                     : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, (TElement) 1))
+                        Machines[0].NumVisibleNeurons, (TElement)1))
             {
                 return AsCuda.ReconstructWithLabels(rand, out labels, softmaxLabels);
             }
@@ -321,9 +331,9 @@ namespace CudaNN
             using (
                 var rand = guassian
                     ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, modelLabels.GetLength(0),
-                        Machines[highest].NumVisibleNeurons, (TElement) 0.5, (TElement) 0.2)
+                        Machines[highest].NumVisibleNeurons, (TElement)0.5, (TElement)0.2)
                     : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, modelLabels.GetLength(0),
-                        Machines[highest].NumVisibleNeurons, (TElement) 1))
+                        Machines[highest].NumVisibleNeurons, (TElement)1))
             {
                 rand.InsertValuesFrom(0, Machines[highest - 1].NumHiddenNeurons, modelLabels);
                 using (var encoded = Machines[highest].Encode(rand))
@@ -450,7 +460,7 @@ namespace CudaNN
 
         IList<IRestrictedBoltzmannMachine<TElement>> INetwork<TElement>.Machines
         {
-            get { return (IList<IRestrictedBoltzmannMachine<TElement>>) Machines; }
+            get { return (IList<IRestrictedBoltzmannMachine<TElement>>)Machines; }
         }
 
         ~CudaAdvancedNetwork()
@@ -567,7 +577,7 @@ namespace CudaNN
                     hidBiasLearningRateCalculatorFactory.Create(i),
                     visBiasLearningRateCalculatorFactory.Create(i));
 
-                Matrix2D<float> encoded;
+                Matrix2D<TElement> encoded;
                 using (var up = Machines[0].GPU.Upload(localCopy))
                 {
                     encoded = Machines[i].Encode(up);
@@ -606,7 +616,7 @@ namespace CudaNN
                     hidBiasLearningRateCalculatorFactory.Create(i),
                     visBiasLearningRateCalculatorFactory.Create(i));
 
-                Matrix2D<float> encoded;
+                Matrix2D<TElement> encoded;
                 using (var d = Machines[0].GPU.Upload(local))
                 {
                     encoded = Machines[i].Encode(d);
@@ -652,6 +662,64 @@ namespace CudaNN
             {
                 machine.SetState(state);
             }
+        }
+
+
+        public void GreedyBatchedTrainMem(IList<TElement[,]> batches, IExitConditionEvaluatorFactory<TElement> exitConditionFactory, ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory, ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory, ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+        {
+            var layerTrainData = batches;
+            for (var i = 0; i < Machines.Count; i++)
+            {
+
+                Machines[i].GreedyBatchedTrainMem(layerTrainData, exitConditionFactory.Create(i),
+                    weightLearningRateCalculatorFactory.Create(i),
+                    hidBiasLearningRateCalculatorFactory.Create(i),
+                    visBiasLearningRateCalculatorFactory.Create(i));
+
+                layerTrainData = layerTrainData.Select(Machines[i].Encode).ToList();
+            }
+        }
+
+        public void GreedyBatchedSupervisedTrainMem(IList<TElement[,]> batches, IList<TElement[,]> labels, IExitConditionEvaluatorFactory<TElement> exitConditionFactory, ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory, ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory, ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+        {
+            if (batches.Select((a, i) => a.GetLength(0) != labels[i].GetLength(0)).Any())
+            {
+                throw new Exception("Mismatch between lengths of batch data and batch labels");
+            }
+
+            var layerTrainData = batches;
+            for (var i = 0; i < Machines.Count; i++)
+            {
+                if (i == Machines.Count - 1)
+                {
+                    var combined = layerTrainData.Select((a, j) =>
+                    {
+                        using (var gp = Machines[0].GPU.Upload(a))
+                        using (var gk = Machines[0].GPU.Upload(labels[j]))
+                        using (var c = Machines[0].GPU.AllocateNoSet<TElement>(gp.GetLength(0),
+                                gp.GetLength(1) + gk.GetLength(1)))
+                        {
+                            c.InsertValuesFrom(0, 0, gp);
+                            c.InsertValuesFrom(0, gp.GetLength(1), gk);
+                            return c.CopyLocal();
+                        }
+
+                    }).ToList();
+
+                    layerTrainData = combined;
+                }
+
+
+                Machines[i].GreedyBatchedTrainMem(layerTrainData, exitConditionFactory.Create(i),
+                    weightLearningRateCalculatorFactory.Create(i),
+                    hidBiasLearningRateCalculatorFactory.Create(i),
+                    visBiasLearningRateCalculatorFactory.Create(i));
+
+
+
+                layerTrainData = layerTrainData.Select(Machines[i].Encode).ToList();
+            }
+
         }
     }
 }

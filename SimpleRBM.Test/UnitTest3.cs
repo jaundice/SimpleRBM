@@ -1,62 +1,13 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Cudafy;
-using Cudafy.Host;
-using Cudafy.Maths.RAND;
-using Cudafy.Translator;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SimpleRBM.Cuda;
 
 namespace SimpleRBM.Test
 {
     [TestClass]
-    public class UnitTest3
+    public class UnitTest3 : CudaTestBase
     {
-
-        private static GPGPU _dev;
-        private static GPGPURAND _rand;
-
-        [ClassInitialize]
-        public static void InitCudaDevice(TestContext context)
-        {
-            CudafyHost.ClearAllDeviceMemories();
-            CudafyHost.ClearDevices();
-
-
-            _dev = CudafyHost.GetDevice(eGPUType.Cuda, 0);
-
-            GPGPUProperties props = _dev.GetDeviceProperties();
-            Console.WriteLine(props.Name);
-
-            Console.WriteLine("Compiling CUDA module");
-
-            eArchitecture arch = _dev.GetArchitecture();
-            ePlatform plat = Environment.Is64BitProcess ? ePlatform.x64 : ePlatform.x86;
-
-            //if (plat == ePlatform.x64)
-            //    throw new Exception("CUDA Random will fail currently on x64");
-
-            CudafyModule mod = CudafyTranslator.Cudafy(
-                plat,
-                arch,
-                typeof(ActivationFunctionsCuda),
-                typeof(Matrix2DCuda)
-                );
-
-
-            ThreadOptimiser.Instance = new ThreadOptimiser(props.Capability, props.MultiProcessorCount,
-                props.MaxThreadsPerBlock,
-                props.MaxThreadsPerMultiProcessor, props.MaxGridSize, props.MaxThreadsSize);
-
-            _rand = GPGPURAND.Create(_dev, curandRngType.CURAND_RNG_PSEUDO_DEFAULT);
-
-            _rand.SetPseudoRandomGeneratorSeed((ulong)DateTime.Now.Ticks);
-            _rand.GenerateSeeds();
-
-            Console.WriteLine("Loading Module");
-            _dev.LoadModule(mod);
-        }
-
         [TestMethod]
         public void RepMat()
         {
@@ -71,7 +22,6 @@ namespace SimpleRBM.Test
             }
 
             PrintArray(res);
-
         }
 
 
@@ -230,10 +180,9 @@ namespace SimpleRBM.Test
             Parallel.For(0, rows, a => Parallel.For(0, cols, b =>
             {
                 lock (rnd)
-                    m[a, b] = (float)rnd.NextDouble();
+                    m[a, b] = (float) rnd.NextDouble();
             }));
             return m;
-
         }
 
         private void PrintArray<T>(T[,] ret)

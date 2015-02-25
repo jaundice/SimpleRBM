@@ -163,5 +163,93 @@ namespace SimpleRBM.Demo.IO
                 Console.WriteLine();
             }
         }
+
+
+        IList<double[,]> IDataIO<double, string>.ReadTrainingData(int skipRecords, int count, int batchSize, out IList<string[]> labels, out IList<double[,]> labelsCoded)
+        {
+            var res = new List<double[,]>();
+            var lbls = new List<string[]>();
+            var coded = new List<double[,]>();
+
+            for (var recs = 0; recs < count; recs += batchSize)
+            {
+                var batchLen = batchSize;
+                if (recs + batchLen > count)
+                {
+                    batchLen = count - recs;
+                }
+
+                string[] lab;
+                double[,] cod;
+                var batch = ((IDataIO<double, string>)this).ReadTrainingData(skipRecords + recs, batchLen, out lab, out cod);
+                res.Add(batch);
+                lbls.Add(lab);
+                coded.Add(cod);
+            }
+            labels = lbls;
+            labelsCoded = coded;
+            return res;
+        }
+
+        IList<double[,]> IDataIO<double, string>.ReadTestData(int skipRecords, int count, int batchSize)
+        {
+            List<double[,]> result = new List<double[,]>();
+            for (var recs = 0; recs < count; recs += batchSize)
+            {
+                var batchLen = batchSize;
+                if (recs + batchLen > count)
+                {
+                    batchLen = count - recs;
+                }
+
+                var batch = ((IDataIO<double, string>)this).ReadTestData( skipRecords + recs, batchLen);
+                result.Add(batch);
+            }
+            return result;
+        }
+
+
+        IList<float[,]> IDataIO<float, string>.ReadTrainingData(int skipRecords, int count, int batchSize, out IList<string[]> labels, out IList<float[,]> labelsCoded)
+        {
+            var res = new List<float[,]>();
+            var lbls = new List<string[]>();
+            var coded = new List<float[,]>();
+
+            for (var recs = 0; recs < count; recs += batchSize)
+            {
+                var batchLen = batchSize;
+                if (recs + batchLen > count)
+                {
+                    batchLen = count - recs;
+                }
+
+                string[] lab;
+                float[,] cod;
+                var batch = ((IDataIO<float, string>)this).ReadTrainingData(skipRecords + recs, batchLen, out lab, out cod);
+                res.Add(batch);
+                lbls.Add(lab);
+                coded.Add(cod);
+            }
+            labels = lbls;
+            labelsCoded = coded;
+            return res;
+        }
+
+        IList<float[,]> IDataIO<float, string>.ReadTestData(int skipRecords, int count, int batchSize)
+        {
+            List<float[,]> result = new List<float[,]>();
+            for (var recs = 0; recs < count; recs += batchSize)
+            {
+                var batchLen = batchSize;
+                if (recs + batchLen > count)
+                {
+                    batchLen = count - recs;
+                }
+
+                var batch = ((IDataIO<float, string>)this).ReadTestData(skipRecords + recs, batchLen);
+                result.Add(batch);
+            }
+            return result;
+        }
     }
 }

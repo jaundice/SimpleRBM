@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using Cudafy.Host;
 using Cudafy.Maths.RAND;
@@ -16,6 +17,8 @@ namespace CudaNN
     public interface IAdvancedRbmCuda<TElement> : IDisposable, IRestrictedBoltzmannMachine<TElement>
         where TElement : struct, IComparable<TElement>
     {
+        int LayerIndex { get; }
+
         Matrix2D<TElement> Encode(Matrix2D<TElement> data);
         Matrix2D<TElement> Decode(Matrix2D<TElement> activations);
 
@@ -41,6 +44,12 @@ namespace CudaNN
             ILearningRateCalculator<TElement> weightLearningRateCalculator,
             ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
             ILearningRateCalculator<TElement> visBiasLearningRateCalculator);
+
+        void GreedyBatchedTrainMem(IList<TElement[,]> batches,
+           IExitConditionEvaluator<TElement> exitConditionEvaluator,
+           ILearningRateCalculator<TElement> weightLearningRateCalculator,
+           ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
+           ILearningRateCalculator<TElement> visBiasLearningRateCalculator);
 
         Matrix2D<TElement> HiddenBiases { get; }
         Matrix2D<TElement> VisibleBiases { get; }

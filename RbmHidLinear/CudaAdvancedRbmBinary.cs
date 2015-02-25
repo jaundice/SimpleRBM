@@ -118,12 +118,13 @@ using xxx = SimpleRBM.Cuda.CudaRbmF;
 #else
 using TElement = System.Double;
 using xxx = SimpleRBM.Cuda.CudaRbmD;
+
 #endif
 
 namespace CudaNN
 {
     [Serializable]
-    public class CudaAdvancedRbmBinary : CudaAdvancedRbmBase, ISerializable
+    public class CudaAdvancedRbmBinary : CudaAdvancedRbmBase
     {
         public bool ConvertActivationsToStates { get; protected set; }
 
@@ -145,11 +146,6 @@ namespace CudaNN
             _encodingNoiseLevel = encodingNoiseLevel;
         }
 
-        public CudaAdvancedRbmBinary(SerializationInfo info, StreamingContext context, GPGPU gpu, GPGPURAND rand)
-            : base(info, context, gpu, rand)
-        {
-            
-        }
 
         public override Matrix2D<TElement> Encode(Matrix2D<TElement> data)
         {
@@ -164,7 +160,7 @@ namespace CudaNN
                     poshidprobs.LogisticInPlace();
                     using (
                         Matrix2D<TElement> rand = AsCuda.GPU.UniformDistribution(AsCuda.GPURAND, numcases,
-                            NumHiddenNeurons, (TElement)_encodingNoiseLevel))
+                            NumHiddenNeurons, (TElement) _encodingNoiseLevel))
                     {
                         SetState(state);
                         //end positive phase
@@ -194,7 +190,7 @@ namespace CudaNN
                     using (negdata)
                     using (
                         var rnd = AsCuda.GPU.UniformDistribution(AsCuda.GPURAND, numcases, NumVisibleNeurons,
-                            (TElement)_decodingNoiseLevel))
+                            (TElement) _decodingNoiseLevel))
                     {
                         negdata = negdata.GreaterThan(rnd);
                     }
@@ -205,106 +201,106 @@ namespace CudaNN
             }
         }
 
-        public override void GreedyBatchedTrain(Matrix2D<TElement> data, int batchSize,
-            IExitConditionEvaluator<TElement> exitConditionEvaluator,
-            ILearningRateCalculator<TElement> weightLearningRateCalculator,
-            ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
-            ILearningRateCalculator<TElement> visBiasLearningRateCalculator)
-        {
-            var state = State;
-            Wake();
-            int numcases = data.GetLength(0);
+        //public override void GreedyBatchedTrain(Matrix2D<TElement> data, int batchSize,
+        //    IExitConditionEvaluator<TElement> exitConditionEvaluator,
+        //    ILearningRateCalculator<TElement> weightLearningRateCalculator,
+        //    ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
+        //    ILearningRateCalculator<TElement> visBiasLearningRateCalculator)
+        //{
+        //    var state = State;
+        //    Wake();
+        //    int numcases = data.GetLength(0);
 
-            exitConditionEvaluator.Start();
-            var datasets = PartitionDataAsMatrices(data, batchSize);
-            try
-            {
+        //    exitConditionEvaluator.Start();
+        //    var datasets = PartitionDataAsMatrices(data, batchSize);
+        //    try
+        //    {
+        //        Stopwatch sw = new Stopwatch();
+        //        int epoch;
+        //        TElement error;
+        //        for (epoch = 0;; epoch++)
+        //        {
+        //            sw.Restart();
+        //            error =
+        //                datasets.Sum(block => BatchedTrainEpoch(block.Item1, block.Item2, block.Item3, epoch, numcases,
+        //                    weightLearningRateCalculator, hidBiasLearningRateCalculator, visBiasLearningRateCalculator));
 
-                Stopwatch sw = new Stopwatch();
-                int epoch;
-                TElement error;
-                for (epoch = 0; ; epoch++)
-                {
-                    sw.Restart();
-                    error = datasets.Sum(block => BatchedTrainEpoch(block.Item1, block.Item2, block.Item3, epoch,numcases,
-                        weightLearningRateCalculator, hidBiasLearningRateCalculator, visBiasLearningRateCalculator));
+        //            OnEpochComplete(new EpochEventArgs<TElement>()
+        //            {
+        //                Epoch = epoch,
+        //                Error = error,
+        //                Layer = LayerIndex
+        //            });
 
-                    OnEpochComplete(new EpochEventArgs<TElement>()
-                    {
-                        Epoch = epoch,
-                        Error = error,
-                        Layer = LayerIndex
-                    });
+        //            if (exitConditionEvaluator.Exit(epoch, error, sw.Elapsed))
+        //                break;
+        //        }
 
-                    if (exitConditionEvaluator.Exit(epoch, error, sw.Elapsed))
-                        break;
-                }
+        //        OnTrainComplete(new EpochEventArgs<TElement>()
+        //        {
+        //            Epoch = epoch,
+        //            Error = error,
+        //            Layer = LayerIndex
+        //        });
+        //    }
+        //    finally
+        //    {
+        //        foreach (var dataset in datasets)
+        //        {
+        //            dataset.Item1.Dispose();
+        //            dataset.Item2.Dispose();
+        //            dataset.Item3.Dispose();
+        //        }
+        //    }
 
-                OnTrainComplete(new EpochEventArgs<TElement>()
-                {
-                    Epoch = epoch,
-                    Error = error,
-                    Layer = LayerIndex
-                });
-            }
-            finally
-            {
-                foreach (var dataset in datasets)
-                {
-                    dataset.Item1.Dispose();
-                    dataset.Item2.Dispose();
-                    dataset.Item3.Dispose();
-                }
-            }
+        //    exitConditionEvaluator.Stop();
+        //    SetState(state);
+        //}
 
-            exitConditionEvaluator.Stop();
-            SetState(state);
-        }
+        //public override void GreedyTrain(Matrix2D<TElement> data,
+        //    IExitConditionEvaluator<TElement> exitConditionEvaluator,
+        //    ILearningRateCalculator<TElement> weightLearningRateCalculator,
+        //    ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
+        //    ILearningRateCalculator<TElement> visBiasLearningRateCalculator)
+        //{
+        //    var state = State;
+        //    Wake();
+        //    int numcases = data.GetLength(0);
+        //    exitConditionEvaluator.Start();
+        //    var sw = new Stopwatch();
+        //    using (Matrix2D<TElement> dataTransposed = data.Transpose())
+        //    using (Matrix2D<TElement> posvisact = data.SumColumns())
+        //    {
+        //        int epoch;
+        //        TElement error;
+        //        for (epoch = 0;; epoch++)
+        //        {
+        //            sw.Restart();
+        //            error = BatchedTrainEpoch(data, dataTransposed, posvisact, epoch, numcases,
+        //                weightLearningRateCalculator, hidBiasLearningRateCalculator, visBiasLearningRateCalculator);
 
-        public override void GreedyTrain(Matrix2D<TElement> data,
-            IExitConditionEvaluator<TElement> exitConditionEvaluator,
-            ILearningRateCalculator<TElement> weightLearningRateCalculator,
-            ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
-            ILearningRateCalculator<TElement> visBiasLearningRateCalculator)
-        {
-            var state = State;
-            Wake();
-            int numcases = data.GetLength(0);
-            exitConditionEvaluator.Start();
-            var sw = new Stopwatch();
-            using (Matrix2D<TElement> dataTransposed = data.Transpose())
-            using (Matrix2D<TElement> posvisact = data.SumColumns())
-            {
-                int epoch;
-                TElement error;
-                for (epoch = 0; ; epoch++)
-                {
-                    sw.Restart();
-                    error = BatchedTrainEpoch(data, dataTransposed, posvisact, epoch,numcases,
-                        weightLearningRateCalculator, hidBiasLearningRateCalculator, visBiasLearningRateCalculator);
+        //            OnEpochComplete(new EpochEventArgs<TElement>()
+        //            {
+        //                Epoch = epoch,
+        //                Error = error,
+        //                Layer = LayerIndex
+        //            });
 
-                    OnEpochComplete(new EpochEventArgs<TElement>()
-                    {
-                        Epoch = epoch,
-                        Error = error,
-                        Layer = LayerIndex
-                    });
+        //            if (exitConditionEvaluator.Exit(epoch, error, sw.Elapsed))
+        //                break;
+        //        }
 
-                    if (exitConditionEvaluator.Exit(epoch, error, sw.Elapsed))
-                        break;
-                }
+        //        OnTrainComplete(new EpochEventArgs<TElement>()
+        //        {
+        //            Epoch = epoch,
+        //            Error = error,
+        //            Layer = LayerIndex
+        //        });
+        //    }
+        //    SetState(state);
+        //}
 
-                OnTrainComplete(new EpochEventArgs<TElement>()
-                {
-                    Epoch = epoch,
-                    Error = error,
-                    Layer = LayerIndex
-                });
-            }
-            SetState(state);
-        }
-
-        private TElement BatchedTrainEpoch(Matrix2D<TElement> data, Matrix2D<TElement> dataTransposed,
+        protected override TElement BatchedTrainEpoch(Matrix2D<TElement> data, Matrix2D<TElement> dataTransposed,
             Matrix2D<TElement> posvisact, int epoch, int numcases,
             ILearningRateCalculator<TElement> weightLearningRateCalculator,
             ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
@@ -312,9 +308,10 @@ namespace CudaNN
         {
             TElement error;
 
+            var batchCases = data.GetLength(0);
 
             //start positive phase
-            using (Matrix2D<TElement> tiledHiddenBiases = AsCuda.HiddenBiases.RepMatRows(numcases))
+            using (Matrix2D<TElement> tiledHiddenBiases = AsCuda.HiddenBiases.RepMatRows(batchCases))
             {
                 Matrix2D<TElement> poshidstates, poshidact, posprods;
                 using (Matrix2D<TElement> datavishid = data.Multiply(AsCuda.Weights))
@@ -324,8 +321,8 @@ namespace CudaNN
                     poshidact = poshidprobs.SumColumns();
                     posprods = dataTransposed.Multiply(poshidprobs);
                     using (
-                        Matrix2D<TElement> rand = AsCuda.GPU.UniformDistribution(AsCuda.GPURAND, numcases,
-                            NumHiddenNeurons, (TElement)_encodingNoiseLevel))
+                        Matrix2D<TElement> rand = AsCuda.GPU.UniformDistribution(AsCuda.GPURAND, batchCases,
+                            NumHiddenNeurons, (TElement) _encodingNoiseLevel))
                     {
                         //end positive phase
                         poshidstates = poshidprobs.GreaterThan(rand);
@@ -335,7 +332,7 @@ namespace CudaNN
                 //start negative phase
                 Matrix2D<TElement> negdata, negprods, neghidact, negvisact;
                 using (poshidstates)
-                using (Matrix2D<TElement> tiledVisibleBiases = AsCuda.VisibleBiases.RepMatRows(numcases))
+                using (Matrix2D<TElement> tiledVisibleBiases = AsCuda.VisibleBiases.RepMatRows(batchCases))
                 using (Matrix2D<TElement> weightsTransposed = AsCuda.Weights.Transpose())
                 using (
                     Matrix2D<TElement> poshidstatesweightstransposed =
@@ -361,7 +358,7 @@ namespace CudaNN
                 using (negdata)
                 using (Matrix2D<TElement> delta = data.Subtract(negdata))
                 {
-                    delta.PowInPlace((TElement)2);
+                    delta.PowInPlace((TElement) 2);
                     using (var errCols = delta.SumColumns())
                     using (var errrows = errCols.SumRows())
                         error = errrows.CopyLocal()[0, 0];
@@ -375,7 +372,7 @@ namespace CudaNN
                 using (Matrix2D<TElement> posprodsminusnegprods = posprods.Subtract(negprods))
                 using (Matrix2D<TElement> weightcostWeight = AsCuda.Weights.Multiply(WeightCost))
                 {
-                    posprodsminusnegprods.MultiplyInPlace((TElement)1 / (TElement)numcases);
+                    posprodsminusnegprods.MultiplyInPlace((TElement) 1/(TElement) numcases);
                     posprodsminusnegprods.SubtractInPlace(weightcostWeight);
                     posprodsminusnegprods.MultiplyInPlace(weightLearningRateCalculator.CalculateLearningRate(
                         LayerIndex, epoch));
@@ -388,7 +385,7 @@ namespace CudaNN
                 using (Matrix2D<TElement> posvisactminusnegvisact = posvisact.Subtract(negvisact))
                 {
                     posvisactminusnegvisact.MultiplyInPlace(
-                        visBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch) / numcases);
+                        visBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch)/numcases);
                     VisibleBiasInc.Dispose();
                     _visbiasinc = momentumvisbiasinc.Add(posvisactminusnegvisact);
                 }
@@ -398,7 +395,7 @@ namespace CudaNN
                 using (Matrix2D<TElement> poshidactminusneghidact = poshidact.Subtract(neghidact))
                 {
                     poshidactminusneghidact.MultiplyInPlace(
-                        hidBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch) / numcases);
+                        hidBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch)/numcases);
                     HiddenBiasInc.Dispose();
                     _hidbiasinc = momentumhidbiasinc.Add(poshidactminusneghidact);
                 }
@@ -410,65 +407,80 @@ namespace CudaNN
             return error;
         }
 
-        public override void GreedyBatchedTrainMem(Matrix2D<TElement> data, int batchSize,
-            IExitConditionEvaluator<TElement> exitConditionEvaluator,
-            ILearningRateCalculator<TElement> weightLearningRateCalculator,
-            ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
-            ILearningRateCalculator<TElement> visBiasLearningRateCalculator)
+        //public override void GreedyBatchedTrainMem(Matrix2D<TElement> data, int batchSize,
+        //    IExitConditionEvaluator<TElement> exitConditionEvaluator,
+        //    ILearningRateCalculator<TElement> weightLearningRateCalculator,
+        //    ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
+        //    ILearningRateCalculator<TElement> visBiasLearningRateCalculator)
+        //{
+        //    var state = State;
+
+
+        //    exitConditionEvaluator.Start();
+        //    int numcases = data.GetLength(0);
+
+        //    List<Tuple<TElement[,], TElement[,], TElement[,]>> datasets;
+
+        //    Suspend(); //free memory for processing dataset
+        //    using (data)
+        //    {
+        //        datasets = PartitionDataAsArrays(data, batchSize);
+        //    }
+        //    Wake();
+
+        //    Stopwatch sw = new Stopwatch();
+        //    int epoch;
+        //    TElement error;
+        //    for (epoch = 0;; epoch++)
+        //    {
+        //        sw.Restart();
+        //        error = datasets.Sum(block =>
+        //        {
+        //            using (var d = AsCuda.GPU.Upload(block.Item1))
+        //            using (var t = AsCuda.GPU.Upload(block.Item2))
+        //            using (var p = AsCuda.GPU.Upload(block.Item3))
+        //                return BatchedTrainEpoch(d, t, p, epoch, numcases,
+        //                    weightLearningRateCalculator, hidBiasLearningRateCalculator,
+        //                    visBiasLearningRateCalculator);
+        //        });
+
+        //        OnEpochComplete(new EpochEventArgs<TElement>()
+        //        {
+        //            Epoch = epoch,
+        //            Error = error,
+        //            Layer = LayerIndex
+        //        });
+
+        //        if (exitConditionEvaluator.Exit(epoch, error, sw.Elapsed))
+        //            break;
+        //    }
+
+        //    OnTrainComplete(new EpochEventArgs<TElement>()
+        //    {
+        //        Epoch = epoch,
+        //        Error = error,
+        //        Layer = LayerIndex
+        //    });
+        //    exitConditionEvaluator.Stop();
+        //    SetState(state);
+        //}
+
+
+        protected override void SaveSpecific(SerializationInfo info)
         {
-            var state = State;
-
-
-            exitConditionEvaluator.Start();
-            int numcases = data.GetLength(0);
-
-            List<Tuple<float[,], float[,], float[,]>> datasets;
-
-            Suspend();//free memory for processing dataset
-            using (data)
-            {
-                datasets = PartitionDataAsArrays(data, batchSize);
-            }
-            Wake();
-
-            Stopwatch sw = new Stopwatch();
-            int epoch;
-            TElement error;
-            for (epoch = 0; ; epoch++)
-            {
-                sw.Restart();
-                error = datasets.Sum(block =>
-                {
-                    using (var d = AsCuda.GPU.Upload(block.Item1))
-                    using (var t = AsCuda.GPU.Upload(block.Item2))
-                    using (var p = AsCuda.GPU.Upload(block.Item3))
-                        return BatchedTrainEpoch(d, t, p, epoch,numcases,
-                            weightLearningRateCalculator, hidBiasLearningRateCalculator,
-                            visBiasLearningRateCalculator);
-                });
-
-                OnEpochComplete(new EpochEventArgs<TElement>()
-                {
-                    Epoch = epoch,
-                    Error = error,
-                    Layer = LayerIndex
-                });
-
-                if (exitConditionEvaluator.Exit(epoch, error, sw.Elapsed))
-                    break;
-            }
-
-            OnTrainComplete(new EpochEventArgs<TElement>()
-            {
-                Epoch = epoch,
-                Error = error,
-                Layer = LayerIndex
-            });
-            exitConditionEvaluator.Stop();
-            SetState(state);
+            info.AddValue("convertActivationsToStates", ConvertActivationsToStates);
+            info.AddValue("decNoise", _decodingNoiseLevel);
+            info.AddValue("encNoise", _encodingNoiseLevel);
         }
 
+        protected override void LoadSpecific(SerializationInfo info)
+        {
+            base.LoadSpecific(info);
+            ConvertActivationsToStates = info.GetBoolean("convertActivationsToStates");
+            _encodingNoiseLevel = (TElement) info.GetValue("encNoise", typeof (TElement));
+            _decodingNoiseLevel = (TElement) info.GetValue("decNoise", typeof (TElement));
+        }
 
-        
+       
     }
 }

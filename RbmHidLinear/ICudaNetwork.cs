@@ -74,5 +74,29 @@ namespace CudaNN
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+
+     //   void GreedyBatchedTrain(IList<Matrix2D<TElement>> batches, 
+     //      IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+     //      ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+     //      ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+     //      ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+
+     //   void GreedyBatchedTrainMem(IList<Matrix2D<TElement>> batches,
+     //       IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+     //       ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+     //       ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+     //       ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+
+     //   void GreedyBatchedSupervisedTrain(IList<Matrix2D<TElement>> batches, IList<Matrix2D<TElement>> labels, int batchSize,
+     //       IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+     //       ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+     //       ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+     //       ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+
+     //void GreedyBatchedSupervisedTrainMem(IList<Matrix2D<TElement>> batches, IList<Matrix2D<TElement>> labels, int batchSize,
+     //       IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+     //       ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+     //       ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+     //       ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
     }
 }

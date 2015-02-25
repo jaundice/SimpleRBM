@@ -12,52 +12,10 @@ using SimpleRBM.MultiDim;
 namespace SimpleRBM.Test
 {
     [TestClass]
-    public class CompareCudaVsMultidimMatrixOpsF
+    public class CompareCudaVsMultidimMatrixOpsF : CudaTestBase
     {
-        private static GPGPU _dev;
-        private static GPGPURAND _rand;
-
-        [ClassInitialize]
-        public static void InitCudaDevice(TestContext context)
-        {
-            CudafyHost.ClearAllDeviceMemories();
-            CudafyHost.ClearDevices();
-
-
-            _dev = CudafyHost.GetDevice(eGPUType.Cuda, 0);
-
-            GPGPUProperties props = _dev.GetDeviceProperties();
-            Console.WriteLine(props.Name);
-
-            Console.WriteLine("Compiling CUDA module");
-
-            eArchitecture arch = _dev.GetArchitecture();
-            ePlatform plat = Environment.Is64BitProcess ? ePlatform.x64 : ePlatform.x86;
-
-            //if (plat == ePlatform.x64)
-            //    throw new Exception("CUDA Random will fail currently on x64");
-
-            CudafyModule mod = CudafyTranslator.Cudafy(
-                plat,
-                arch,
-                typeof(ActivationFunctionsCuda),
-                typeof(Matrix2DCuda)
-                );
-
-
-            ThreadOptimiser.Instance = new ThreadOptimiser(props.Capability, props.MultiProcessorCount,
-                props.MaxThreadsPerBlock,
-                props.MaxThreadsPerMultiProcessor, props.MaxGridSize, props.MaxThreadsSize);
-
-            _rand = GPGPURAND.Create(_dev, curandRngType.CURAND_RNG_PSEUDO_DEFAULT);
-
-            _rand.SetPseudoRandomGeneratorSeed((ulong)DateTime.Now.Ticks);
-            _rand.GenerateSeeds();
-
-            Console.WriteLine("Loading Module");
-            _dev.LoadModule(mod);
-        }
-
+       
+      
         [TestMethod]
         public void CopyToAndFromCudaEqual()
         {
@@ -71,9 +29,8 @@ namespace SimpleRBM.Test
             cudaMatrix.Dispose();
         }
 
-        //failing - vital.
         [TestMethod]
-        public void MatrixMultiplyEqual()
+        public void MatrixMultiplyIntEqual()
         {
             Matrix2D<float> cudaMatrix1 = null;
             Matrix2D<float> cudaMatrix2 = null;
@@ -82,8 +39,95 @@ namespace SimpleRBM.Test
             {
                 float[,] netMatrix1;
                 float[,] netMatrix2;
-                TestHelper.CreateRandomMatricesF(_dev, 256, 256, out netMatrix1, out cudaMatrix1);
-                TestHelper.CreateRandomMatricesF(_dev, 256, 256, out netMatrix2, out cudaMatrix2);
+                TestHelper.CreateRandomMatricesIntF(_dev, 512, 512, out netMatrix1, out cudaMatrix1);
+                TestHelper.CreateRandomMatricesIntF(_dev, 512, 512, out netMatrix2, out cudaMatrix2);
+
+                float[,] localM = Matrix2D.Multiply(netMatrix1, netMatrix2);
+
+                cudaM = cudaMatrix1.Multiply(cudaMatrix2);
+
+                float[,] cudaLocal = cudaM.CopyLocal();
+
+                Assert.IsTrue(MatricesEqual(localM, cudaLocal));
+            }
+            finally
+            {
+                cudaMatrix1.Dispose();
+                cudaMatrix2.Dispose();
+                cudaM.Dispose();
+            }
+        }
+
+        [TestMethod]
+        public void MatrixMultiplyIntEqual2()
+        {
+            Matrix2D<float> cudaMatrix1 = null;
+            Matrix2D<float> cudaMatrix2 = null;
+            Matrix2D<float> cudaM = null;
+            try
+            {
+                float[,] netMatrix1;
+                float[,] netMatrix2;
+                TestHelper.CreateRandomMatricesIntF(_dev, 120, 512, out netMatrix1, out cudaMatrix1);
+                TestHelper.CreateRandomMatricesIntF(_dev, 512, 120, out netMatrix2, out cudaMatrix2);
+
+                float[,] localM = Matrix2D.Multiply(netMatrix1, netMatrix2);
+
+                cudaM = cudaMatrix1.Multiply(cudaMatrix2);
+
+                float[,] cudaLocal = cudaM.CopyLocal();
+
+                Assert.IsTrue(MatricesEqual(localM, cudaLocal));
+            }
+            finally
+            {
+                cudaMatrix1.Dispose();
+                cudaMatrix2.Dispose();
+                cudaM.Dispose();
+            }
+        }
+
+        [TestMethod]
+        public void MatrixMultiplyRealEqual()
+        {
+            Matrix2D<float> cudaMatrix1 = null;
+            Matrix2D<float> cudaMatrix2 = null;
+            Matrix2D<float> cudaM = null;
+            try
+            {
+                float[,] netMatrix1;
+                float[,] netMatrix2;
+                TestHelper.CreateRandomMatricesF(_dev, 512, 512, out netMatrix1, out cudaMatrix1);
+                TestHelper.CreateRandomMatricesF(_dev, 512, 512, out netMatrix2, out cudaMatrix2);
+
+                float[,] localM = Matrix2D.Multiply(netMatrix1, netMatrix2);
+
+                cudaM = cudaMatrix1.Multiply(cudaMatrix2);
+
+                float[,] cudaLocal = cudaM.CopyLocal();
+
+                Assert.IsTrue(MatricesEqual(localM, cudaLocal));
+            }
+            finally
+            {
+                cudaMatrix1.Dispose();
+                cudaMatrix2.Dispose();
+                cudaM.Dispose();
+            }
+        }
+
+        [TestMethod]
+        public void MatrixMultiplyRealEqual2()
+        {
+            Matrix2D<float> cudaMatrix1 = null;
+            Matrix2D<float> cudaMatrix2 = null;
+            Matrix2D<float> cudaM = null;
+            try
+            {
+                float[,] netMatrix1;
+                float[,] netMatrix2;
+                TestHelper.CreateRandomMatricesF(_dev, 120, 512, out netMatrix1, out cudaMatrix1);
+                TestHelper.CreateRandomMatricesF(_dev, 512, 120, out netMatrix2, out cudaMatrix2);
 
                 float[,] localM = Matrix2D.Multiply(netMatrix1, netMatrix2);
 
@@ -181,6 +225,7 @@ namespace SimpleRBM.Test
         }
 
 
+
         [TestMethod]
         public void MatrixMultiplyFillEqual()
         {
@@ -191,14 +236,16 @@ namespace SimpleRBM.Test
             {
                 float[,] netMatrix1;
                 float[,] netMatrix2;
-                TestHelper.CreateRandomMatricesF(_dev, 128, 128, out netMatrix1, out cudaMatrix1);
-                TestHelper.CreateRandomMatricesF(_dev, 128, 128, out netMatrix2, out cudaMatrix2);
+                TestHelper.CreateRandomMatricesIntF(_dev, 10, 100, out netMatrix1, out cudaMatrix1);
+                TestHelper.CreateRandomMatricesIntF(_dev, 100, 10, out netMatrix2, out cudaMatrix2);
 
                 //Matrix2D.Fill(netMatrix1, 0.000000000000000005);
-                Matrix2D.Fill(netMatrix2, 0.0003f);
+                var s = 3.250f;
+
+                Matrix2D.Fill(netMatrix2, s);
 
                 //cudaMatrix1.Fill(0.000000000000000005);
-                cudaMatrix2.Fill(0.0003f);
+                cudaMatrix2.Fill(s);
 
                 float[,] localM = Matrix2D.Multiply(netMatrix1, netMatrix2);
 
@@ -481,39 +528,34 @@ namespace SimpleRBM.Test
         }
 
 
+        private const float Epsilon = 1E-5F;
+
         public bool MatricesEqual(float[,] a, float[,] b)
         {
             float[,] difference = Matrix2D.Subtract(a, b);
 
+            var maxDiff = Matrix2D.EnumerateElements(difference).Max(v => Math.Abs(v));
+
+            Console.WriteLine("Max Difference: {0}", maxDiff);
+
             VisualizeDifferences(difference);
 
-            return Matrix2D.EnumerateElements(difference).All(c => c < float.Epsilon);
+            return Matrix2D.EnumerateElements(difference).All(c => c < Epsilon);
         }
 
-
-        /// <summary>
-        /// displays a grid of 1s and 0s. 1 means that the element is non zero
-        /// </summary>
-        /// <param name="difference"></param>
         private void VisualizeDifferences(float[,] difference)
         {
-            StringBuilder sb = new StringBuilder();
-            for (var i = 0; i < difference.GetLength(0); i++)
+            var sb = new StringBuilder();
+            for (int i = 0; i < difference.GetLength(0); i++)
             {
                 sb.AppendLine();
-                for (var j = 0; j < difference.GetLength(1); j++)
+                for (int j = 0; j < difference.GetLength(1); j++)
                 {
-                    sb.Append(Math.Abs(difference[i, j]) < float.Epsilon ? "0" : "1");
+                    sb.Append(Math.Abs(difference[i, j]) < Epsilon ? "0" : "1");
                 }
             }
-            Console.Write(sb.ToString());
-        }
-
-        [ClassCleanup]
-        public static void Cleanup()
-        {
-            _rand.Dispose();
-            _dev.Dispose();
+            Console.WriteLine(sb.ToString());
+            
         }
     }
 

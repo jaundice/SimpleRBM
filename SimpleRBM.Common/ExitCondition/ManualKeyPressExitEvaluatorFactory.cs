@@ -7,8 +7,9 @@ namespace SimpleRBM.Common.ExitCondition
         private readonly int _maxEpochs;
         private readonly T _minError;
         private IEpochErrorTracker<T> _epochErrorTracker;
+        private int _reportFrequency;
 
-        public ManualKeyPressExitEvaluatorFactory(IEpochErrorTracker<T> epochErrorTracker, double minError, int maxEpochs = 100000)
+        public ManualKeyPressExitEvaluatorFactory(IEpochErrorTracker<T> epochErrorTracker, double minError, int maxEpochs = 100000, int reportFrequency=20)
         {
             Console.WriteLine("Using Manual keypress exit evaluator");
             Console.WriteLine(@"RBM will exit training after:
@@ -19,11 +20,12 @@ If the pressed key is 'l' it will exit the next time the epoch error falls to it
             _maxEpochs = maxEpochs;
             _minError = (T)Convert.ChangeType(minError, typeof(T));
             _epochErrorTracker = epochErrorTracker;
+            _reportFrequency = reportFrequency;
         }
 
         public IExitConditionEvaluator<T> Create(int layerIndex)
         {
-            return new ManualKeyPressEvaluator<T>(_epochErrorTracker, layerIndex, _maxEpochs, _minError);
+            return new ManualKeyPressEvaluator<T>(_epochErrorTracker, layerIndex, _maxEpochs, _minError, _reportFrequency);
         }
     }
 }

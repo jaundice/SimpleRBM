@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Threading.Tasks;
@@ -20,8 +21,7 @@ using xxx = SimpleRBM.Cuda.CudaRbmF;
 #else
 using TElement = System.Double;
 using xxx = SimpleRBM.Cuda.CudaRbmD;
-using faces = SimpleRBM.Demo.IO.FacesDataD;
-using kaggle = SimpleRBM.Demo.IO.KaggleDataD;
+
 #endif
 
 namespace CudaNN
@@ -37,7 +37,7 @@ namespace CudaNN
 
         private static void Main(string[] args)
         {
-            string demo = Demos.Data;
+            string demo = Demos.Faces;
 
             int numTrainingExamples;
 
@@ -54,23 +54,23 @@ namespace CudaNN
             switch (demo)
             {
                 case "Faces":
-                    {
-                        numTrainingExamples = 700;
-                        FacesDemo(dev, rand, numTrainingExamples, pathBase);
-                        break;
-                    }
+                {
+                    numTrainingExamples = 5000;
+                    FacesDemo(dev, rand, numTrainingExamples, pathBase);
+                    break;
+                }
                 case "Data":
-                    {
-                        numTrainingExamples = 185945;
-                        CsvDemo(dev, rand, numTrainingExamples, pathBase);
-                        break;
-                    }
+                {
+                    numTrainingExamples = 185945;
+                    CsvDemo(dev, rand, numTrainingExamples, pathBase);
+                    break;
+                }
                 case "Kaggle":
-                    {
-                        numTrainingExamples = 40000;
-                        KaggleDemo(dev, rand, numTrainingExamples, pathBase);
-                        break;
-                    }
+                {
+                    numTrainingExamples = 40000;
+                    KaggleDemo(dev, rand, numTrainingExamples, pathBase);
+                    break;
+                }
             }
         }
 
@@ -97,17 +97,19 @@ namespace CudaNN
 
                 net.EpochComplete += (a, b) =>
                 {
-                    if (b.Epoch % 100 == 0)
+                    if (b.Epoch%100 == 0)
                     {
-                        var recon = ((CudaAdvancedNetwork)a).Reconstruct(tdata, b.Layer);
+                        var recon = ((CudaAdvancedNetwork) a).Reconstruct(tdata, b.Layer);
                         SaveImages(pathBase, string.Format("{0}_{1}_{{0}}_Reconstruction.jpg", b.Layer, b.Epoch), recon);
                     }
                 };
 
                 net.LayerTrainComplete += (a, b) =>
                 {
-                    var m = ((ICudaNetwork<TElement>)a).Machines[b.Layer];
-                    m.Save(Path.Combine(pathBase, string.Format("Layer_{0}_{1}x{2}.dat", b.Layer, m.NumVisibleNeurons, m.NumHiddenNeurons)));
+                    var m = ((ICudaNetwork<TElement>) a).Machines[b.Layer];
+                    m.Save(Path.Combine(pathBase,
+                        string.Format("Layer_{0}_{1}x{2}_{3}.dat", b.Layer, m.NumVisibleNeurons, m.NumHiddenNeurons,
+                            typeof (TElement).Name)));
                 };
 
                 //batch the data in gpu memory
@@ -115,23 +117,27 @@ namespace CudaNN
                     var greedyTracker =
                         new EpochErrorFileTracker<TElement>(Path.Combine(pathBase, "GreedyTrainError.log")))
                 {
+                    double minLR = 1E-04;
+
                     string[] lbla;
-                    float[,] codeda;
+                    TElement[,] codeda;
+                    DecayType decayType = DecayType.Power;
                     net.GreedyBatchedTrain(d.ReadTrainingData(0, numTrainingExamples, out lbla, out codeda),
                         10000,
-                        new ManualKeyPressExitEvaluatorFactory<TElement>(greedyTracker, (TElement)0.005, 50000),
+                        new ManualKeyPressExitEvaluatorFactory<TElement>(greedyTracker, (TElement) 0.005, 5000),
                         new LayerSpecificLearningRateCalculatorFactory<TElement>(
-                            new LinearlyDecayingLearningRateFactory<TElement>(0.001, 0.9999, 0.000001),
-                            new LinearlyDecayingLearningRateFactory<TElement>(0.0005, 0.9999, 0.0000001),
-                            new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.0000001)),
+                            new DecayingLearningRateFactory<TElement>(0.6, 0.99, minLR, decayType),
+                            new DecayingLearningRateFactory<TElement>(0.6, 0.99, minLR, decayType),
+                            new DecayingLearningRateFactory<TElement>(0.6, 0.99, 1E-3, decayType)),
                         new LayerSpecificLearningRateCalculatorFactory<TElement>(
-                            new LinearlyDecayingLearningRateFactory<TElement>(0.001, 0.9999, 0.0000001),
-                            new LinearlyDecayingLearningRateFactory<TElement>(0.0005, 0.9999, 0.0000001),
-                            new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.0000001)),
+                            new DecayingLearningRateFactory<TElement>(0.6, 0.99, minLR, decayType),
+                            new DecayingLearningRateFactory<TElement>(0.6, 0.99, minLR, decayType),
+                            new DecayingLearningRateFactory<TElement>(0.6, 0.99, 1E-3, decayType)),
                         new LayerSpecificLearningRateCalculatorFactory<TElement>(
-                            new LinearlyDecayingLearningRateFactory<TElement>(0.001, 0.9999, 0.0000001),
-                            new LinearlyDecayingLearningRateFactory<TElement>(0.0005, 0.9999, 0.0000001),
-                            new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.0000001)));
+                            new DecayingLearningRateFactory<TElement>(0.6, 0.99, minLR, decayType),
+                            new DecayingLearningRateFactory<TElement>(0.6, 0.99, minLR, decayType),
+                            new DecayingLearningRateFactory<TElement>(0.6, 0.99, 1E-3, decayType))
+                        );
                 }
 
                 var testData = d.ReadTrainingData(0, 200, out lbl, out coded);
@@ -169,21 +175,18 @@ namespace CudaNN
 
             using (var net = new CudaAdvancedNetwork(new CudaAdvancedRbmBase[]
             {
-                //new CudaAdvancedRbmLinearHidden(dev, rand, 0, 250*250, 800, finalMomentum:(TElement)0.7), 
-                new CudaAdvancedRbmBinary(dev, rand, 0, 250*250, 1000, false),
-                //new CudaAdvancedRbmBinary(dev, rand, 0, 250*250, 1000, true),
-                new CudaAdvancedRbmBinary(dev, rand, 1, 1000, 4000, true),
+                new CudaAdvancedRbmBinary(dev, rand, 0, 250*250, 500, false),
+                new CudaAdvancedRbmBinary(dev, rand, 1, 500, 4000, true),
                 new CudaAdvancedRbmBinary(dev, rand, 2, 4000, 4000, true)
             }))
             {
                 net.SetDefaultMachineState(SuspendState.Suspended); //keep data in main memory as much as possible
-                string[] lbl;
-                TElement[,] coded;
+
                 net.EpochComplete += (a, b) =>
                 {
-                    if (b.Epoch % 100 == 0)
+                    if (b.Epoch%100 == 0)
                     {
-                        var dreams = ((CudaAdvancedNetwork)a).Daydream(10, b.Layer);
+                        var dreams = ((CudaAdvancedNetwork) a).Daydream(50, b.Layer);
                         SaveImages(pathBase, string.Format("{0}_{1}_{{0}}_Daydream.jpg", b.Layer, b.Epoch), dreams);
                         dreams = null;
                     }
@@ -191,33 +194,47 @@ namespace CudaNN
 
                 net.LayerTrainComplete += (a, b) =>
                 {
-                    var m = ((ICudaNetwork<TElement>)a).Machines[b.Layer];
-                    m.Save(Path.Combine(pathBase, string.Format("Layer_{0}_{1}x{2}.dat", b.Layer, m.NumVisibleNeurons, m.NumHiddenNeurons)));
+                    var m = ((ICudaNetwork<TElement>) a).Machines[b.Layer];
+                    m.Save(Path.Combine(pathBase,
+                        string.Format("Layer_{0}_{1}x{2}_{3}.dat", b.Layer, m.NumVisibleNeurons, m.NumHiddenNeurons,
+                            typeof (TElement).Name)));
 
-                    var dreams = ((CudaAdvancedNetwork)a).Daydream(200, b.Layer);
+                    var dreams = ((CudaAdvancedNetwork) a).Daydream(10, b.Layer);
                     SaveImages(pathBase, string.Format("{0}_{1}_{{0}}_TrainEndDaydream.jpg", b.Layer, b.Epoch), dreams);
                     dreams = null;
- 
                 };
 
-                var training = dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded);
-                SaveImages(pathBase, "TrainingData_{0}.jpg", training);
+                IList<string[]> lbl;
+                IList<TElement[,]> coded;
+                var training = dataProvider.ReadTrainingData(0, numTrainingExamples, 200, out lbl, out coded);
+                for (var kk = 0; kk < training.Count; kk++)
+                {
+                    SaveImages(pathBase, string.Format("TrainingData_{0}_{{0}}.jpg", kk), training[kk]);
+                }
                 //batch the data into main memory
                 using (
                     var greedyTracker =
                         new EpochErrorFileTracker<TElement>(Path.Combine(pathBase, "GreedyTrainError.log")))
-                    net.GreedyBatchedTrainMem(training, 200,
-                        new ManualKeyPressExitEvaluatorFactory<TElement>(greedyTracker, 0.0005f, 50000),
-                        new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001),
-                        new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001),
-                        new LinearlyDecayingLearningRateFactory<TElement>(0.0001, 0.9999, 0.000001));
+                {
+                    TElement minLR = (TElement) 1E-7;
+                    DecayType decayType = DecayType.Power;
+                    net.GreedyBatchedTrainMem(training,
+                        new ManualKeyPressExitEvaluatorFactory<TElement>(greedyTracker, 0.0005f, 50000, 5),
+                        new DecayingLearningRateFactory<TElement>(0.003, 0.999, minLR, decayType),
+                        new DecayingLearningRateFactory<TElement>(0.003, 0.999, minLR, decayType),
+                        new DecayingLearningRateFactory<TElement>(0.003, 0.999, minLR, decayType)
+                        );
+                }
 
-                var testData = dataProvider.ReadTrainingData(numTrainingExamples, 200, out lbl, out coded);
+                var testData = dataProvider.ReadTestData(numTrainingExamples, 500, 50);
 
-                var reconstructions = net.Reconstruct(testData);
+                for (var kk = 0; kk < testData.Count; kk++)
+                {
+                    var reconstructions = net.Reconstruct(testData[kk]);
 
-                SaveImages(pathBase, "testData_{0}.jpg", testData);
-                SaveImages(pathBase, "reconstructions_{0}.jpg", reconstructions);
+                    SaveImages(pathBase, string.Format("testData_{0}_{{0}}.jpg", kk), testData[kk]);
+                    SaveImages(pathBase, string.Format("reconstructions_{0}_{{0}}.jpg", kk), reconstructions);
+                }
             }
         }
 
@@ -246,20 +263,20 @@ namespace CudaNN
 
                 net.EpochComplete += (a, b) =>
                 {
-                    if (b.Epoch % 100 == 0)
+                    if (b.Epoch%100 == 0)
                     {
                         TElement[,] daydream;
                         if (b.Layer == net.Machines.Count - 1)
                         {
                             TElement[,] labels;
-                            daydream = ((CudaAdvancedNetwork)a).DaydreamWithLabels(10, out labels, true, true);
+                            daydream = ((CudaAdvancedNetwork) a).DaydreamWithLabels(10, out labels, true, true);
 
                             dataProvider.PrintToConsole(daydream,
                                 computedLabels: labels);
                         }
                         else
                         {
-                            daydream = ((CudaAdvancedNetwork)a).Daydream(10, b.Layer);
+                            daydream = ((CudaAdvancedNetwork) a).Daydream(10, b.Layer);
                         }
                         SaveImages(pathBase, string.Format("{0}_{1}_DayDream_{{0}}.jpg", b.Layer, b.Epoch), daydream);
                     }
@@ -271,9 +288,9 @@ namespace CudaNN
                         dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded),
                         coded, 4000,
                         new ManualKeyPressExitEvaluatorFactory<TElement>(greedyTracker, 0.0005f, 3920),
-                        new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999, 0.000001),
-                        new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999, 0.000001),
-                        new LinearlyDecayingLearningRateFactory<TElement>(0.003, 0.9999, 0.000001));
+                        new DecayingLearningRateFactory<TElement>(0.003, 0.9999, 0.000001),
+                        new DecayingLearningRateFactory<TElement>(0.003, 0.9999, 0.000001),
+                        new DecayingLearningRateFactory<TElement>(0.003, 0.9999, 0.000001));
 
                 int[] testSrcLabels;
                 TElement[,] testSourceCoded;
@@ -305,7 +322,7 @@ namespace CudaNN
                 a =>
                     ImageUtils.SaveImageData(data, a,
                         Path.Combine(pathBase, string.Format(nameFormatString, a)),
-                        b => (byte)(b * 255f)));
+                        b => (byte) (b*255f)));
         }
 
 
@@ -323,16 +340,9 @@ namespace CudaNN
             Console.WriteLine("Compiling CUDA module");
 
             eArchitecture arch = dev.GetArchitecture();
-            //if ((uint)arch > 291U)
-            //    arch = eArchitecture.sm_35;
+
 
             ePlatform plat = Environment.Is64BitProcess ? ePlatform.x64 : ePlatform.x86;
-
-            //force x86
-            //plat = ePlatform.x86;
-
-            //if (plat == ePlatform.x64)
-            //    throw new Exception("CUDA Random will fail currently on x64");
 
             string kernelPath = Path.Combine(Environment.CurrentDirectory,
                 string.Format("CudaKernels_{0}.kernel", plat.ToString()));
@@ -349,8 +359,8 @@ namespace CudaNN
                 mod = CudafyTranslator.Cudafy(
                     plat,
                     arch,
-                    typeof(ActivationFunctionsCuda),
-                    typeof(Matrix2DCuda)
+                    typeof (ActivationFunctionsCuda),
+                    typeof (Matrix2DCuda)
                     );
                 Console.WriteLine("Saving kernels to {0}", kernelPath);
                 mod.Serialize(kernelPath);
@@ -362,7 +372,7 @@ namespace CudaNN
 
             rand = GPGPURAND.Create(dev, curandRngType.CURAND_RNG_PSEUDO_DEFAULT);
 
-            rand.SetPseudoRandomGeneratorSeed((ulong)DateTime.Now.Ticks);
+            rand.SetPseudoRandomGeneratorSeed((ulong) DateTime.Now.Ticks);
             rand.GenerateSeeds();
 
             Console.WriteLine("Loading Module");

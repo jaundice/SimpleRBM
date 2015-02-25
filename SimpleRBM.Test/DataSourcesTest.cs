@@ -1,4 +1,6 @@
-﻿using System.Configuration;
+﻿using System;
+using System.Configuration;
+using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SimpleRBM.Demo.Demo;
 using SimpleRBM.Demo.IO;
@@ -11,7 +13,7 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void TestHandwrittenNumbers()
         {
-            var io = new HandwrittenNumbersData("optdigits-tra.txt");
+            var io = new HandwrittenNumbersData(Path.Combine(Environment.CurrentDirectory, "optdigits-tra.txt"));
 
             int[] labels;
             float[,] labelsCoded;

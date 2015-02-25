@@ -1,11 +1,45 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace SimpleRBM.Common.ExitCondition
 {
+    public class ConsoleKeyListener
+    {
+        public event EventHandler<KeyPressEventArgs> KeyPress;
+
+        private static ConsoleKeyListener _instance = new ConsoleKeyListener();
+
+        public static ConsoleKeyListener Instance
+        {
+            get { return _instance ?? (_instance = new ConsoleKeyListener()); }
+        }
+
+        private Task _task;
+
+        private ConsoleKeyListener()
+        {
+            _task = Task.Run(() =>
+            {
+                while (true)
+                {
+                    OnKeyPress(Console.ReadKey(true));
+                }
+            });
+        }
+
+        private void OnKeyPress(ConsoleKeyInfo consoleKeyInfo)
+        {
+            if (KeyPress != null)
+            {
+                KeyPress(this, new KeyPressEventArgs(consoleKeyInfo));
+            }
+        }
+    }
+
     public class ManualKeyPressEvaluator<T> : IExitConditionEvaluator<T> where T : struct, IComparable<T>
     {
         private readonly int _layerDepth;
@@ -14,16 +48,18 @@ namespace SimpleRBM.Common.ExitCondition
         private bool _exit;
         private bool _exitOnNextLowest;
         private T _lowestErrorSeen;
-        private CancellationTokenSource src;
         private int _epochsSinceLastErrorImprovement = 0;
         private IEpochErrorTracker<T> _epochErrorTracker;
+        private int _reportFrequency;
 
-        public ManualKeyPressEvaluator(IEpochErrorTracker<T> epochErrorTracker, int layerDepth, int maxEpochs, T minError)
+        public ManualKeyPressEvaluator(IEpochErrorTracker<T> epochErrorTracker, int layerDepth, int maxEpochs,
+            T minError, int reportFrequency)
         {
             _maxEpochs = maxEpochs;
             _minError = minError;
             _layerDepth = layerDepth;
             _epochErrorTracker = epochErrorTracker;
+            _reportFrequency = reportFrequency;
         }
 
         public bool Exit(int epochNumber, T lastError, TimeSpan elapsedTime)
@@ -34,7 +70,6 @@ namespace SimpleRBM.Common.ExitCondition
 
             if (Comparer<T>.Default.Compare(lastError, _minError) < 0)
             {
-                src.Cancel();
                 _exit = true;
             }
             if (epochNumber == 0)
@@ -51,8 +86,9 @@ namespace SimpleRBM.Common.ExitCondition
                 }
                 else
                 {
-                    if (epochNumber == _maxEpochs + 1 || epochNumber % 20 == 0)
-                        Console.WriteLine("Max epochs passed. Exiting next time error drops below {0:F6}", _lowestErrorSeen);
+                    if (epochNumber == _maxEpochs + 1 || epochNumber % _reportFrequency == 0)
+                        Console.WriteLine("Max epochs passed. Exiting next time error drops below {0:F6}",
+                            _lowestErrorSeen);
                 }
             }
 
@@ -62,7 +98,6 @@ namespace SimpleRBM.Common.ExitCondition
                 _epochsSinceLastErrorImprovement = 0;
                 if (_exitOnNextLowest)
                 {
-                    src.Cancel();
                     _exit = true;
                 }
             }
@@ -71,11 +106,15 @@ namespace SimpleRBM.Common.ExitCondition
                 _epochsSinceLastErrorImprovement++;
             }
 
-            if (_exit || epochNumber % 20 == 0)
-                Console.WriteLine("Epoch: {0}\tLayer: {1}\tError: {2:F6}\tElapsed: {3}\tdelta: {4:F6}\tepochs since improvement: {5}", epochNumber,
+            if (_exit || epochNumber % _reportFrequency == 0)
+                Console.WriteLine(
+                    "Epoch: {0}\tLayer: {1}\tError: {2:F6}\tElapsed: {3}\tdelta: {4:F6}\tepochs since improvement: {5}",
+                    epochNumber,
                     _layerDepth, lastError, elapsedTime,
                     (double)Convert.ChangeType(tempLowest, typeof(double)) -
                     (double)Convert.ChangeType(lastError, typeof(double)), _epochsSinceLastErrorImprovement);
+
+
 
             return _exit;
         }
@@ -84,32 +123,28 @@ namespace SimpleRBM.Common.ExitCondition
         {
             _exit = false;
             _exitOnNextLowest = false;
+            ConsoleKeyListener.Instance.KeyPress += Instance_KeyPress;
+        }
 
-            if (src != null)
-                src.Cancel();
-
-            src = new CancellationTokenSource();
-
-            Task.Factory.StartNew(() =>
+        private void Instance_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyInfo.KeyChar == 'l' || e.KeyInfo.KeyChar == 'L')
             {
-                ConsoleKeyInfo key = Console.ReadKey();
-                if (key.KeyChar == 'l' || key.KeyChar == 'L')
-                {
-                    _exitOnNextLowest = true;
-                    Console.WriteLine("Exiting next time epoch error < {0}", _lowestErrorSeen);
-                }
-                else
-                {
-                    _exit = true;
-                }
-                src.Cancel();
-            }, src.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                _exitOnNextLowest = true;
+                Console.WriteLine("Exiting next time epoch error < {0}", _lowestErrorSeen);
+            }
+            else
+            {
+                Console.WriteLine("Exiting now");
+
+                _exit = true;
+            }
         }
 
 
         public void Stop()
         {
-            src.Cancel();
+            ConsoleKeyListener.Instance.KeyPress -= Instance_KeyPress;
         }
     }
 }

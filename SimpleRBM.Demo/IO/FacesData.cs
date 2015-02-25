@@ -11,34 +11,46 @@ namespace SimpleRBM.Demo.IO
 {
     public class FacesData : DataIOBase<string>
     {
+        private List<FileInfo> _allTrainingFiles;
+        private string[] _allLabelOptions;
+        private List<FileInfo> _allTestFiles;
+
         public FacesData(string trainingDataPath, string testDataPath)
             : base(trainingDataPath, testDataPath)
         {
+            var rnd = new Random();
+            _allTrainingFiles =
+                new DirectoryInfo(trainingDataPath).EnumerateFiles("*.jpg", SearchOption.AllDirectories).Select(a => new
+                {
+                    a,
+                    rnd = rnd.Next()
+                }).OrderBy(a => a.rnd).Select(a => a.a).ToList();
+
+            _allLabelOptions =
+                new DirectoryInfo(trainingDataPath).EnumerateDirectories("*", SearchOption.AllDirectories)
+                    .Select(a => a.Name)
+                    .ToArray();
+
+            _allTestFiles = trainingDataPath == testDataPath
+                ? _allTrainingFiles
+                : new DirectoryInfo(testDataPath).EnumerateFiles("*.jpg", SearchOption.AllDirectories).Select(a => new
+                {
+                    a,
+                    rnd = rnd.Next()
+                }).OrderBy(a => a.rnd).Select(a => a.a).ToList();
         }
 
         protected override float[,] ReadTrainingData(string filePath, int skipRecords, int count, out string[] labels,
             out float[,] labelsCoded)
         {
-            var rnd = new Random();
-
-            List<FileInfo> files =
-                new DirectoryInfo(filePath).EnumerateFiles("*.jpg", SearchOption.AllDirectories).Select(a => new
-                {
-                    a,
-                    rnd = rnd.Next()
-                }).OrderBy(a => a.rnd).Select(a => a.a)
-                    .Skip(skipRecords)
-                    .Take(count)
-                    .ToList();
+            var files = _allTrainingFiles.Skip(skipRecords)
+                .Take(count)
+                .ToList();
 
             labels = files.Select(a => a.Directory.Name).ToArray();
 
-            string[] allLabelOptions =
-                new DirectoryInfo(filePath).EnumerateDirectories("*", SearchOption.AllDirectories)
-                    .Select(a => a.Name)
-                    .ToArray();
 
-            labelsCoded = LabelEncoder.EncodeLabels<string, float>(labels, allLabelOptions);
+            labelsCoded = LabelEncoder.EncodeLabels<string, float>(labels, _allLabelOptions);
             return ImageDataF(files);
         }
 
@@ -47,15 +59,10 @@ namespace SimpleRBM.Demo.IO
             var rnd = new Random();
 
 
-            List<FileInfo> files =
-                new DirectoryInfo(filePath).EnumerateFiles("*.jpg", SearchOption.AllDirectories).Select(a => new
-                {
-                    a,
-                    rnd = rnd.Next()
-                }).OrderBy(a => a.rnd).Select(a => a.a)
-                    .Skip(skipRecords)
-                    .Take(count)
-                    .ToList();
+            List<FileInfo> files = _allTestFiles
+                .Skip(skipRecords)
+                .Take(count)
+                .ToList();
 
             return ImageDataF(files);
         }
@@ -86,8 +93,7 @@ namespace SimpleRBM.Demo.IO
 
         protected override double[,] ReadTestDataD(string filePath, int skipRecords, int count)
         {
-            List<FileInfo> files =
-                new DirectoryInfo(filePath).EnumerateFiles("*.jpg", SearchOption.AllDirectories)
+            List<FileInfo> files = _allTestFiles
                     .Skip(skipRecords)
                     .Take(count)
                     .ToList();
@@ -122,20 +128,14 @@ namespace SimpleRBM.Demo.IO
         protected override double[,] ReadTrainingData(string filePath, int skipRecords, int count, out string[] labels,
             out double[,] labelsCoded)
         {
-            List<FileInfo> files =
-                new DirectoryInfo(filePath).EnumerateFiles("*.jpg", SearchOption.AllDirectories)
+            List<FileInfo> files = _allTrainingFiles
                     .Skip(skipRecords)
                     .Take(count)
                     .ToList();
 
             labels = files.Select(a => a.Directory.Name).ToArray();
 
-            var allLabelOptions =
-                new DirectoryInfo(filePath).EnumerateDirectories("*", SearchOption.AllDirectories)
-                    .Select(a => a.Name)
-                    .ToArray();
-
-            labelsCoded = LabelEncoder.EncodeLabels<string, double>(labels, allLabelOptions);
+            labelsCoded = LabelEncoder.EncodeLabels<string, double>(labels, _allLabelOptions);
 
             return ImageDataD(files);
         }

@@ -173,8 +173,8 @@ namespace SimpleRBM.Demo
                     factory,
                     new FacesData(ConfigurationManager.AppSettings["FacesDirectory"], ConfigurationManager.AppSettings["FacesTestDirectory"]),
                     DefaultFacesLayerSizes,
-                    new LinearlyDecayingLearningRateFactory<TElement>(learningRate, 0.999999, 0.000001),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.01, 0.99999, 0.000001),
+                    new DecayingLearningRateFactory<TElement>(learningRate, 0.999999, 0.000001),
+                    new DecayingLearningRateFactory<TElement>(0.01, 0.99999, 0.000001),
                     trainingSize,
                     skipTrainingRecords, false);
             }
@@ -187,8 +187,8 @@ namespace SimpleRBM.Demo
                      new KaggleData(ConfigurationManager.AppSettings["KaggleTrainingData"],
                         ConfigurationManager.AppSettings["KaggleTestData"]),
                     DefaultKaggleLayerSizes,
-                    new LinearlyDecayingLearningRateFactory<TElement>(learningRate, 0.999999, 0.000001),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.01, 0.99999, 0.000001),
+                    new DecayingLearningRateFactory<TElement>(learningRate, 0.999999, 0.000001),
+                    new DecayingLearningRateFactory<TElement>(0.01, 0.99999, 0.000001),
                     trainingSize,
                     skipTrainingRecords, true);
             }
@@ -201,8 +201,8 @@ namespace SimpleRBM.Demo
                     new CsvData(ConfigurationManager.AppSettings["CsvDataTraining"],
                         ConfigurationManager.AppSettings["CsvDataTest"], true, true),
                     DefaultCsvLayerSizes,
-                    new LinearlyDecayingLearningRateFactory<TElement>(learningRate, 0.999999, 0.000001),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.01, 0.99999, 0.000001),
+                    new DecayingLearningRateFactory<TElement>(learningRate, 0.999999, 0.000001),
+                    new DecayingLearningRateFactory<TElement>(0.01, 0.99999, 0.000001),
                     trainingSize,
                     skipTrainingRecords, false);
             }
@@ -214,8 +214,8 @@ namespace SimpleRBM.Demo
                     factory,
                     new WavData(ConfigurationManager.AppSettings["WavAudioDirectory"], 18500),
                     DefaultAudioLayerSizes,
-                    new LinearlyDecayingLearningRateFactory<TElement>(learningRate, 0.999999, 0.000001),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.01, 0.99999, 0.000001),
+                    new DecayingLearningRateFactory<TElement>(learningRate, 0.999999, 0.000001),
+                    new DecayingLearningRateFactory<TElement>(0.01, 0.99999, 0.000001),
                     trainingSize,
                     skipTrainingRecords, false);
             }
@@ -227,8 +227,8 @@ namespace SimpleRBM.Demo
                     factory,
                     new HandwrittenNumbersData("optdigits-tra.txt"),
                     DefaultHandwrittenLayerSizes,
-                    new LinearlyDecayingLearningRateFactory<TElement>(learningRate, 0.999999, 0.000001),
-                    new LinearlyDecayingLearningRateFactory<TElement>(0.01, 0.99999, 0.000001),
+                    new DecayingLearningRateFactory<TElement>(learningRate, 0.999999, 0.000001),
+                    new DecayingLearningRateFactory<TElement>(0.01, 0.99999, 0.000001),
                     trainingSize,
                     skipTrainingRecords, true);
             }

@@ -65,5 +65,16 @@ namespace CudaNN
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
-    }
+
+     void GreedyBatchedTrainMem(IList<TElement[,]> batches,
+            IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+
+     void GreedyBatchedSupervisedTrainMem(IList<TElement[,]> batches, IList<TElement[,]> labels,
+            IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);}
 }

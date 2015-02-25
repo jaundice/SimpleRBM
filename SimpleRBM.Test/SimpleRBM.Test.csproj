@@ -109,6 +109,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="CompareCudaVsMultidimMatrixOpsF.cs" />
+    <Compile Include="CudaTestBase.cs" />
     <Compile Include="ThreadOptimizerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DataSourcesTest.cs" />
@@ -116,8 +117,13 @@
     <Compile Include="UnitTest1.cs" />
     <Compile Include="UnitTest2.cs" />
     <Compile Include="UnitTest3.cs" />
+    <Compile Include="UnitTest4.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\RbmHidLinear\CudaNN.csproj">
+      <Project>{971c0731-4c8b-4bc8-aab9-ee683e19dfeb}</Project>
+      <Name>CudaNN</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SimpleRBM.Common\SimpleRBM.Common.csproj">
       <Project>{62C68210-6A25-4E4C-A840-E85629403C3B}</Project>
       <Name>SimpleRBM.Common</Name>
