@@ -3,6 +3,7 @@
     public enum DecayType
     {
         Power,
-        HalfPower
+        HalfPower,
+        DoublePower
     }
 }

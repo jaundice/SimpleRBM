@@ -20,7 +20,7 @@ using TElement = System.Double;
 
 namespace CudaNN
 {
-    public abstract class CudaAdvancedRbmBase : IDisposable, IAdvancedRbmCuda<TElement>
+    public abstract class CudaAdvancedRbmBase : IAdvancedRbmCuda<TElement>
     {
         private TElement _finalmomentum;
         private GPGPU _gpu;
@@ -71,7 +71,10 @@ namespace CudaNN
             _rand = rand;
 
             _weights = _gpu.GuassianDistribution(_rand, _numVisibleNeurons, _numHiddenNeurons,
-                scale: (TElement) 0.1);
+                stDev: (TElement) 0.01);
+
+            //https://www.cs.toronto.edu/~hinton/absps/guideTR.pdf
+
             _hiddenBiases = _gpu.AllocateAndSet<TElement>(1, _numHiddenNeurons);
             _visibleBiases = _gpu.AllocateAndSet<TElement>(1, _numVisibleNeurons);
             _vishidinc = _gpu.AllocateAndSet<TElement>(_numVisibleNeurons, _numHiddenNeurons);
@@ -232,11 +235,15 @@ namespace CudaNN
             {
                 int epoch;
                 TElement error;
-                for (epoch = 0; ; epoch++)
+                for (epoch = 0;; epoch++)
                 {
                     sw.Restart();
+                    TElement weightLearningRate = weightLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
+                    TElement visBiasLearningRate = visBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
+                    TElement hidBiasLearningRate = hidBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
+
                     error = BatchedTrainEpoch(data, dataTransposed, posvisact, epoch, numcases,
-                        weightLearningRateCalculator, hidBiasLearningRateCalculator, visBiasLearningRateCalculator);
+                        weightLearningRate, hidBiasLearningRate, visBiasLearningRate);
 
                     OnEpochComplete(new EpochEventArgs<TElement>()
                     {
@@ -324,12 +331,16 @@ namespace CudaNN
                 Stopwatch sw = new Stopwatch();
                 int epoch;
                 TElement error;
-                for (epoch = 0; ; epoch++)
+                for (epoch = 0;; epoch++)
                 {
                     sw.Restart();
+                    TElement weightLearningRate = weightLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
+                    TElement visBiasLearningRate = visBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
+                    TElement hidBiasLearningRate = hidBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
+
                     error =
                         datasets.Sum(block => BatchedTrainEpoch(block.Item1, block.Item2, block.Item3, epoch, numcases,
-                            weightLearningRateCalculator, hidBiasLearningRateCalculator, visBiasLearningRateCalculator));
+                            weightLearningRate, hidBiasLearningRate, visBiasLearningRate));
 
                     OnEpochComplete(new EpochEventArgs<TElement>()
                     {
@@ -396,17 +407,21 @@ namespace CudaNN
             Stopwatch sw = new Stopwatch();
             int epoch;
             TElement error;
-            for (epoch = 0; ; epoch++)
+            for (epoch = 0;; epoch++)
             {
                 sw.Restart();
+                TElement weightLearningRate = weightLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
+                TElement visBiasLearningRate = visBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
+                TElement hidBiasLearningRate = hidBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
+
                 error = datasets.Sum(block =>
                 {
                     using (var d = AsCuda.GPU.Upload(block.Item1))
                     using (var t = AsCuda.GPU.Upload(block.Item2))
                     using (var p = AsCuda.GPU.Upload(block.Item3))
                         return BatchedTrainEpoch(d, t, p, epoch, numcases,
-                            weightLearningRateCalculator, hidBiasLearningRateCalculator,
-                            visBiasLearningRateCalculator);
+                            weightLearningRate, hidBiasLearningRate,
+                            visBiasLearningRate);
                 });
 
                 OnEpochComplete(new EpochEventArgs<TElement>()
@@ -518,9 +533,9 @@ namespace CudaNN
 
         protected abstract TElement BatchedTrainEpoch(Matrix2D<TElement> data, Matrix2D<TElement> dataTransposed,
             Matrix2D<TElement> posvisact,
-            int epoch, int numcases, ILearningRateCalculator<TElement> weightLearningRateCalculator,
-            ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
-            ILearningRateCalculator<TElement> visBiasLearningRateCalculator);
+            int epoch, int numcases, TElement weightLearningRate,
+            TElement hidBiasLearningRate,
+            TElement visBiasLearningRate);
 
         protected virtual List<System.Tuple<Matrix2D<TElement>, Matrix2D<TElement>, Matrix2D<TElement>>>
             PartitionDataAsMatrices(
@@ -694,8 +709,8 @@ namespace CudaNN
             var datasets = new List<System.Tuple<TElement[,], TElement[,], TElement[,]>>();
             foreach (var batch in batches)
             {
-                using(var d = _gpu.Upload(batch))
-                using(var t = d.Transpose())
+                using (var d = _gpu.Upload(batch))
+                using (var t = d.Transpose())
                 using (var s = d.SumColumns())
                 {
                     datasets.Add(Tuple.Create(batch, t.CopyLocal(), s.CopyLocal()));
@@ -708,17 +723,21 @@ namespace CudaNN
             Stopwatch sw = new Stopwatch();
             int epoch;
             TElement error;
-            for (epoch = 0; ; epoch++)
+            for (epoch = 0;; epoch++)
             {
                 sw.Restart();
+                TElement weightLearningRate = weightLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
+                TElement visBiasLearningRate = visBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
+                TElement hidBiasLearningRate = hidBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
+
                 error = datasets.Sum(block =>
                 {
                     using (var d = AsCuda.GPU.Upload(block.Item1))
                     using (var t = AsCuda.GPU.Upload(block.Item2))
                     using (var p = AsCuda.GPU.Upload(block.Item3))
                         return BatchedTrainEpoch(d, t, p, epoch, numcases,
-                            weightLearningRateCalculator, hidBiasLearningRateCalculator,
-                            visBiasLearningRateCalculator);
+                            weightLearningRate, hidBiasLearningRate,
+                            visBiasLearningRate);
                 });
 
                 OnEpochComplete(new EpochEventArgs<TElement>()

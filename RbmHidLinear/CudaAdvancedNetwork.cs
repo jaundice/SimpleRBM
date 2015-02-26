@@ -264,30 +264,30 @@ namespace CudaNN
             }
         }
 
-        public TElement[,] Daydream(int numDreams, int maxDepth = -1, bool guassian = true)
+        public TElement[,] Daydream(TElement noiseScale, int numDreams, int maxDepth = -1, bool guassian = true)
         {
-            using (var a = AsCuda.Daydream(numDreams, maxDepth, guassian))
+            using (var a = AsCuda.Daydream(noiseScale, numDreams, maxDepth, guassian))
                 return a.CopyLocal();
         }
 
-        Matrix2D<TElement> ICudaNetwork<TElement>.Daydream(int numDreams, int maxDepth = -1, bool guassian = true)
+        Matrix2D<TElement> ICudaNetwork<TElement>.Daydream(TElement noiseScale, int numDreams, int maxDepth = -1, bool guassian = true)
         {
             using (
                 var rand = guassian
                     ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, (TElement)0.5, (TElement)0.2)
+                        Machines[0].NumVisibleNeurons, noiseScale)
                     : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, (TElement)1))
+                        Machines[0].NumVisibleNeurons, noiseScale))
             {
                 return AsCuda.Reconstruct(rand, maxDepth);
             }
         }
 
-        public TElement[,] DaydreamWithLabels(int numDreams, out TElement[,] labels,
+        public TElement[,] DaydreamWithLabels(TElement noiseScale, int numDreams, out TElement[,] labels,
             bool guassian = true, bool softmaxLabels = true)
         {
             Matrix2D<TElement> lbl;
-            using (var res = AsCuda.DaydreamWithLabels(numDreams, out lbl, guassian, softmaxLabels))
+            using (var res = AsCuda.DaydreamWithLabels(noiseScale, numDreams, out lbl, guassian, softmaxLabels))
             using (lbl)
             {
                 labels = lbl.CopyLocal();
@@ -295,27 +295,27 @@ namespace CudaNN
             }
         }
 
-        Matrix2D<TElement> ICudaNetwork<TElement>.DaydreamWithLabels(int numDreams,
+        Matrix2D<TElement> ICudaNetwork<TElement>.DaydreamWithLabels(TElement noiseScale, int numDreams,
             out Matrix2D<TElement> labels, bool guassian = true, bool softmaxLabels = true)
         {
             using (
                 var rand = guassian
                     ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, (TElement)0.5, (TElement)0.2)
+                        Machines[0].NumVisibleNeurons, noiseScale)
                     : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, (TElement)1))
+                        Machines[0].NumVisibleNeurons, noiseScale))
             {
                 return AsCuda.ReconstructWithLabels(rand, out labels, softmaxLabels);
             }
         }
 
-        public TElement[,] DaydreamByClass(TElement[,] modelLabels,
+        public TElement[,] DaydreamByClass(TElement noiseScale, TElement[,] modelLabels,
             out TElement[,] generatedLabels, bool guassian = true, bool softmaxGeneratedLabels = true)
         {
             using (var d = Machines[0].GPU.Upload(modelLabels))
             {
                 Matrix2D<TElement> gen;
-                using (var res = AsCuda.DaydreamByClass(d, out gen, guassian, softmaxGeneratedLabels))
+                using (var res = AsCuda.DaydreamByClass(noiseScale, d, out gen, guassian, softmaxGeneratedLabels))
                 using (gen)
                 {
                     generatedLabels = gen.CopyLocal();
@@ -324,16 +324,16 @@ namespace CudaNN
             }
         }
 
-        Matrix2D<TElement> ICudaNetwork<TElement>.DaydreamByClass(Matrix2D<TElement> modelLabels,
+        Matrix2D<TElement> ICudaNetwork<TElement>.DaydreamByClass(TElement noiseScale, Matrix2D<TElement> modelLabels,
             out Matrix2D<TElement> generatedLabels, bool guassian = true, bool softmaxLabels = true)
         {
             var highest = Machines.Count - 1;
             using (
                 var rand = guassian
                     ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, modelLabels.GetLength(0),
-                        Machines[highest].NumVisibleNeurons, (TElement)0.5, (TElement)0.2)
+                        Machines[highest].NumVisibleNeurons, scale: noiseScale)
                     : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, modelLabels.GetLength(0),
-                        Machines[highest].NumVisibleNeurons, (TElement)1))
+                        Machines[highest].NumVisibleNeurons, noiseScale))
             {
                 rand.InsertValuesFrom(0, Machines[highest - 1].NumHiddenNeurons, modelLabels);
                 using (var encoded = Machines[highest].Encode(rand))
@@ -594,7 +594,6 @@ namespace CudaNN
             ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
         {
             var layerTrainData = data;
-            TElement[,] local = data.CopyLocal();
             for (var i = 0; i < Machines.Count; i++)
             {
                 if (i == Machines.Count - 1)
@@ -607,8 +606,9 @@ namespace CudaNN
                     labels.Dispose();
                     layerTrainData.Dispose();
                     layerTrainData = combined;
-                    local = combined.CopyLocal();
                 }
+
+                TElement[,] local = layerTrainData.CopyLocal();
 
 
                 Machines[i].GreedyBatchedTrainMem(layerTrainData, batchSize, exitConditionFactory.Create(i),
@@ -686,7 +686,6 @@ namespace CudaNN
             {
                 throw new Exception("Mismatch between lengths of batch data and batch labels");
             }
-
             var layerTrainData = batches;
             for (var i = 0; i < Machines.Count; i++)
             {
@@ -720,6 +719,22 @@ namespace CudaNN
                 layerTrainData = layerTrainData.Select(Machines[i].Encode).ToList();
             }
 
+        }
+
+
+        TElement[,] INetwork<double>.Daydream(int numDreams, int maxDepth = -1, bool guassian = true)
+        {
+            throw new NotImplementedException();
+        }
+
+        TElement[,] INetwork<double>.DaydreamWithLabels(int numDreams, out TElement[,] labels, bool guassian = true, bool softmaxLabels = true)
+        {
+            throw new NotImplementedException();
+        }
+
+        TElement[,] INetwork<double>.DaydreamByClass(TElement[,] modelLabels, out TElement[,] generatedLabels, bool guassian = true, bool softmaxGeneratedLabels = true)
+        {
+            throw new NotImplementedException();
         }
     }
 }

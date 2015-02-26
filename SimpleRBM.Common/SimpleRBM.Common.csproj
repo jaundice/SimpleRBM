@@ -115,6 +115,7 @@
     <Compile Include="LearningRate\LayerSpecificLearningRateFactory.cs" />
     <Compile Include="LearningRate\DecayingLearningRate.cs" />
     <Compile Include="LearningRate\DecayingLearningRateFactory.cs" />
+    <Compile Include="LearningRate\LearningRateCalculatorBase.cs" />
     <Compile Include="Save\LayerSaveInfoD.cs" />
     <Compile Include="Save\LayerSaveInfoF.cs" />
     <Compile Include="ExitCondition\ManualKeyPressEvaluator.cs" />

@@ -4,16 +4,18 @@ namespace SimpleRBM.Common.LearningRate
 {
     public class ConstantLearningRateFactory<T> : ILearningRateCalculatorFactory<T>
     {
-        private readonly T _rate;
+        private readonly double _rate;
+        private readonly int _notifyFreq;
 
-        public ConstantLearningRateFactory(double rate)
+        public ConstantLearningRateFactory(double rate, int notifyFreq=-1)
         {
-            _rate = (T) Convert.ChangeType(rate, typeof (T));
+            _rate = rate;
+            _notifyFreq = notifyFreq;
         }
 
         public ILearningRateCalculator<T> Create(int layer)
         {
-            return new ConstantLearningRate<T>(_rate);
+            return new ConstantLearningRate<T>(_rate, _notifyFreq);
         }
     }
 }

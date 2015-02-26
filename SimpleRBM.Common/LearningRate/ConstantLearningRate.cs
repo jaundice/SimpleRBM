@@ -2,23 +2,18 @@
 
 namespace SimpleRBM.Common.LearningRate
 {
-    public class ConstantLearningRate<T> : ILearningRateCalculator<T>
+    public class ConstantLearningRate<T> : LearningRateCalculatorBase<T>
     {
-        private readonly T _rate;
-
-        public ConstantLearningRate(double rate)
+        public ConstantLearningRate(double rate, int notify)
+            : base(rate, notify)
         {
-            _rate = (T)Convert.ChangeType(rate, typeof(T));
+
         }
 
-        public ConstantLearningRate(T rate)
+        public override T DoCalculateLearningRate(int layer, int epoch)
         {
-            _rate = rate;
+            return (T)Convert.ChangeType(_rate, typeof(T));
         }
 
-        public T CalculateLearningRate(int layer, int epoch)
-        {
-            return _rate ;
-        }
     }
 }

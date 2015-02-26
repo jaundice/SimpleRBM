@@ -31,12 +31,13 @@ namespace CudaNN
             out Matrix2D<TElement> labels, bool softmaxLabels = true);
 
         Matrix2D<TElement> LabelData(Matrix2D<TElement> data, bool softmaxLabels = true);
-        new Matrix2D<TElement> Daydream(int numDreams, int maxDepth = -1, bool guassian = true);
 
-        Matrix2D<TElement> DaydreamWithLabels(int numDreams, out Matrix2D<TElement> labels, bool guassian = true,
+        new Matrix2D<TElement> Daydream(TElement noiseScale, int numDreams, int maxDepth = -1, bool guassian = true);
+
+        Matrix2D<TElement> DaydreamWithLabels(TElement noiseScale, int numDreams, out Matrix2D<TElement> labels, bool guassian = true,
             bool softmaxLabels = true);
 
-        Matrix2D<TElement> DaydreamByClass(Matrix2D<TElement> modelLabels,
+        Matrix2D<TElement> DaydreamByClass(TElement noiseScale, Matrix2D<TElement> modelLabels,
             out Matrix2D<TElement> generatedLabels, bool guassian = true, bool softmaxLabels = true);
 
         void GreedyTrain(Matrix2D<TElement> data,

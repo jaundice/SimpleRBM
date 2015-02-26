@@ -11,11 +11,23 @@ namespace SimpleRBM.Demo.IO
 {
     public class FacesData : DataIOBase<string>
     {
+        public enum ConversionMode
+        {
+            RgbToGreyInt,
+            RgbToGreyPosReal,
+            RgbToGreyPosNegReal
+        }
+
         private List<FileInfo> _allTrainingFiles;
         private string[] _allLabelOptions;
         private List<FileInfo> _allTestFiles;
 
-        public FacesData(string trainingDataPath, string testDataPath)
+        private ImageUtils.ConvertPixel<float> _floatConverter;
+        private ImageUtils.ConvertPixel<double> _doubleConverter;
+
+
+        public FacesData(string trainingDataPath, string testDataPath,
+            ConversionMode mode = ConversionMode.RgbToGreyPosReal)
             : base(trainingDataPath, testDataPath)
         {
             var rnd = new Random();
@@ -38,6 +50,28 @@ namespace SimpleRBM.Demo.IO
                     a,
                     rnd = rnd.Next()
                 }).OrderBy(a => a.rnd).Select(a => a.a).ToList();
+
+            switch (mode)
+            {
+                case ConversionMode.RgbToGreyPosReal:
+                {
+                    _floatConverter = ImageUtils.ConvertRGBToGreyF;
+                    _doubleConverter = ImageUtils.ConvertRGBToGreyD;
+                    break;
+                }
+                case ConversionMode.RgbToGreyInt:
+                {
+                    _floatConverter = ImageUtils.ConvertRGBToGreyIntF;
+                    _doubleConverter = ImageUtils.ConvertRGBToGreyIntD;
+                    break;
+                }
+                case ConversionMode.RgbToGreyPosNegReal:
+                {
+                    _floatConverter = ImageUtils.ConvertRGBToGreyPosNegF;
+                    _doubleConverter = ImageUtils.ConvertRGBToGreyPosNegD;
+                    break;
+                }
+            }
         }
 
         protected override float[,] ReadTrainingData(string filePath, int skipRecords, int count, out string[] labels,
@@ -51,7 +85,7 @@ namespace SimpleRBM.Demo.IO
 
 
             labelsCoded = LabelEncoder.EncodeLabels<string, float>(labels, _allLabelOptions);
-            return ImageDataF(files);
+            return ImageDataF(files, _floatConverter);
         }
 
         protected override float[,] ReadTestDataF(string filePath, int skipRecords, int count)
@@ -64,15 +98,15 @@ namespace SimpleRBM.Demo.IO
                 .Take(count)
                 .ToList();
 
-            return ImageDataF(files);
+            return ImageDataF(files, _floatConverter);
         }
 
 
-        private static float[,] ImageDataF(IEnumerable<FileInfo> files)
+        private static float[,] ImageDataF(IEnumerable<FileInfo> files, ImageUtils.ConvertPixel<float> converter)
         {
             List<FileInfo> lstFiles = files.ToList();
 
-            IEnumerable<float[]> trainingImageData = ImageUtils.ReadImageData(lstFiles, ImageUtils.ConvertRGBToGreyF);
+            IEnumerable<float[]> trainingImageData = ImageUtils.ReadImageData(lstFiles, converter);
 
 
             float[,] data = null;
@@ -94,19 +128,19 @@ namespace SimpleRBM.Demo.IO
         protected override double[,] ReadTestDataD(string filePath, int skipRecords, int count)
         {
             List<FileInfo> files = _allTestFiles
-                    .Skip(skipRecords)
-                    .Take(count)
-                    .ToList();
+                .Skip(skipRecords)
+                .Take(count)
+                .ToList();
 
-            return ImageDataD(files);
+            return ImageDataD(files, _doubleConverter);
         }
 
 
-        private static double[,] ImageDataD(IEnumerable<FileInfo> files)
+        private static double[,] ImageDataD(IEnumerable<FileInfo> files, ImageUtils.ConvertPixel<double> converter)
         {
             List<FileInfo> lstFiles = files.ToList();
 
-            IEnumerable<double[]> trainingImageData = ImageUtils.ReadImageData(lstFiles, ImageUtils.ConvertRGBToGreyD);
+            IEnumerable<double[]> trainingImageData = ImageUtils.ReadImageData(lstFiles, converter);
 
 
             double[,] data = null;
@@ -129,15 +163,15 @@ namespace SimpleRBM.Demo.IO
             out double[,] labelsCoded)
         {
             List<FileInfo> files = _allTrainingFiles
-                    .Skip(skipRecords)
-                    .Take(count)
-                    .ToList();
+                .Skip(skipRecords)
+                .Take(count)
+                .ToList();
 
             labels = files.Select(a => a.Directory.Name).ToArray();
 
             labelsCoded = LabelEncoder.EncodeLabels<string, double>(labels, _allLabelOptions);
 
-            return ImageDataD(files);
+            return ImageDataD(files, _doubleConverter);
         }
     }
 }

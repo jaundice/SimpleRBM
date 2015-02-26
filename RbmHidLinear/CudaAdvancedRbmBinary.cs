@@ -302,13 +302,14 @@ namespace CudaNN
 
         protected override TElement BatchedTrainEpoch(Matrix2D<TElement> data, Matrix2D<TElement> dataTransposed,
             Matrix2D<TElement> posvisact, int epoch, int numcases,
-            ILearningRateCalculator<TElement> weightLearningRateCalculator,
-            ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
-            ILearningRateCalculator<TElement> visBiasLearningRateCalculator)
+            TElement weightLearningRate,
+            TElement hidBiasLearningRate,
+            TElement visBiasLearningRate)
         {
             TElement error;
 
             var batchCases = data.GetLength(0);
+
 
             //start positive phase
             using (Matrix2D<TElement> tiledHiddenBiases = AsCuda.HiddenBiases.RepMatRows(batchCases))
@@ -374,8 +375,7 @@ namespace CudaNN
                 {
                     posprodsminusnegprods.MultiplyInPlace((TElement) 1/(TElement) numcases);
                     posprodsminusnegprods.SubtractInPlace(weightcostWeight);
-                    posprodsminusnegprods.MultiplyInPlace(weightLearningRateCalculator.CalculateLearningRate(
-                        LayerIndex, epoch));
+                    posprodsminusnegprods.MultiplyInPlace(weightLearningRate);
                     WeightInc.Dispose();
                     _vishidinc = momentumvishidinc.Add(posprodsminusnegprods);
                 }
@@ -385,7 +385,7 @@ namespace CudaNN
                 using (Matrix2D<TElement> posvisactminusnegvisact = posvisact.Subtract(negvisact))
                 {
                     posvisactminusnegvisact.MultiplyInPlace(
-                        visBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch)/numcases);
+                        visBiasLearningRate/numcases);
                     VisibleBiasInc.Dispose();
                     _visbiasinc = momentumvisbiasinc.Add(posvisactminusnegvisact);
                 }
@@ -395,7 +395,7 @@ namespace CudaNN
                 using (Matrix2D<TElement> poshidactminusneghidact = poshidact.Subtract(neghidact))
                 {
                     poshidactminusneghidact.MultiplyInPlace(
-                        hidBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch)/numcases);
+                        hidBiasLearningRate/numcases);
                     HiddenBiasInc.Dispose();
                     _hidbiasinc = momentumhidbiasinc.Add(poshidactminusneghidact);
                 }

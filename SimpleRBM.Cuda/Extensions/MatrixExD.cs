@@ -315,12 +315,12 @@ namespace SimpleRBM.Cuda
             return self;
         }
 
-        public static Matrix2D<TElement> Upload(this GPGPU gpu, TElement[,] source)
-        {
-            Matrix2D<TElement> tempSrcData = gpu.AllocateNoSet<TElement>(source.GetLength(0), source.GetLength(1));
-            gpu.CopyToDevice(source, tempSrcData);
-            return tempSrcData;
-        }
+        //public static Matrix2D<TElement> Upload(this GPGPU gpu, TElement[,] source)
+        //{
+        //    Matrix2D<TElement> tempSrcData = gpu.AllocateNoSet<TElement>(source.GetLength(0), source.GetLength(1));
+        //    gpu.CopyToDevice(source, tempSrcData);
+        //    return tempSrcData;
+        //}
 
         public static TElement[,] CopyLocal(this Matrix2D<TElement> self)
         {
