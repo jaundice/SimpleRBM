@@ -82,7 +82,7 @@ namespace SimpleRBM.Demo
             byte G = data[ost + 1];
             byte R = data[ost + 2];
 
-            var r= (double)(byte)(((double)R * 0.3) + ((double)G * 0.59) + ((double)B * 0.11));
+            var r = (double)(byte)(((double)R * 0.3) + ((double)G * 0.59) + ((double)B * 0.11));
 
             return r;
         }
@@ -125,22 +125,45 @@ namespace SimpleRBM.Demo
 
         public static unsafe void SaveImageData<T>(T[,] data, int sourceRow, string path, Func<T, byte> pixelConverter)
         {
+            int stride;
+            using (var bmp = GenerateBitmap(data, sourceRow, pixelConverter, out stride))
+                bmp.Save(path, ImageFormat.Jpeg);
+        }
+
+        public static unsafe Bitmap GenerateBitmap<T>(T[,] data, int sourceRow, Func<T, byte> pixelConverter, out int stride)
+        {
             var dimension = (int)Math.Ceiling(Math.Sqrt(data.GetLength(1)));
             var rowLength = data.GetLength(1);
-            using (var bmp = new Bitmap(dimension, dimension))
-            {
-                for (var i = 0; i < dimension; i++)
-                {
-                    for (var j = 0; j < dimension; j++)
-                    {
-                        var idx = j * dimension + i;
-                        var intensity = idx < rowLength ? pixelConverter(data[sourceRow, idx]) : 0;
-                        bmp.SetPixel(i, j, Color.FromArgb(intensity, intensity, intensity));
-                    }
-                }
 
-                bmp.Save(path, ImageFormat.Jpeg);
+            var bmp = new Bitmap(dimension, dimension, PixelFormat.Format32bppArgb);
+            var w = bmp.Width;
+            var h = bmp.Height;
+            BitmapData imgData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.WriteOnly,
+                   bmp.PixelFormat);
+            stride = imgData.Stride;
+            var pixelSize = 4;
+            try
+            {
+
+                byte* row = (byte*)imgData.Scan0;
+                Parallel.For(0, w, ww => Parallel.For(0, h, hh =>
+                    {
+                        var idx = hh * dimension + ww;
+                        var intensity = idx < rowLength ? pixelConverter(data[sourceRow, idx]) : 0;
+                        row[hh * imgData.Stride + ww * pixelSize] = (byte)intensity;
+                        row[hh * imgData.Stride + ww * pixelSize + 1] = (byte)intensity;
+                        row[hh * imgData.Stride + ww * pixelSize + 2] = (byte)intensity;
+                        row[hh * imgData.Stride + ww * pixelSize + 3] = (byte)255;
+                    }));
+
+
             }
+            finally
+            {
+                bmp.UnlockBits(imgData);
+            }
+
+            return bmp;
         }
     }
 }

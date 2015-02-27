@@ -81,36 +81,41 @@ namespace SimpleRBM.Cuda
             int small = Math.Min(rows, cols);
 
 
-            int sm = small == 1 ? 1 : 32;
-            int bi =  32;
-            if (small >= 1024)
+            int sm = small == 1 ? 1 : 16;
+            int bi = small == 1 ? 32 : 16;
+            if (small >= 2048)
             {
                 bi = 1;
                 sm = 1024;
             }
-            else if (small >= 512)
+            if (small >= 1024)
             {
                 bi = 1;
                 sm = 512;
             }
-            else if (small >= 256)
+            else if (small >= 512)
             {
                 bi = 1;
                 sm = 256;
             }
-            else if (small >= 128)
+            else if (small >= 256)
             {
                 bi = 1;
                 sm = 128;
             }
-            else if (small >= 64)
+            else if (small >= 128)
             {
                 bi = 1;
                 sm = 64;
             }
+            else if (small >= 64)
+            {
+                bi = 1;
+                sm = 32;
+            }
 
             var b = new dim3(bi, sm);
-            var g = new dim3((int)Math.Max(1, Math.Round((double)big / bi)), Math.Max(1, (int)Math.Round((double)small / sm)));
+            var g = new dim3((int)Math.Max(1, Math.Floor((double)big / bi)), Math.Max(1, (int)Math.Floor((double)small / sm)));
 
             if (rows > cols)
             {

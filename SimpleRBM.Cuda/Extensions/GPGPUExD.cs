@@ -19,7 +19,7 @@ namespace SimpleRBM.Cuda
                 if (len % 2 != 0)
                     len++;
 
-                rand.GenerateNormal(tempGaussian, (float)mean, (float)stDev, len);
+                rand.GenerateNormal(tempGaussian.Matrix, (float)mean, (float)stDev, len);
                 gpu.Launch(grid, block, Matrix2DCuda.CopyToArrayAtND2, array.Matrix, tempGaussian.Matrix, scale);
             }
             return array;
@@ -35,7 +35,7 @@ namespace SimpleRBM.Cuda
 
             using (Matrix1D<TElement> tempUniform = gpu.AllocateNoSet<TElement>(x * y))
             {
-                rand.GenerateUniform(tempUniform, x * y);
+                rand.GenerateUniform(tempUniform.Matrix, x * y);
 
                 gpu.Launch(grid, block, Matrix2DCuda.CopyToArrayAtND2, array.Matrix, tempUniform.Matrix, scale);
             }

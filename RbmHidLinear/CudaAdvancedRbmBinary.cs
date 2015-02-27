@@ -391,6 +391,7 @@ namespace CudaNN
                 }
 
                 using (neghidact)
+                using(poshidact)
                 using (Matrix2D<TElement> momentumhidbiasinc = HiddenBiasInc.Multiply(momentum))
                 using (Matrix2D<TElement> poshidactminusneghidact = poshidact.Subtract(neghidact))
                 {

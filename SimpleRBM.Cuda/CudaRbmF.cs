@@ -62,7 +62,7 @@ namespace SimpleRBM.Cuda
             VisibleActivation = visibleActivation;
             HiddenActivation = hiddenActivation;
             Matrix2D<TElement> gpuweights = GPU.AllocateAndSet<TElement>(numVisible + 1, numHidden + 1);
-            GPU.CopyToDevice(weights, gpuweights);
+            GPU.CopyToDevice(weights, gpuweights.Matrix);
             IsInitialized = true;
 
             Weights = gpuweights;

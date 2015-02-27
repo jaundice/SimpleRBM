@@ -56,7 +56,7 @@ namespace CudaNN
             {
                 case "Faces":
                     {
-                        numTrainingExamples = 600;
+                        numTrainingExamples = 5000;
                         FacesDemo(dev, rand, numTrainingExamples, pathBase);
                         break;
                     }
@@ -133,8 +133,6 @@ namespace CudaNN
                     var greedyTracker =
                         new EpochErrorFileTracker<TElement>(Path.Combine(pathBase, "GreedyTrainError.log")))
                 {
-                    double rate = 0.00001;
-
                     string[] lbla;
                     TElement[,] codeda;
                     //var trainingData = d.ReadTrainingData(0, numTrainingExamples, out lbla, out codeda);
@@ -143,9 +141,9 @@ namespace CudaNN
                     net.GreedyBatchedTrain(trainingData,
                         600,
                         new ManualKeyPressExitEvaluatorFactory<TElement>(greedyTracker, 0.005, 5000),
-                        new ConstantLearningRateFactory<double>(rate, 20),
-                        new ConstantLearningRateFactory<double>(rate),
-                        new ConstantLearningRateFactory<double>(rate)
+                        new ConstantLearningRateFactory<double>(0.0001, 20),
+                        new ConstantLearningRateFactory<double>(0.00005),
+                        new ConstantLearningRateFactory<double>(0.000001)
                         );
                 }
 

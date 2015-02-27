@@ -1,0 +1,182 @@
+﻿<Window x:Class="CudaNN.Monitor.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:CudaNN.Monitor"
+        xmlns:system="clr-namespace:System;assembly=mscorlib"
+        Title="MainWindow" >
+    <Window.DataContext>
+        <app:MonitorViewModel></app:MonitorViewModel>
+    </Window.DataContext>
+    <Window.Resources>
+        <ResourceDictionary>
+            <DataTemplate x:Key="ImageComparison"  DataType="app:ImagePair">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"></ColumnDefinition>
+                        <ColumnDefinition Width="*"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Image Margin="4" Stretch="Uniform" UseLayoutRounding="False"  StretchDirection="Both"  Source="{Binding Path=Item1, Mode=OneWay}" Grid.Column="0" Loaded="FrameworkElement_OnLoaded"/>
+                    <Image Margin="4" Stretch="Uniform" UseLayoutRounding="False" StretchDirection="Both" Source="{Binding Path=Item2, Mode=OneWay}" Grid.Column="1" Loaded="FrameworkElement_OnLoaded"/>
+                </Grid>
+            </DataTemplate>
+            <x:Array x:Key="DemoNames" Type="system:String">
+                <system:String>Data</system:String>
+                <system:String>Faces</system:String>
+                <system:String>Kaggle</system:String>
+            </x:Array>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition></RowDefinition>
+
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"></ColumnDefinition>
+                <ColumnDefinition Width="Auto"></ColumnDefinition>
+                <ColumnDefinition Width="Auto"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <Label Margin="4" Grid.Column="0">Demo</Label>
+            <ComboBox Margin="4" Grid.Column="1" ItemsSource="{StaticResource DemoNames}" DisplayMemberPath="." SelectedValuePath="."  SelectedValue="{Binding Path=DemoMode, Mode=TwoWay}" SelectedIndex="0" />
+            <Button Margin="4" Grid.Column="2" Command="{Binding Path=RunCommand}">Run</Button>
+        </Grid>
+        <Grid Grid.Row="1" Margin="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"></ColumnDefinition>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+                <ColumnDefinition Width="Auto"></ColumnDefinition>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+                <ColumnDefinition Width="Auto"></ColumnDefinition>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+                <ColumnDefinition Width="Auto"></ColumnDefinition>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+                <ColumnDefinition Width="70"></ColumnDefinition>
+
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"></RowDefinition>
+                <RowDefinition Height="Auto"></RowDefinition>
+            </Grid.RowDefinitions>
+            <Label Grid.Column="0" Grid.Row="0">Layer</Label>
+            <Label Grid.Column="1" Grid.Row="0" Content="{Binding Path=Layer, Mode=OneWay}" ></Label>
+            <Label Grid.Column="2" Grid.Row="0">Epoch</Label>
+            <Label Grid.Column="3" Grid.Row="0" Content="{Binding Path=Epoch, Mode=OneWay}" ></Label>
+            <Label Grid.Column="4" Grid.Row="0">Error</Label>
+            <Label Grid.Column="5" Grid.Row="0" Content="{Binding Path=Error, Mode=OneWay}" ></Label>
+            <Label Grid.Column="6" Grid.Row="0">Delta</Label>
+            <Label Grid.Column="7" Grid.Row="0" Content="{Binding Path=Delta, Mode=OneWay}" ></Label>
+            <Label Grid.Column="0" Grid.Row="1">Learning Rate</Label>
+            <TextBox Grid.Column="1" Grid.Row="1" Text="{Binding Path=LearningRate, Mode=TwoWay, TargetNullValue=0.0001}" ></TextBox>
+            <Label Grid.Column="2" Grid.Row="1">Update Frequency</Label>
+            <TextBox Grid.Column="3" Grid.Row="1" Text="{Binding Path=UpdateFrequency, Mode=TwoWay, TargetNullValue=20}" ></TextBox>
+            <Label Grid.Column="4" Grid.Row="1">Backup Frequency</Label>
+            <TextBox Grid.Column="5" Grid.Row="1" Text="{Binding Path=BackupFrequency, Mode=TwoWay, TargetNullValue=1000}" ></TextBox>
+            <Label Grid.Column="6" Grid.Row="1">#Training Examples</Label>
+            <Label Grid.Column="7" Grid.Row="1" Content="{Binding Path=NumTrainingExamples, Mode=OneWay}" ></Label>
+            <Grid Grid.Row="0" Column="8" RowSpan="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"></RowDefinition>
+                </Grid.RowDefinitions>
+                <Image  Margin="4" Grid.Row="0" Stretch="Uniform" UseLayoutRounding="False"  StretchDirection="Both" Source="{Binding Path=ActivationFrequency, Mode=OneWay}"  Loaded="FrameworkElement_OnLoaded" ></Image>
+            </Grid>
+        </Grid>
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <Grid Grid.Column="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"></RowDefinition>
+                    <RowDefinition Height="*"></RowDefinition>
+                </Grid.RowDefinitions>
+                <Label  Margin="4" Grid.Column="0" Grid.Row="0">Reconstructions</Label>
+                <ScrollViewer Margin="4" Grid.Row="1" Grid.Column="0">
+                    <ItemsControl  HorizontalAlignment="Left" ItemsSource="{Binding Path=Reconstructions}"  ItemTemplate="{Binding Source={StaticResource  ResourceKey=ImageComparison}}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel></VirtualizingStackPanel>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+            <Grid Grid.Column="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"></ColumnDefinition>
+                    <ColumnDefinition Width="*"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"></RowDefinition>
+                    <RowDefinition Height="*"></RowDefinition>
+                </Grid.RowDefinitions>
+                <Label  Margin="4" Grid.Column="0" Grid.Row="0">Features</Label>
+                <Label  Margin="4" Grid.Column="1" Grid.Row="0">Training Set</Label>
+                <ScrollViewer  Margin="4" HorizontalAlignment="Left" Grid.Row="1" Grid.Column="0">
+                    <ItemsControl  HorizontalAlignment="Left" ItemsSource="{Binding Path=Features}" >
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel  VerticalAlignment="Top"></VirtualizingStackPanel>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Image Margin="4" Stretch="Uniform" UseLayoutRounding="False"  Source="{Binding Path=.}" Loaded="FrameworkElement_OnLoaded" ></Image>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+                <ScrollViewer Margin="4" HorizontalAlignment="Left"  Grid.Row="1" Grid.Column="1">
+                    <ItemsControl  HorizontalAlignment="Left" ItemsSource="{Binding Path=TrainingSet}" >
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel VerticalAlignment="Top"></VirtualizingStackPanel>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Image Margin="4" Stretch="Uniform" UseLayoutRounding="False"  Source="{Binding Path=.}" Loaded="FrameworkElement_OnLoaded" ></Image>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+            <Grid Grid.Column="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"></RowDefinition>
+                    <RowDefinition Height="*"></RowDefinition>
+                </Grid.RowDefinitions>
+                <Label  Margin="4" Grid.Column="0" Grid.Row="0">Day Dreams</Label>
+                <ScrollViewer  Margin="4" HorizontalAlignment="Left" Grid.Row="1" Grid.Column="0">
+                    <ItemsControl HorizontalAlignment="Left" ItemsSource="{Binding Path=DayDreams}" >
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel  VerticalAlignment="Top"></VirtualizingStackPanel>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Image Margin="4" Stretch="Uniform" UseLayoutRounding="False"  Source="{Binding Path=.}" Loaded="FrameworkElement_OnLoaded" ></Image>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

@@ -35,14 +35,14 @@ namespace SimpleRBM.Cuda
         public static Matrix2D<T> Upload<T>(this GPGPU gpu, T[,] source) where T : struct
         {
             Matrix2D<T> tempSrcData = gpu.AllocateNoSet<T>(source.GetLength(0), source.GetLength(1));
-            gpu.CopyToDevice(source, tempSrcData);
+            gpu.CopyToDevice(source, tempSrcData.Matrix);
             return tempSrcData;
         }
 
         public static Matrix1D<T> Upload<T>(this GPGPU gpu, T[] source) where T : struct
         {
             Matrix1D<T> tempSrcData = gpu.AllocateNoSet<T>(source.GetLength(0));
-            gpu.CopyToDevice(source, tempSrcData);
+            gpu.CopyToDevice(source, tempSrcData.Matrix);
             return tempSrcData;
         }
 
