@@ -11,19 +11,21 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Threading;
 using Cudafy;
 using Cudafy.Host;
 using Cudafy.Maths.RAND;
 using Cudafy.Translator;
 using SimpleRBM.Common;
 using SimpleRBM.Common.ExitCondition;
-using SimpleRBM.Common.LearningRate;
 using SimpleRBM.Cuda;
 using SimpleRBM.Demo;
 using SimpleRBM.Demo.IO;
-using SimpleRBM.Demo.Util;
+using Brush = System.Windows.Media.Brush;
+using Color = System.Windows.Media.Color;
+using Image = System.Windows.Controls.Image;
+using Point = System.Windows.Point;
 #if USEFLOAT
 using TElement = System.Single;
 using xxx = SimpleRBM.Cuda.CudaRbmF;
@@ -36,86 +38,117 @@ using xxx = SimpleRBM.Cuda.CudaRbmD;
 
 namespace CudaNN.Monitor
 {
-    public static class DispatcherEx
-    {
-        public static async void InvokeIfRequired(this Dispatcher self, Action action)
-        {
-            if (self.CheckAccess())
-                action();
-            else
-                await self.InvokeAsync(action);
-        }
-
-        public static async Task<T> InvokeIfRequired<T>(this Dispatcher self, Func<T> action)
-        {
-            if (self.CheckAccess())
-                return action();
-            return await self.InvokeAsync(action);
-        }
-    }
-
     public class MonitorViewModel : DependencyObject
     {
         public static readonly DependencyProperty DemoModeProperty = DependencyProperty.Register("DemoMode",
-            typeof (string), typeof (MonitorViewModel), new PropertyMetadata(default(string)));
+            typeof(string), typeof(MonitorViewModel), new PropertyMetadata(default(string)));
 
-        public static readonly DependencyProperty LayerProperty = DependencyProperty.Register("Layer", typeof (int),
-            typeof (MonitorViewModel), new PropertyMetadata(default(int)));
+        public static readonly DependencyProperty LayerProperty = DependencyProperty.Register("Layer", typeof(int),
+            typeof(MonitorViewModel), new PropertyMetadata(default(int)));
 
-        public static readonly DependencyProperty EpochProperty = DependencyProperty.Register("Epoch", typeof (int),
-            typeof (MonitorViewModel), new PropertyMetadata(default(int)));
+        public static readonly DependencyProperty SelectedFeatureIndexProperty =
+            DependencyProperty.Register("SelectedFeatureIndex", typeof(int),
+                typeof(MonitorViewModel), new PropertyMetadata(default(int)));
+
+        public static readonly DependencyProperty EpochProperty = DependencyProperty.Register("Epoch", typeof(int),
+            typeof(MonitorViewModel), new PropertyMetadata(default(int)));
 
         public static readonly DependencyProperty LearningRateProperty = DependencyProperty.Register("LearningRate",
-            typeof (TElement), typeof (MonitorViewModel), new PropertyMetadata(default(TElement)));
+            typeof(TElement), typeof(MonitorViewModel), new PropertyMetadata(default(TElement)));
 
         public static readonly DependencyProperty UpdateFrequencyProperty =
-            DependencyProperty.Register("UpdateFrequency", typeof (int), typeof (MonitorViewModel),
+            DependencyProperty.Register("UpdateFrequency", typeof(int), typeof(MonitorViewModel),
                 new PropertyMetadata(default(int)));
 
         public static readonly DependencyProperty ActivationFrequencyProperty =
-            DependencyProperty.Register("ActivationFrequency", typeof (BitmapSource), typeof (MonitorViewModel),
+            DependencyProperty.Register("ActivationFrequency", typeof(BitmapSource), typeof(MonitorViewModel),
                 new PropertyMetadata(default(BitmapSource)));
 
         public static readonly DependencyProperty ReconstructionsProperty =
-            DependencyProperty.Register("Reconstructions", typeof (ObservableCollection<ImagePair>),
-                typeof (MonitorViewModel), new PropertyMetadata(default(ObservableCollection<ImagePair>)));
+            DependencyProperty.Register("Reconstructions", typeof(ObservableCollection<ImagePair>),
+                typeof(MonitorViewModel), new PropertyMetadata(default(ObservableCollection<ImagePair>)));
 
         public static readonly DependencyProperty FeaturesProperty = DependencyProperty.Register("Features",
-            typeof (ObservableCollection<BitmapSource>), typeof (MonitorViewModel),
+            typeof(ObservableCollection<BitmapSource>), typeof(MonitorViewModel),
             new PropertyMetadata(default(ObservableCollection<BitmapSource>)));
 
         public static readonly DependencyProperty RunAppMethodProperty = DependencyProperty.Register("RunAppMethod",
-            typeof (ICommand), typeof (MonitorViewModel), new PropertyMetadata(default(ICommand)));
+            typeof(ICommand), typeof(MonitorViewModel), new PropertyMetadata(default(ICommand)));
 
         public static readonly DependencyProperty RunBindingProperty = DependencyProperty.Register("RunBinding",
-            typeof (CommandBinding), typeof (MonitorViewModel), new PropertyMetadata(default(CommandBinding)));
+            typeof(CommandBinding), typeof(MonitorViewModel), new PropertyMetadata(default(CommandBinding)));
 
         public static readonly DependencyProperty RunCommandProperty = DependencyProperty.Register("RunCommand",
-            typeof (ICommand), typeof (MonitorViewModel), new PropertyMetadata(default(ICommand)));
+            typeof(ICommand), typeof(MonitorViewModel), new PropertyMetadata(default(ICommand)));
 
         public static readonly DependencyProperty BackupFrequencyProperty =
-            DependencyProperty.Register("BackupFrequency", typeof (int), typeof (MonitorViewModel),
+            DependencyProperty.Register("BackupFrequency", typeof(int), typeof(MonitorViewModel),
                 new PropertyMetadata(default(int)));
 
-        public static readonly DependencyProperty ErrorProperty = DependencyProperty.Register("Error", typeof (TElement),
-            typeof (MonitorViewModel), new PropertyMetadata(default(TElement)));
+        public static readonly DependencyProperty ErrorProperty = DependencyProperty.Register("Error", typeof(TElement),
+            typeof(MonitorViewModel), new PropertyMetadata(default(TElement)));
 
-        public static readonly DependencyProperty DeltaProperty = DependencyProperty.Register("Delta", typeof (TElement),
-            typeof (MonitorViewModel), new PropertyMetadata(default(TElement)));
+        public static readonly DependencyProperty DeltaProperty = DependencyProperty.Register("Delta", typeof(TElement),
+            typeof(MonitorViewModel), new PropertyMetadata(default(TElement)));
 
         public static readonly DependencyProperty NumTrainingExamplesProperty =
-            DependencyProperty.Register("NumTrainingExamples", typeof (int), typeof (MonitorViewModel),
+            DependencyProperty.Register("NumTrainingExamples", typeof(int), typeof(MonitorViewModel),
                 new PropertyMetadata(default(int)));
 
         public static readonly DependencyProperty DayDreamsProperty = DependencyProperty.Register("DayDreams",
-            typeof (ObservableCollection<BitmapSource>), typeof (MonitorViewModel),
+            typeof(ObservableCollection<BitmapSource>), typeof(MonitorViewModel),
             new PropertyMetadata(default(ObservableCollection<BitmapSource>)));
 
         public static readonly DependencyProperty TrainingSetProperty = DependencyProperty.Register("TrainingSet",
-            typeof (ObservableCollection<BitmapSource>), typeof (MonitorViewModel),
+            typeof(ObservableCollection<BitmapSource>), typeof(MonitorViewModel),
             new PropertyMetadata(default(ObservableCollection<BitmapSource>)));
 
+        public static readonly DependencyProperty ElapsedProperty = DependencyProperty.Register("Elapsed",
+            typeof(TimeSpan), typeof(MonitorViewModel), new PropertyMetadata(default(TimeSpan)));
+
+        public static readonly DependencyProperty ExitEvaluatorFactoryProperty =
+            DependencyProperty.Register("ExitEvaluatorFactory", typeof(InteractiveExitEvaluatorFactory<double>),
+                typeof(MonitorViewModel), new PropertyMetadata(default(InteractiveExitEvaluatorFactory<double>)));
+
+        public static readonly DependencyProperty DisplayedEpochProperty = DependencyProperty.Register(
+            "DisplayedEpoch", typeof(int), typeof(MonitorViewModel), new PropertyMetadata(default(int)));
+
+        public static readonly DependencyProperty InitStDevProperty = DependencyProperty.Register("InitStDev",
+            typeof(double), typeof(MonitorViewModel), new PropertyMetadata(default(double)));
+
+        public static readonly DependencyProperty WeightLearningRateFactoryProperty =
+            DependencyProperty.Register("WeightLearningRateFactory",
+                typeof(InteractiveLearningRateCalculatorFactory<double>), typeof(MonitorViewModel),
+                new PropertyMetadata(default(InteractiveLearningRateCalculatorFactory<double>)));
+
+        public static readonly DependencyProperty DisplayFeatureCommandProperty =
+            DependencyProperty.Register("DisplayFeatureCommand", typeof(ICommand), typeof(MonitorViewModel),
+                new PropertyMetadata(default(ICommand)));
+
+        public static readonly DependencyProperty SelectedFeatureProperty =
+            DependencyProperty.Register("SelectedFeature", typeof(BitmapSource), typeof(MonitorViewModel),
+                new PropertyMetadata(default(BitmapSource)));
+
+        public static readonly DependencyProperty VisBiasLearningRateFactoryProperty =
+            DependencyProperty.Register("VisBiasLearningRateFactory",
+                typeof(InteractiveLearningRateCalculatorFactory<double>), typeof(MonitorViewModel),
+                new PropertyMetadata(default(InteractiveLearningRateCalculatorFactory<double>)));
+
+        public static readonly DependencyProperty HidBiasLearningRateFactoryProperty =
+            DependencyProperty.Register("HidBiasLearningRateFactory",
+                typeof(InteractiveLearningRateCalculatorFactory<double>), typeof(MonitorViewModel),
+                new PropertyMetadata(default(InteractiveLearningRateCalculatorFactory<double>)));
+
         private CancellationTokenSource _cancelSource;
+
+        public static readonly DependencyProperty ErrorLabelBrushProperty =
+            DependencyProperty.Register("ErrorLabelBrush", typeof(Brush), typeof(MonitorViewModel),
+                new PropertyMetadata(default(Brush)));
+
+        public static readonly DependencyProperty DeltaLabelBrushProperty =
+            DependencyProperty.Register("DeltaLabelBrush", typeof(Brush), typeof(MonitorViewModel),
+                new PropertyMetadata(default(Brush)));
+
 
         public MonitorViewModel()
         {
@@ -124,41 +157,47 @@ namespace CudaNN.Monitor
 
         public string DemoMode
         {
-            get { return Dispatcher.InvokeIfRequired(() => (string) GetValue(DemoModeProperty)).Result; }
-            set { Dispatcher.InvokeIfRequired(() => SetValue(DemoModeProperty, value)); }
+            get { return Dispatcher.InvokeIfRequired(() => (string)GetValue(DemoModeProperty)).Result; }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(DemoModeProperty, value)).Wait(); }
         }
 
         public int Layer
         {
-            get { return Dispatcher.InvokeIfRequired(() => (int) GetValue(LayerProperty)).Result; }
-            set { Dispatcher.InvokeIfRequired(() => SetValue(LayerProperty, value)); }
+            get { return Dispatcher.InvokeIfRequired(() => (int)GetValue(LayerProperty)).Result; }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(LayerProperty, value)).Wait(); }
+        }
+
+        public int SelectedFeatureIndex
+        {
+            get { return Dispatcher.InvokeIfRequired(() => (int)GetValue(SelectedFeatureIndexProperty)).Result; }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(SelectedFeatureIndexProperty, value)).Wait(); }
         }
 
         public int Epoch
         {
-            get { return Dispatcher.InvokeIfRequired(() => (int) GetValue(EpochProperty)).Result; }
-            set { Dispatcher.InvokeIfRequired(() => SetValue(EpochProperty, value)); }
+            get { return Dispatcher.InvokeIfRequired(() => (int)GetValue(EpochProperty)).Result; }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(EpochProperty, value)).Wait(); }
         }
 
         public TElement LearningRate
         {
-            get { return Dispatcher.InvokeIfRequired(() => (TElement) GetValue(LearningRateProperty)).Result; }
-            set { Dispatcher.InvokeIfRequired(() => SetValue(LearningRateProperty, value)); }
+            get { return Dispatcher.InvokeIfRequired(() => (TElement)GetValue(LearningRateProperty)).Result; }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(LearningRateProperty, value)).Wait(); }
         }
 
         public int UpdateFrequency
         {
-            get { return Dispatcher.InvokeIfRequired(() => (int) GetValue(UpdateFrequencyProperty)).Result; }
-            set { Dispatcher.InvokeIfRequired(() => SetValue(UpdateFrequencyProperty, value)); }
+            get { return Dispatcher.InvokeIfRequired(() => (int)GetValue(UpdateFrequencyProperty)).Result; }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(UpdateFrequencyProperty, value)).Wait(); }
         }
 
         public BitmapSource ActivationFrequency
         {
             get
             {
-                return Dispatcher.InvokeIfRequired(() => (BitmapSource) GetValue(ActivationFrequencyProperty)).Result;
+                return Dispatcher.InvokeIfRequired(() => (BitmapSource)GetValue(ActivationFrequencyProperty)).Result;
             }
-            set { Dispatcher.InvokeIfRequired(() => SetValue(ActivationFrequencyProperty, value)); }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(ActivationFrequencyProperty, value)).Wait(); }
         }
 
         public ObservableCollection<ImagePair> Reconstructions
@@ -167,9 +206,9 @@ namespace CudaNN.Monitor
             {
                 return
                     Dispatcher.InvokeIfRequired(
-                        () => (ObservableCollection<ImagePair>) GetValue(ReconstructionsProperty)).Result;
+                        () => (ObservableCollection<ImagePair>)GetValue(ReconstructionsProperty)).Result;
             }
-            set { Dispatcher.InvokeIfRequired(() => SetValue(ReconstructionsProperty, value)); }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(ReconstructionsProperty, value)).Wait(); }
         }
 
         public ObservableCollection<BitmapSource> Features
@@ -177,40 +216,40 @@ namespace CudaNN.Monitor
             get
             {
                 return
-                    Dispatcher.InvokeIfRequired(() => (ObservableCollection<BitmapSource>) GetValue(FeaturesProperty))
+                    Dispatcher.InvokeIfRequired(() => (ObservableCollection<BitmapSource>)GetValue(FeaturesProperty))
                         .Result;
             }
-            set { Dispatcher.InvokeIfRequired(() => SetValue(FeaturesProperty, value)); }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(FeaturesProperty, value)).Wait(); }
         }
 
         public ICommand RunCommand
         {
-            get { return Dispatcher.InvokeIfRequired(() => (ICommand) GetValue(RunCommandProperty)).Result; }
-            set { Dispatcher.InvokeIfRequired(() => SetValue(RunCommandProperty, value)); }
+            get { return Dispatcher.InvokeIfRequired(() => (ICommand)GetValue(RunCommandProperty)).Result; }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(RunCommandProperty, value)).Wait(); }
         }
 
         public int BackupFrequency
         {
-            get { return Dispatcher.InvokeIfRequired(() => (int) GetValue(BackupFrequencyProperty)).Result; }
+            get { return Dispatcher.InvokeIfRequired(() => (int)GetValue(BackupFrequencyProperty)).Result; }
             set { Dispatcher.InvokeIfRequired(() => SetValue(BackupFrequencyProperty, value)); }
         }
 
         public TElement Error
         {
-            get { return Dispatcher.InvokeIfRequired(() => (TElement) GetValue(ErrorProperty)).Result; }
-            set { Dispatcher.InvokeIfRequired(() => SetValue(ErrorProperty, value)); }
+            get { return Dispatcher.InvokeIfRequired(() => (TElement)GetValue(ErrorProperty)).Result; }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(ErrorProperty, value)).Wait(); }
         }
 
         public TElement Delta
         {
-            get { return Dispatcher.InvokeIfRequired(() => (TElement) GetValue(DeltaProperty)).Result; }
-            set { Dispatcher.InvokeIfRequired(() => SetValue(DeltaProperty, value)); }
+            get { return Dispatcher.InvokeIfRequired(() => (TElement)GetValue(DeltaProperty)).Result; }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(DeltaProperty, value)).Wait(); }
         }
 
         public int NumTrainingExamples
         {
-            get { return Dispatcher.InvokeIfRequired(() => (int) GetValue(NumTrainingExamplesProperty)).Result; }
-            set { Dispatcher.InvokeIfRequired(() => SetValue(NumTrainingExamplesProperty, value)); }
+            get { return Dispatcher.InvokeIfRequired(() => (int)GetValue(NumTrainingExamplesProperty)).Result; }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(NumTrainingExamplesProperty, value)).Wait(); }
         }
 
         public ObservableCollection<BitmapSource> DayDreams
@@ -218,10 +257,10 @@ namespace CudaNN.Monitor
             get
             {
                 return
-                    Dispatcher.InvokeIfRequired(() => (ObservableCollection<BitmapSource>) GetValue(DayDreamsProperty))
+                    Dispatcher.InvokeIfRequired(() => (ObservableCollection<BitmapSource>)GetValue(DayDreamsProperty))
                         .Result;
             }
-            set { Dispatcher.InvokeIfRequired(() => SetValue(DayDreamsProperty, value)); }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(DayDreamsProperty, value)).Wait(); }
         }
 
         public ObservableCollection<BitmapSource> TrainingSet
@@ -229,11 +268,138 @@ namespace CudaNN.Monitor
             get
             {
                 return
-                    Dispatcher.InvokeIfRequired(() => (ObservableCollection<BitmapSource>) GetValue(TrainingSetProperty))
+                    Dispatcher.InvokeIfRequired(() => (ObservableCollection<BitmapSource>)GetValue(TrainingSetProperty))
                         .Result;
             }
-            set { Dispatcher.InvokeIfRequired(() => SetValue(TrainingSetProperty, value)); }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(TrainingSetProperty, value)).Wait(); }
         }
+
+        public TimeSpan Elapsed
+        {
+            get
+            {
+                return
+                    Dispatcher.InvokeIfRequired(() => (TimeSpan)GetValue(ElapsedProperty))
+                        .Result;
+            }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(ElapsedProperty, value)).Wait(); }
+        }
+
+        public InteractiveExitEvaluatorFactory<double> ExitEvaluatorFactory
+        {
+            get
+            {
+                return
+                    Dispatcher.InvokeIfRequired(
+                        () => (InteractiveExitEvaluatorFactory<double>)GetValue(ExitEvaluatorFactoryProperty))
+                        .Result;
+            }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(ExitEvaluatorFactoryProperty, value)).Wait(); }
+        }
+
+        public int DisplayedEpoch
+        {
+            get { return Dispatcher.InvokeIfRequired(() => (int)GetValue(DisplayedEpochProperty)).Result; }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(DisplayedEpochProperty, value)).Wait(); }
+        }
+
+        public double InitStDev
+        {
+            get { return Dispatcher.InvokeIfRequired(() => (double)GetValue(InitStDevProperty)).Result; }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(InitStDevProperty, value)).Wait(); }
+        }
+
+        public InteractiveLearningRateCalculatorFactory<double> WeightLearningRateFactory
+        {
+            get
+            {
+                return
+                    Dispatcher.InvokeIfRequired(
+                        () =>
+                            (InteractiveLearningRateCalculatorFactory<double>)
+                                GetValue(WeightLearningRateFactoryProperty))
+                        .Result;
+            }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(WeightLearningRateFactoryProperty, value)).Wait(); }
+        }
+
+        public ICommand DisplayFeatureCommand
+        {
+            get { return Dispatcher.InvokeIfRequired(() => (ICommand)GetValue(DisplayFeatureCommandProperty)).Result; }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(DisplayFeatureCommandProperty, value)).Wait(); }
+        }
+
+        public BitmapSource SelectedFeature
+        {
+            get { return Dispatcher.InvokeIfRequired(() => (BitmapSource)GetValue(SelectedFeatureProperty)).Result; }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(SelectedFeatureProperty, value)).Wait(); }
+        }
+
+        public InteractiveLearningRateCalculatorFactory<double> VisBiasLearningRateFactory
+        {
+            get
+            {
+                return
+                    Dispatcher.InvokeIfRequired(
+                        () =>
+                            (InteractiveLearningRateCalculatorFactory<double>)
+                                GetValue(VisBiasLearningRateFactoryProperty))
+                        .Result;
+            }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(VisBiasLearningRateFactoryProperty, value)).Wait(); }
+        }
+
+        public InteractiveLearningRateCalculatorFactory<double> HidBiasLearningRateFactory
+        {
+            get
+            {
+                return
+                    Dispatcher.InvokeIfRequired(
+                        () =>
+                            (InteractiveLearningRateCalculatorFactory<double>)
+                                GetValue(HidBiasLearningRateFactoryProperty))
+                        .Result;
+            }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(HidBiasLearningRateFactoryProperty, value)).Wait(); }
+        }
+
+        public Brush ErrorLabelBrush
+        {
+            get { return Dispatcher.InvokeIfRequired(() => (Brush)GetValue(ErrorLabelBrushProperty)).Result; }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(ErrorLabelBrushProperty, value)).Wait(); }
+        }
+
+        public Brush DeltaLabelBrush
+        {
+            get { return Dispatcher.InvokeIfRequired(() => (Brush)GetValue(DeltaLabelBrushProperty)).Result; }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(DeltaLabelBrushProperty, value)).Wait(); }
+        }
+
+        public void DisplayFeature(object sender, MouseEventArgs mouseArgs)
+        {
+            if (mouseArgs != null)
+            {
+                var image = mouseArgs.Device.Target as Image;
+                Point pos = mouseArgs.GetPosition(image);
+
+                var imgSrc = (BitmapSource)image.Source;
+                var pixX = pos.X * imgSrc.PixelWidth / image.ActualWidth;
+                var pixY = pos.Y * imgSrc.PixelHeight / image.ActualHeight;
+
+                int idx = (int)(pixY) * imgSrc.PixelWidth + (int)pixX;
+                SelectedFeatureIndex = idx;
+                SelectFeature(idx);
+            }
+        }
+
+        private void SelectFeature(int idx)
+        {
+            if (Features != null)
+            {
+                SelectedFeature = idx < Features.Count ? Features[idx] : null;
+            }
+        }
+
 
         private async void Run()
         {
@@ -241,8 +407,10 @@ namespace CudaNN.Monitor
                 string.Format("{0}_{1}", DateTime.Now.ToString("u").Replace(':', '-'), DemoMode));
 
             Directory.CreateDirectory(pathBase);
-            UpdateFrequency = 20;
-            BackupFrequency = 500;
+            UpdateFrequency = UpdateFrequency > 0 ? UpdateFrequency : (UpdateFrequency = 20);
+            BackupFrequency = BackupFrequency > 0 ? BackupFrequency : (BackupFrequency = 500);
+            InitStDev = InitStDev > 0 ? InitStDev : (InitStDev = 0.01);
+            //MaxEpochs = MaxEpochs > 0 ? MaxEpochs : (MaxEpochs = 5000);
 
             Task t = null;
             try
@@ -256,28 +424,29 @@ namespace CudaNN.Monitor
 
             _cancelSource = new CancellationTokenSource();
 
+
             switch (DemoMode)
             {
                 case "Faces":
-                {
-                    int numexamples = 5000;
-                    t = Task.Run(() => FacesDemo(numexamples, pathBase), _cancelSource.Token);
-                    break;
-                }
+                    {
+                        NumTrainingExamples = NumTrainingExamples > 0 ? NumTrainingExamples : (NumTrainingExamples = 5000);
+                        t = Task.Run(() => FacesDemo(NumTrainingExamples, pathBase), _cancelSource.Token);
+                        break;
+                    }
                 case "Data":
-                {
-                    int numexamples = 185945;
-                    t = Task.Run(() => CsvDemo(numexamples, pathBase), _cancelSource.Token);
-                    break;
-                }
+                    {
+                        NumTrainingExamples = NumTrainingExamples > 0 ? NumTrainingExamples : (NumTrainingExamples = 185945);
+                        t = Task.Run(() => CsvDemo(NumTrainingExamples, pathBase), _cancelSource.Token);
+                        break;
+                    }
                 case "Kaggle":
-                {
-                    //int numexamples = 40000;
-                    int numexamples = 4000;
+                    {
+                        //int numexamples = 40000;
+                        NumTrainingExamples = NumTrainingExamples > 0 ? NumTrainingExamples : (NumTrainingExamples = 40000);
 
-                    t = Task.Run(() => KaggleDemo(numexamples, pathBase), _cancelSource.Token);
-                    break;
-                }
+                        t = Task.Run(() => KaggleDemo(NumTrainingExamples, pathBase), _cancelSource.Token);
+                        break;
+                    }
             }
         }
 
@@ -293,9 +462,9 @@ namespace CudaNN.Monitor
 
             using (var net = new CudaAdvancedNetwork(new CudaAdvancedRbmBase[]
             {
-                new CudaAdvancedRbmBinary(dev, rand, 0, 178, 1000, false),
-                new CudaAdvancedRbmBinary(dev, rand, 1, 1000, 1000, true),
-                new CudaAdvancedRbmBinary(dev, rand, 2, 1000, 50, true)
+                new CudaAdvancedRbmBinary(dev, rand, 0, 178, 500, false, weightInitializationStDev: InitStDev),
+                new CudaAdvancedRbmBinary(dev, rand, 1, 500, 500, true, weightInitializationStDev: InitStDev),
+                new CudaAdvancedRbmBinary(dev, rand, 2, 500, 50, true, weightInitializationStDev: InitStDev)
             }))
             {
                 net.SetDefaultMachineState(SuspendState.Active);
@@ -305,55 +474,53 @@ namespace CudaNN.Monitor
                 double[,] tdata = d.ReadTestData(0, 50);
                 List<double[,]> identityMatrices = IdentityMatrices(dev, net);
 
-                IList<BitmapSource> originalTestImages =
-                    await Task.Run(async () => await GenerateImageSources(tdata));
-                Reconstructions = await Dispatcher.InvokeIfRequired(() =>
-                    new ObservableCollection<ImagePair>(originalTestImages.Select(a => new ImagePair {Item1 = a})));
+                IList<BitmapSource> originalTestImages = await GenerateImageSources(tdata);
+
+                Dispatcher.InvokeIfRequired(
+                    () =>
+                        Reconstructions =
+                            new ObservableCollection<ImagePair>(originalTestImages.Select(a => new ImagePair { Item1 = a })));
 
                 dev.SetCurrentContext();
 
                 net.EpochComplete += async (a, b) =>
                 {
-                    var nn = ((ICudaNetwork<TElement>) a);
+                    var nn = ((ICudaNetwork<TElement>)a);
                     IAdvancedRbmCuda<double> m = nn.Machines[b.Layer];
-                    if (b.Epoch > 0 && b.Epoch%BackupFrequency == 0)
+                    if (b.Epoch > 0 && b.Epoch % BackupFrequency == 0)
                     {
                         m.Save(Path.Combine(pathBase,
                             string.Format("Layer_{0}_{1}x{2}_{3}_Temp_{4}.dat", b.Layer, m.NumVisibleNeurons,
                                 m.NumHiddenNeurons,
-                                typeof (TElement).Name, b.Epoch)));
+                                typeof(TElement).Name, b.Epoch)));
                     }
 
-                    if (b.Epoch%UpdateFrequency == 0)
+                    double[,] activations = GetActivations(dev, nn, tdata, b);
+
+                    if (b.Epoch % UpdateFrequency == 0)
                     {
-                        double[,] dreams = ((CudaAdvancedNetwork) nn).Daydream(1.0, 100, b.Layer);
+                        double[,] dreams = ((CudaAdvancedNetwork)nn).Daydream(1.0, 100, b.Layer);
                         double[,] recon = nn.Reconstruct(tdata, b.Layer);
                         double[,] feats = nn.Decode(identityMatrices[b.Layer], b.Layer);
 
-                        TElement[,] activations;
-                        using (Matrix2D<double> enc = dev.Upload(nn.Encode(tdata, b.Layer)))
-                        using (Matrix2D<double> act = enc.SumRows())
-                        using (Matrix2D<double> trans = act.Transpose())
-                        using (Matrix2D<double> max = trans.MaxRowValues())
-                        using (Matrix2D<double> sm = trans.DivideElements(max))
-                        {
-                            //activations = act.CopyLocal();
-                            activations = sm.CopyLocal();
-                        }
 
-
-                        UpdateUIProperties(pathBase, b, recon, feats, activations, dreams,
-                            dd => GenerateImageSources(dd));
+                        Task.Run(() => UpdateUIProperties(pathBase, b, recon, feats, activations, dreams,
+                            dd => GenerateImageSources(dd)));
+                    }
+                    else
+                    {
+                        Task.Run(
+                            () => UpdateUIProperties(pathBase, b, activations, dd => GenerateImageSourcesPosNeg(dd)));
                     }
                 };
 
                 net.LayerTrainComplete += (a, b) =>
                 {
-                    IAdvancedRbmCuda<double> m = ((ICudaNetwork<TElement>) a).Machines[b.Layer];
+                    IAdvancedRbmCuda<double> m = ((ICudaNetwork<TElement>)a).Machines[b.Layer];
                     m.Save(Path.Combine(pathBase,
                         string.Format("Layer_{0}_{1}x{2}_{3}_Final.dat", b.Layer, m.NumVisibleNeurons,
                             m.NumHiddenNeurons,
-                            typeof (TElement).Name)));
+                            typeof(TElement).Name)));
                 };
 
                 //batch the data in gpu memory
@@ -361,6 +528,11 @@ namespace CudaNN.Monitor
                     var greedyTracker =
                         new EpochErrorFileTracker<TElement>(Path.Combine(pathBase, "GreedyTrainError.log")))
                 {
+                    ExitEvaluatorFactory =
+                        await
+                            Dispatcher.InvokeIfRequired(
+                                () => new InteractiveExitEvaluatorFactory<double>(greedyTracker, 0.5, 5000));
+
                     string[] lbla;
                     TElement[,] codeda;
                     double[,] trainingData = d.ReadTrainingData(0, numTrainingExamples, out lbla, out codeda);
@@ -369,52 +541,367 @@ namespace CudaNN.Monitor
                             TrainingSet =
                                 new ObservableCollection<BitmapSource>(await GenerateImageSources(trainingData, 1000)));
 
-                    await Dispatcher.InvokeIfRequired(() => NumTrainingExamples = trainingData.GetLength(0));
+                    Dispatcher.InvokeIfRequired(() => NumTrainingExamples = trainingData.GetLength(0));
+
+                    await Dispatcher.InvokeIfRequired(() =>
+                    {
+                        WeightLearningRateFactory = new InteractiveLearningRateCalculatorFactory<double>(3E-05);
+                        HidBiasLearningRateFactory = new InteractiveLearningRateCalculatorFactory<double>(3E-05);
+                        VisBiasLearningRateFactory = new InteractiveLearningRateCalculatorFactory<double>(3E-05);
+                    });
 
                     //var trainingData = d.ReadTestData(0, numTrainingExamples);
                     dev.SetCurrentContext();
                     net.GreedyBatchedTrain(trainingData,
                         600,
-                        new EpochCountExitConditionFactory<TElement>(greedyTracker, 5000),
-                        new LayerSpecificLearningRateCalculatorFactory<TElement>(
-                            new ConstantLearningRateFactory<TElement>(0.0001, 20),
-                            new ConstantLearningRateFactory<TElement>(0.00005),
-                            new ConstantLearningRateFactory<TElement>(0.000001)),
-                        new LayerSpecificLearningRateCalculatorFactory<TElement>(
-                            new ConstantLearningRateFactory<TElement>(0.0001, 20),
-                            new ConstantLearningRateFactory<TElement>(0.00005),
-                            new ConstantLearningRateFactory<TElement>(0.000001)),
-                        new LayerSpecificLearningRateCalculatorFactory<TElement>(
-                            new ConstantLearningRateFactory<TElement>(0.0001, 20),
-                            new ConstantLearningRateFactory<TElement>(0.00005),
-                            new ConstantLearningRateFactory<TElement>(0.000001))
+                        ExitEvaluatorFactory,
+                        WeightLearningRateFactory,
+                        HidBiasLearningRateFactory,
+                        VisBiasLearningRateFactory
                         );
                 }
 
-                double[,] testData = d.ReadTrainingData(0, 200, out lbl, out coded);
+                //double[,] testData = d.ReadTrainingData(0, 200, out lbl, out coded);
 
-                double[,] reconstructions = net.Reconstruct(testData);
+                //double[,] reconstructions = net.Reconstruct(testData);
 
-                DisplayResults(pathBase, d, reconstructions, testData, lbl);
+                //DisplayResults(pathBase, d, reconstructions, testData, lbl);
 
-                IDataIO<TElement, string> d2 = new CsvData(ConfigurationManager.AppSettings["CsvDataTest"],
-                    ConfigurationManager.AppSettings["CsvDataTest"], true, true);
+                //IDataIO<TElement, string> d2 = new CsvData(ConfigurationManager.AppSettings["CsvDataTest"],
+                //    ConfigurationManager.AppSettings["CsvDataTest"], true, true);
 
-                string[] labels;
-                TElement[,] lcoded;
-                double[,] allDataToCode = d2.ReadTrainingData(0, 185945, out labels, out lcoded);
-                double[,] encoded = net.Encode(allDataToCode);
-                string[] kkey = KeyEncoder.CreateBinaryStringKeys(encoded);
+                //string[] labels;
+                //TElement[,] lcoded;
+                //double[,] allDataToCode = d2.ReadTrainingData(0, 185945, out labels, out lcoded);
+                //double[,] encoded = net.Encode(allDataToCode);
+                //string[] kkey = KeyEncoder.CreateBinaryStringKeys(encoded);
 
-                using (FileStream fs = File.OpenWrite(Path.Combine(pathBase, "Encoded.csv")))
-                using (var tw = new StreamWriter(fs))
+                //using (FileStream fs = File.OpenWrite(Path.Combine(pathBase, "Encoded.csv")))
+                //using (var tw = new StreamWriter(fs))
+                //{
+                //    for (int i = 0; i < allDataToCode.GetLength(0); i++)
+                //    {
+                //        tw.WriteLine("{0},\"{1}\"", labels[i], kkey[i]);
+                //    }
+                //}
+            }
+        }
+
+
+        private async void FacesDemo(int numTrainingExamples, string pathBase)
+        {
+            GPGPU dev;
+            GPGPURAND rand;
+            InitCuda(out dev, out rand);
+
+            dev.SetCurrentContext();
+            bool useLinear = true;
+
+            IDataIO<TElement, string> dataProvider =
+                new FacesData(ConfigurationManager.AppSettings["FacesDirectory"],
+                    ConfigurationManager.AppSettings["FacesTestDirectory"],
+                    FacesData.ConversionMode.RgbToGreyPosNegReal);
+
+
+            Func<TElement[,], Task<IList<BitmapSource>>> imageSaveMethod = useLinear
+                ? (Func<TElement[,], Task<IList<BitmapSource>>>)(dd => GenerateImageSourcesPosNeg(dd))
+                : (dd => GenerateImageSources(dd));
+
+            using (var net = new CudaAdvancedNetwork(useLinear
+                ? new CudaAdvancedRbmBase[]
                 {
-                    for (int i = 0; i < allDataToCode.GetLength(0); i++)
+                    //new CudaAdvancedRbmLinearHidden(dev, rand, 0, 250*250, 500, 0.02),
+                    new CudaAdvancedRbmLinearHidden(dev, rand, 0, 75*75, 2000, weightInitializationStDev: InitStDev,
+                        finalMomentum: 0.7),
+                    //crop selection 3 is cropped to 150px x 150px centred, resized to 50% with 1 gimp unit of blur
+                    new CudaAdvancedRbmLinearHidden(dev, rand, 1, 2000, 4000, weightInitializationStDev: InitStDev),
+                    new CudaAdvancedRbmLinearHidden(dev, rand, 2, 4000, 4000, weightInitializationStDev: InitStDev)
+                }
+                : new CudaAdvancedRbmBase[]
+                {
+                    //new CudaAdvancedRbmBinary(dev, rand, 0, 250*250, 200, false),
+                    new CudaAdvancedRbmBinary(dev, rand, 0, 75*75, 2000, false, weightInitializationStDev: InitStDev),
+                    new CudaAdvancedRbmBinary(dev, rand, 1, 2000, 4000, true, weightInitializationStDev: InitStDev),
+                    new CudaAdvancedRbmBinary(dev, rand, 2, 4000, 4000, true, weightInitializationStDev: InitStDev)
+                }))
+            {
+                net.SetDefaultMachineState(SuspendState.Suspended);
+                //keep data in main memory as much as possible at the expense of more memory movement between System and GPU
+
+                double[,] tdata = dataProvider.ReadTestData(numTrainingExamples, 50);
+                DirectoryInfo di = Directory.CreateDirectory(Path.Combine(pathBase, "Original"));
+
+                dev.SetCurrentContext();
+                List<double[,]> identityMatrices = IdentityMatrices(dev, net);
+
+                Task.Run(() => Dispatcher.InvokeIfRequired(async () =>
+                    Reconstructions =
+                        new ObservableCollection<ImagePair>(
+                            (await GenerateImageSourcesPosNeg(tdata)).Select(a => new ImagePair { Item1 = a }))));
+
+                dev.SetCurrentContext();
+
+                net.EpochComplete += async (a, b) =>
+                {
+                    var nn = ((ICudaNetwork<TElement>)a);
+                    IAdvancedRbmCuda<double> m = nn.Machines[b.Layer];
+                    if (b.Epoch > 0 && b.Epoch % BackupFrequency == 0)
                     {
-                        tw.WriteLine("{0},\"{1}\"", labels[i], kkey[i]);
+                        m.Save(Path.Combine(pathBase,
+                            string.Format("Layer_{0}_{1}x{2}_{3}_Temp_{4}.dat", b.Layer, m.NumVisibleNeurons,
+                                m.NumHiddenNeurons,
+                                typeof(TElement).Name, b.Epoch)));
                     }
+
+                    double[,] activations = GetActivations(dev, nn, tdata, b);
+                    if (b.Epoch % UpdateFrequency == 0)
+                    {
+                        double[,] dreams = ((CudaAdvancedNetwork)nn).Daydream(1.0, 100, b.Layer);
+                        double[,] recon = nn.Reconstruct(tdata, b.Layer);
+                        double[,] feats = nn.Decode(identityMatrices[b.Layer], b.Layer);
+
+                        //var activations = GetActivations(dev, nn, tdata, b);
+
+                        Task.Run(() => UpdateUIProperties(pathBase, b, recon, feats, activations, dreams,
+                            dd => GenerateImageSourcesPosNeg(dd)));
+                    }
+                    else
+                    {
+                        Task.Run(
+                            () => UpdateUIProperties(pathBase, b, activations, dd => GenerateImageSourcesPosNeg(dd)));
+                    }
+                };
+
+                net.LayerTrainComplete += (a, b) =>
+                {
+                    IAdvancedRbmCuda<double> m = ((ICudaNetwork<TElement>)a).Machines[b.Layer];
+                    m.Save(Path.Combine(pathBase,
+                        string.Format("Layer_{0}_{1}x{2}_{3}.dat", b.Layer, m.NumVisibleNeurons, m.NumHiddenNeurons,
+                            typeof(TElement).Name)));
+                };
+
+                IList<string[]> lbl;
+                IList<TElement[,]> coded;
+                IList<double[,]> training = dataProvider.ReadTrainingData(0, numTrainingExamples, 50, out lbl,
+                    out coded);
+
+                Dispatcher.InvokeIfRequired(() => NumTrainingExamples = training.Sum(a => a.GetLength(0)));
+
+                int maxtrain = 1000;
+
+                var bmps = new List<BitmapSource>(maxtrain);
+
+
+                Task<List<BitmapSource>> tgen = Task.Run(async () =>
+                {
+                    foreach (var batch in training)
+                    {
+                        bmps.AddRange(await GenerateImageSourcesPosNeg(batch, maxtrain - bmps.Count));
+                        if (bmps.Count >= maxtrain)
+                            break;
+                    }
+                    return bmps;
+                });
+
+                Task.Run(
+                    () =>
+                        Dispatcher.InvokeIfRequired(
+                            async () => TrainingSet = new ObservableCollection<BitmapSource>(await tgen)));
+
+
+                dev.SetCurrentContext();
+
+                await Dispatcher.InvokeIfRequired(() =>
+                {
+                    WeightLearningRateFactory = new InteractiveLearningRateCalculatorFactory<double>(3E-04);
+                    HidBiasLearningRateFactory = new InteractiveLearningRateCalculatorFactory<double>(3E-05);
+                    VisBiasLearningRateFactory = new InteractiveLearningRateCalculatorFactory<double>(3E-05);
+                });
+
+                using (
+                    var greedyTracker =
+                        new EpochErrorFileTracker<TElement>(Path.Combine(pathBase, "GreedyTrainError.log")))
+                {
+                    ExitEvaluatorFactory =
+                        await
+                            Dispatcher.InvokeIfRequired(
+                                () => new InteractiveExitEvaluatorFactory<double>(greedyTracker, 0.5, 5000));
+                    dev.SetCurrentContext();
+                    net.GreedyBatchedTrainMem(training,
+                        ExitEvaluatorFactory,
+                        WeightLearningRateFactory,
+                        HidBiasLearningRateFactory,
+                        VisBiasLearningRateFactory
+                        );
                 }
             }
+        }
+
+
+        private async void KaggleDemo(int numTrainingExamples, string pathBase)
+        {
+            GPGPU dev;
+            GPGPURAND rand;
+            InitCuda(out dev, out rand);
+            dev.SetCurrentContext();
+            IDataIO<TElement, int> dataProvider =
+                new KaggleData(ConfigurationManager.AppSettings["KaggleTrainingData"],
+                    ConfigurationManager.AppSettings["KaggleTestData"]);
+
+            using (var net = new CudaAdvancedNetwork(new CudaAdvancedRbmBase[]
+            {
+                new CudaAdvancedRbmBinary(dev, rand, 0, 784, 500, false, weightInitializationStDev: InitStDev),
+                new CudaAdvancedRbmBinary(dev, rand, 1, 500, 500, true, weightInitializationStDev: InitStDev),
+                new CudaAdvancedRbmBinary(dev, rand, 2, 510, 2000, true, weightInitializationStDev: InitStDev)
+                //visible buffer expanded by 10 for labeling
+            }))
+            {
+                //keep data in gpu memory as much as possible
+                net.SetDefaultMachineState(SuspendState.Active);
+
+
+                int[] lbl;
+                TElement[,] coded;
+                double[,] tdata = dataProvider.ReadTestData(0, 50);
+                DirectoryInfo di = Directory.CreateDirectory(Path.Combine(pathBase, "Original"));
+                List<double[,]> identityMatrices = IdentityMatrices(dev, net);
+
+                Task.Run(() => Dispatcher.InvokeIfRequired(async () =>
+                    Reconstructions =
+                        new ObservableCollection<ImagePair>(
+                            (await GenerateImageSources(tdata)).Select(a => new ImagePair { Item1 = a }))));
+
+                dev.SetCurrentContext();
+
+                net.EpochComplete += async (a, b) =>
+                {
+                    var nn = ((ICudaNetwork<TElement>)a);
+                    IAdvancedRbmCuda<double> m = nn.Machines[b.Layer];
+                    if (b.Epoch > 0 && b.Epoch % BackupFrequency == 0)
+                    {
+                        m.Save(Path.Combine(pathBase,
+                            string.Format("Layer_{0}_{1}x{2}_{3}_Temp_{4}.dat", b.Layer, m.NumVisibleNeurons,
+                                m.NumHiddenNeurons,
+                                typeof(TElement).Name, b.Epoch)));
+                    }
+
+                    if (b.Epoch % UpdateFrequency == 0)
+                    {
+                        double[,] dreams;
+                        double[,] recon;
+                        double[,] feats;
+                        double[,] activations;
+                        if (b.Layer == nn.Machines.Count - 1)
+                        {
+                            double[,] lbls;
+                            dreams = ((CudaAdvancedNetwork)nn).DaydreamWithLabels(1.0, 100, out lbls);
+                            double[,] llbl;
+                            recon = nn.ReconstructWithLabels(tdata, out llbl);
+                            double[,] llbls;
+                            feats = nn.DecodeWithLabels(identityMatrices[b.Layer], out llbls);
+                            activations = GetActivationsWithLabelExpansion(dev, nn, tdata);
+                        }
+                        else
+                        {
+                            dreams = ((CudaAdvancedNetwork)nn).Daydream(1.0, 100, b.Layer);
+                            recon = nn.Reconstruct(tdata, b.Layer);
+                            feats = nn.Decode(identityMatrices[b.Layer], b.Layer);
+                            activations = GetActivations(dev, nn, tdata, b);
+                        }
+
+
+                        Task.Run(() => UpdateUIProperties(pathBase, b, recon, feats, activations, dreams,
+                            dd => GenerateImageSources(dd)));
+                    }
+                    else
+                    {
+                        double[,] activations;
+                        if (b.Layer == nn.Machines.Count - 1)
+                        {
+                            activations = GetActivationsWithLabelExpansion(dev, nn, tdata);
+                        }
+                        else
+                        {
+                            activations = GetActivations(dev, nn, tdata, b);
+                        }
+                        Task.Run(
+                            () => UpdateUIProperties(pathBase, b, activations, dd => GenerateImageSourcesPosNeg(dd)));
+                    }
+                };
+
+                double[,] trainingData = dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded);
+                Task.Run(() =>
+                    Dispatcher.InvokeIfRequired(
+                        async () =>
+                            TrainingSet =
+                                new ObservableCollection<BitmapSource>(await GenerateImageSources(trainingData, 1000))));
+
+                Dispatcher.InvokeIfRequired(() => NumTrainingExamples = trainingData.GetLength(0));
+
+                using (
+                    var greedyTracker =
+                        new EpochErrorFileTracker<TElement>(Path.Combine(pathBase, "GreedyTrainError.log")))
+                {
+                    ExitEvaluatorFactory =
+                        await
+                            Dispatcher.InvokeIfRequired(
+                                () => new InteractiveExitEvaluatorFactory<double>(greedyTracker, 0.5, 5000));
+
+                    await Dispatcher.InvokeIfRequired(() =>
+                    {
+                        WeightLearningRateFactory = new InteractiveLearningRateCalculatorFactory<double>(3E-05);
+                        HidBiasLearningRateFactory = new InteractiveLearningRateCalculatorFactory<double>(3E-05);
+                        VisBiasLearningRateFactory = new InteractiveLearningRateCalculatorFactory<double>(3E-05);
+                    });
+
+                    dev.SetCurrentContext();
+                    net.GreedyBatchedSupervisedTrain(
+                        trainingData,
+                        coded, 100,
+                        ExitEvaluatorFactory,
+                        WeightLearningRateFactory,
+                        HidBiasLearningRateFactory,
+                        VisBiasLearningRateFactory
+                        );
+                }
+                //int[] testSrcLabels;
+                //TElement[,] testSourceCoded;
+                //double[,] testData = dataProvider.ReadTrainingData(numTrainingExamples, 500, out testSrcLabels,
+                //    out testSourceCoded);
+
+                //TElement[,] computedLabels;
+                //double[,] reconstructions = net.ReconstructWithLabels(testData, out computedLabels, softmaxLabels: true);
+                //Console.WriteLine("Reconstructions");
+                //DisplayResults(pathBase, dataProvider, reconstructions, testData, testSrcLabels, testSourceCoded,
+                //    computedLabels);
+                //Console.WriteLine("Daydream by class");
+            }
+        }
+
+        private static double[,] GetActivations(GPGPU dev, ICudaNetwork<double> nn, double[,] tdata,
+            EpochEventArgs<double> b)
+        {
+            TElement[,] activations;
+            using (Matrix2D<double> enc = dev.Upload(nn.Encode(tdata, b.Layer)))
+            using (Matrix2D<double> act = enc.SumColumns())
+            using (Matrix2D<double> sm = act.Multiply(1.0 / tdata.GetLength(0)))
+            {
+                activations = sm.CopyLocal();
+            }
+            return activations;
+        }
+
+        private static double[,] GetActivationsWithLabelExpansion(GPGPU dev, ICudaNetwork<double> nn, double[,] tdata)
+        {
+            TElement[,] activations;
+            using (Matrix2D<double> d = dev.Upload(tdata))
+            using (Matrix2D<double> enc = nn.EncodeWithLabelExpansion(d))
+            using (Matrix2D<double> act = enc.SumColumns())
+            using (Matrix2D<double> sm = act.Multiply(1.0 / tdata.GetLength(0)))
+            {
+                activations = sm.CopyLocal();
+            }
+            return activations;
         }
 
         private static List<double[,]> IdentityMatrices(GPGPU dev, CudaAdvancedNetwork net)
@@ -435,38 +922,47 @@ namespace CudaNN.Monitor
             return identityMatrices;
         }
 
-        private async Task UpdateUIProperties(string pathBase, EpochEventArgs<double> b, double[,] recon,
-            double[,] feats,
-            double[,] activations, double[,] dreams, Func<TElement[,], Task<IList<BitmapSource>>> imgSaver)
+        private async Task UpdateUIProperties(string pathBase, EpochEventArgs<TElement> epochEventArgs,
+            TElement[,] activations, Func<TElement[,], Task<IList<BitmapSource>>> bitmapConverter)
         {
-            Epoch = b.Epoch;
-            Error = b.Error;
-            Layer = b.Layer;
-            IList<BitmapSource> reconIm = await imgSaver(
-                recon);
-            IList<BitmapSource> featIm = await imgSaver(
-                feats);
-            IList<BitmapSource> actiim = await imgSaver(
-                activations);
+            Epoch = epochEventArgs.Epoch;
+            Error = epochEventArgs.Error;
+            Layer = epochEventArgs.Layer;
+            Delta = epochEventArgs.Delta;
+            Elapsed = epochEventArgs.Elapsed;
+            LearningRate = epochEventArgs.LearningRate;
+            IList<BitmapSource> actiim = await bitmapConverter(activations);
 
-
-            UpdateImageResult(Reconstructions, reconIm);
-
-            IList<BitmapSource> dreamIm =
-                await imgSaver(dreams);
-
-            await Dispatcher.InvokeIfRequired(async () =>
-            {
-                var feat = new ObservableCollection<BitmapSource>(featIm);
-                Features = feat;
-                DayDreams = new ObservableCollection<BitmapSource>(dreamIm);
-                ActivationFrequency = actiim[0];
-            });
+            await Dispatcher.InvokeIfRequired(() => { ActivationFrequency = actiim[0]; });
         }
 
-        private void UpdateImageResult(ObservableCollection<ImagePair> set, IList<BitmapSource> reconIm)
+        private async void UpdateUIProperties(string pathBase, EpochEventArgs<double> b, double[,] recon,
+            double[,] feats,
+            double[,] activations, double[,] dreams, Func<TElement[,], Task<IList<BitmapSource>>> imgGenerator)
         {
-            Dispatcher.InvokeIfRequired(() =>
+            DisplayedEpoch = b.Epoch;
+            Task t = UpdateUIProperties(pathBase, b, activations, imgGenerator);
+
+            Task t1 = Task.Run(async () => UpdateImageResult(Reconstructions, await imgGenerator(recon)));
+            Task<Task> t2 = Task.Run(
+                () =>
+                    Dispatcher.InvokeIfRequired(
+                        async () => { DayDreams = new ObservableCollection<BitmapSource>(await imgGenerator(dreams)); }));
+            Task<Task> t3 = Task.Run(
+                () =>
+                    Dispatcher.InvokeIfRequired(
+                        async () =>
+                        {
+                            Features = new ObservableCollection<BitmapSource>(await imgGenerator(feats));
+                            SelectFeature(SelectedFeatureIndex);
+                        }));
+
+            await Task.Run(() => Task.WaitAll(t, t1, t2, t3));
+        }
+
+        private async void UpdateImageResult(ObservableCollection<ImagePair> set, IList<BitmapSource> reconIm)
+        {
+            await Dispatcher.InvokeIfRequired(() =>
             {
                 for (int i = 0; i < reconIm.Count; i++)
                 {
@@ -475,259 +971,6 @@ namespace CudaNN.Monitor
             });
         }
 
-
-        private async void FacesDemo(int numTrainingExamples, string pathBase)
-        {
-            GPGPU dev;
-            GPGPURAND rand;
-            InitCuda(out dev, out rand);
-
-            dev.SetCurrentContext();
-            bool useLinear = true;
-
-            IDataIO<TElement, string> dataProvider =
-                new FacesData(ConfigurationManager.AppSettings["FacesDirectory"],
-                    ConfigurationManager.AppSettings["FacesTestDirectory"],
-                    FacesData.ConversionMode.RgbToGreyPosNegReal);
-
-
-            Func<TElement[,], Task<IList<BitmapSource>>> imageSaveMethod = useLinear
-                ? (Func<TElement[,], Task<IList<BitmapSource>>>) (dd => GenerateImageSourcesPosNeg(dd))
-                : (dd => GenerateImageSources(dd));
-
-            using (var net = new CudaAdvancedNetwork(useLinear
-                ? new CudaAdvancedRbmBase[]
-                {
-                    new CudaAdvancedRbmLinearHidden(dev, rand, 0, 250*250, 500, 0.02),
-                    new CudaAdvancedRbmLinearHidden(dev, rand, 0, 500, 4000, 0.02),
-                    new CudaAdvancedRbmLinearHidden(dev, rand, 0, 4000, 4000, 0.02)
-                }
-                : new CudaAdvancedRbmBase[]
-                {
-                    new CudaAdvancedRbmBinary(dev, rand, 0, 250*250, 200, false),
-                    new CudaAdvancedRbmBinary(dev, rand, 1, 200, 4000, true),
-                    new CudaAdvancedRbmBinary(dev, rand, 2, 4000, 4000, true)
-                }))
-            {
-                net.SetDefaultMachineState(SuspendState.Suspended);
-                //keep data in main memory as much as possible at the expense of more memory movement between System and GPU
-
-                double[,] tdata = dataProvider.ReadTestData(0, 50);
-                DirectoryInfo di = Directory.CreateDirectory(Path.Combine(pathBase, "Original"));
-
-                dev.SetCurrentContext();
-                List<double[,]> identityMatrices = IdentityMatrices(dev, net);
-
-
-                IList<BitmapSource> originalTestImages =
-                    await Task.Run(async () => await GenerateImageSourcesPosNeg(tdata));
-                Reconstructions = await Dispatcher.InvokeIfRequired(() =>
-                    new ObservableCollection<ImagePair>(originalTestImages.Select(a => new ImagePair {Item1 = a})));
-
-                dev.SetCurrentContext();
-
-                net.EpochComplete += async (a, b) =>
-                {
-                    var nn = ((ICudaNetwork<TElement>) a);
-                    IAdvancedRbmCuda<double> m = nn.Machines[b.Layer];
-                    if (b.Epoch > 0 && b.Epoch%BackupFrequency == 0)
-                    {
-                        m.Save(Path.Combine(pathBase,
-                            string.Format("Layer_{0}_{1}x{2}_{3}_Temp_{4}.dat", b.Layer, m.NumVisibleNeurons,
-                                m.NumHiddenNeurons,
-                                typeof (TElement).Name, b.Epoch)));
-                    }
-
-                    if (b.Epoch%UpdateFrequency == 0)
-                    {
-                        double[,] dreams = ((CudaAdvancedNetwork) nn).Daydream(1.0, 100, b.Layer);
-                        double[,] recon = nn.Reconstruct(tdata, b.Layer);
-                        double[,] feats = nn.Decode(identityMatrices[b.Layer], b.Layer);
-
-                        TElement[,] activations;
-                        using (Matrix2D<double> enc = dev.Upload(nn.Encode(tdata, b.Layer)))
-                        using (Matrix2D<double> act = enc.SumRows())
-                        using (Matrix2D<double> trans = act.Transpose())
-                        using (Matrix2D<double> max = trans.MaxRowValues())
-                        using (Matrix2D<double> sm = trans.DivideElements(max))
-                        {
-                            //activations = act.CopyLocal();
-                            activations = sm.CopyLocal();
-                        }
-
-
-                        await
-                            Task.Run(
-                                async () =>
-                                    await
-                                        UpdateUIProperties(pathBase, b, recon, feats, activations, dreams,
-                                            dd => GenerateImageSourcesPosNeg(dd)));
-                    }
-                };
-
-                net.LayerTrainComplete += (a, b) =>
-                {
-                    IAdvancedRbmCuda<double> m = ((ICudaNetwork<TElement>) a).Machines[b.Layer];
-                    m.Save(Path.Combine(pathBase,
-                        string.Format("Layer_{0}_{1}x{2}_{3}.dat", b.Layer, m.NumVisibleNeurons, m.NumHiddenNeurons,
-                            typeof (TElement).Name)));
-                };
-
-                IList<string[]> lbl;
-                IList<TElement[,]> coded;
-                IList<double[,]> training = dataProvider.ReadTrainingData(0, numTrainingExamples, 10, out lbl,
-                    out coded);
-                await
-                    Dispatcher.InvokeIfRequired(
-                        () =>
-                            TrainingSet =
-                                new ObservableCollection<BitmapSource>(
-                                    training.Select(a => GenerateImageSourcesPosNeg(a).Result).SelectMany(b => b)));
-
-                await Dispatcher.InvokeIfRequired(() => NumTrainingExamples = training.Sum(a => a.GetLength(0)));
-                dev.SetCurrentContext();
-                //batch the data into main memory
-                using (
-                    var greedyTracker =
-                        new EpochErrorFileTracker<TElement>(Path.Combine(pathBase, "GreedyTrainError.log")))
-                {
-                    net.GreedyBatchedTrainMem(training,
-                        new EpochCountExitConditionFactory<TElement>(greedyTracker, 5000),
-                        new LayerSpecificLearningRateCalculatorFactory<TElement>(
-                            new ConstantLearningRateFactory<TElement>(0.000003, 20),
-                            new ConstantLearningRateFactory<TElement>(0.000003),
-                            new ConstantLearningRateFactory<TElement>(0.000003)),
-                        new LayerSpecificLearningRateCalculatorFactory<TElement>(
-                            new ConstantLearningRateFactory<TElement>(0.000003, 20),
-                            new ConstantLearningRateFactory<TElement>(0.000003),
-                            new ConstantLearningRateFactory<TElement>(0.000003)),
-                        new LayerSpecificLearningRateCalculatorFactory<TElement>(
-                            new ConstantLearningRateFactory<TElement>(0.000003, 20),
-                            new ConstantLearningRateFactory<TElement>(0.000003),
-                            new ConstantLearningRateFactory<TElement>(0.000003))
-                        );
-                }
-            }
-        }
-
-
-        private async void KaggleDemo(int numTrainingExamples, string pathBase)
-        {
-            GPGPU dev;
-            GPGPURAND rand;
-            InitCuda(out dev, out rand);
-            dev.SetCurrentContext();
-            IDataIO<TElement, int> dataProvider =
-                new KaggleData(ConfigurationManager.AppSettings["KaggleTrainingData"],
-                    ConfigurationManager.AppSettings["KaggleTestData"]);
-
-            using (var net = new CudaAdvancedNetwork(new CudaAdvancedRbmBase[]
-            {
-                new CudaAdvancedRbmBinary(dev, rand, 0, 784, 500, false),
-                new CudaAdvancedRbmBinary(dev, rand, 1, 500, 500, true),
-                new CudaAdvancedRbmBinary(dev, rand, 2, 510, 2000, true)
-                //visible buffer expanded by 10 for labeling
-            }))
-            {
-                //keep data in gpu memory as much as possible
-                net.SetDefaultMachineState(SuspendState.Active);
-
-
-                int[] lbl;
-                TElement[,] coded;
-                double[,] tdata = dataProvider.ReadTestData(0, 50);
-                DirectoryInfo di = Directory.CreateDirectory(Path.Combine(pathBase, "Original"));
-                List<double[,]> identityMatrices = IdentityMatrices(dev, net);
-
-
-                IList<BitmapSource> originalTestImages =
-                    await Task.Run(async () => await GenerateImageSources(tdata));
-                Reconstructions = await Dispatcher.InvokeIfRequired(() =>
-                    new ObservableCollection<ImagePair>(originalTestImages.Select(a => new ImagePair {Item1 = a})));
-
-                dev.SetCurrentContext();
-
-                net.EpochComplete += async (a, b) =>
-                {
-                    var nn = ((ICudaNetwork<TElement>) a);
-                    IAdvancedRbmCuda<double> m = nn.Machines[b.Layer];
-                    if (b.Epoch > 0 && b.Epoch%BackupFrequency == 0)
-                    {
-                        m.Save(Path.Combine(pathBase,
-                            string.Format("Layer_{0}_{1}x{2}_{3}_Temp_{4}.dat", b.Layer, m.NumVisibleNeurons,
-                                m.NumHiddenNeurons,
-                                typeof (TElement).Name, b.Epoch)));
-                    }
-
-                    if (b.Epoch%UpdateFrequency == 0)
-                    {
-                        double[,] dreams = ((CudaAdvancedNetwork) nn).Daydream(1.0, 100, b.Layer);
-                        double[,] recon = nn.Reconstruct(tdata, b.Layer);
-                        double[,] feats = nn.Decode(identityMatrices[b.Layer], b.Layer);
-
-                        TElement[,] activations;
-                        using (Matrix2D<double> enc = dev.Upload(nn.Encode(tdata, b.Layer)))
-                        using (Matrix2D<double> act = enc.SumRows())
-                        using (Matrix2D<double> trans = act.Transpose())
-                        using (Matrix2D<double> max = trans.MaxRowValues())
-                        using (Matrix2D<double> sm = trans.DivideElements(max))
-                        {
-                            //activations = act.CopyLocal();
-                            activations = sm.CopyLocal();
-                        }
-
-
-                        await
-                            Task.Run(
-                                async () =>
-                                    await
-                                        UpdateUIProperties(pathBase, b, recon, feats, activations, dreams,
-                                            dd => GenerateImageSources(dd)));
-                    }
-                };
-
-                double[,] trainingData = dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded);
-                Dispatcher.InvokeIfRequired(
-                    async () =>
-                        TrainingSet =
-                            new ObservableCollection<BitmapSource>(await GenerateImageSources(trainingData, 1000)));
-
-                await Dispatcher.InvokeIfRequired(() => NumTrainingExamples = trainingData.GetLength(0));
-
-                dev.SetCurrentContext();
-                using (
-                    var greedyTracker =
-                        new EpochErrorFileTracker<TElement>(Path.Combine(pathBase, "GreedyTrainError.log")))
-                    net.GreedyBatchedSupervisedTrain(
-                        trainingData,
-                        coded, 100,
-                        new EpochCountExitConditionFactory<TElement>(greedyTracker, 5000),
-                        new LayerSpecificLearningRateCalculatorFactory<TElement>(
-                            new ConstantLearningRateFactory<TElement>(0.003, 20),
-                            new ConstantLearningRateFactory<TElement>(0.0005),
-                            new ConstantLearningRateFactory<TElement>(0.0001)),
-                        new LayerSpecificLearningRateCalculatorFactory<TElement>(
-                            new ConstantLearningRateFactory<TElement>(0.003, 20),
-                            new ConstantLearningRateFactory<TElement>(0.0005),
-                            new ConstantLearningRateFactory<TElement>(0.0001)),
-                        new LayerSpecificLearningRateCalculatorFactory<TElement>(
-                            new ConstantLearningRateFactory<TElement>(0.003, 20),
-                            new ConstantLearningRateFactory<TElement>(0.0005),
-                            new ConstantLearningRateFactory<TElement>(0.0001))
-                        );
-                int[] testSrcLabels;
-                TElement[,] testSourceCoded;
-                double[,] testData = dataProvider.ReadTrainingData(numTrainingExamples, 500, out testSrcLabels,
-                    out testSourceCoded);
-
-                TElement[,] computedLabels;
-                double[,] reconstructions = net.ReconstructWithLabels(testData, out computedLabels, softmaxLabels: true);
-                Console.WriteLine("Reconstructions");
-                DisplayResults(pathBase, dataProvider, reconstructions, testData, testSrcLabels, testSourceCoded,
-                    computedLabels);
-                Console.WriteLine("Daydream by class");
-            }
-        }
 
         private async void DisplayResults<TLabel>(string pathBase, IDataIO<TElement, TLabel> dataProvider,
             TElement[,] reconstructions, TElement[,] referenceData, TLabel[] labels,
@@ -739,42 +982,55 @@ namespace CudaNN.Monitor
             IList<BitmapSource> finalRecon = await GenerateImageSources(reconstructions);
             Reconstructions =
                 new ObservableCollection<ImagePair>(finalTest.Zip(finalRecon,
-                    (a, b) => new ImagePair {Item1 = a, Item2 = b}));
+                    (a, b) => new ImagePair { Item1 = a, Item2 = b }));
         }
 
         private async Task<IList<BitmapSource>> GenerateImageSources(TElement[,] data, int maxResults = int.MaxValue)
         {
-            return await GenerateImageSources(data, b => (byte) (b*255f), maxResults);
+            return await GenerateImageSources(data, b => (byte)(b * 255f), maxResults);
         }
 
         private async Task<IList<BitmapSource>> GenerateImageSources(TElement[,] data,
             Func<TElement, byte> converter, int maxResults)
         {
-            return await Dispatcher.InvokeIfRequired(() =>
+            int num = Math.Min(data.GetLength(0), maxResults);
+            var bmps = new Bitmap[num];
+
+            await Task.Run(() =>
             {
-                var images = new BitmapSource[data.GetLength(0)];
-                Parallel.For(0, Math.Min(data.GetLength(0), maxResults),
-                    async a =>
+                for (int a = 0; a < num; a++)
+                {
+                    int stride;
+                    bmps[a] = ImageUtils.GenerateBitmap(data, a, converter, out stride);
+                }
+            });
+
+            var images = new BitmapSource[data.GetLength(0)];
+
+            await Dispatcher.InvokeIfRequired(
+                () =>
+                {
+                    for (int a = 0; a < num; a++)
                     {
-                        int stride;
-                        Bitmap bmp = ImageUtils.GenerateBitmap(data, a, converter, out stride);
-                        IntPtr h = bmp.GetHbitmap();
+                        IntPtr h = bmps[a].GetHbitmap();
                         try
                         {
-                            await
-                                Dispatcher.InvokeIfRequired(
-                                    () =>
-                                        images[a] =
-                                            Imaging.CreateBitmapSourceFromHBitmap(h, IntPtr.Zero, Int32Rect.Empty,
-                                                BitmapSizeOptions.FromEmptyOptions()));
+                            images[a] =
+                                Imaging.CreateBitmapSourceFromHBitmap(h, IntPtr.Zero, Int32Rect.Empty,
+                                    BitmapSizeOptions.FromEmptyOptions());
+                            images[a].Freeze();
                         }
                         finally
                         {
                             DeleteObject(h);
                         }
-                    });
-                return images;
-            });
+                    }
+                });
+            foreach (Bitmap bitmap in bmps)
+            {
+                bitmap.Dispose();
+            }
+            return images;
         }
 
         [DllImport("gdi32", EntryPoint = "DeleteObject")]
@@ -783,13 +1039,13 @@ namespace CudaNN.Monitor
 
         private async Task<IList<BitmapSource>> GenerateImageSourcesInt(TElement[,] data, int maxResults = int.MaxValue)
         {
-            return await GenerateImageSources(data, b => (byte) (b), maxResults);
+            return await GenerateImageSources(data, b => (byte)(b), maxResults);
         }
 
         private async Task<IList<BitmapSource>> GenerateImageSourcesPosNeg(
             TElement[,] data, int maxResults = int.MaxValue)
         {
-            return await GenerateImageSources(data, b => (byte) ((b + 0.5)*255.0), maxResults);
+            return await GenerateImageSources(data, b => (byte)((b + 0.5) * 255.0), maxResults);
         }
 
 
@@ -826,8 +1082,8 @@ namespace CudaNN.Monitor
                 mod = CudafyTranslator.Cudafy(
                     plat,
                     arch,
-                    typeof (ActivationFunctionsCuda),
-                    typeof (Matrix2DCuda)
+                    typeof(ActivationFunctionsCuda),
+                    typeof(Matrix2DCuda)
                     );
                 Console.WriteLine("Saving kernels to {0}", kernelPath);
                 mod.Serialize(kernelPath);
@@ -839,11 +1095,40 @@ namespace CudaNN.Monitor
 
             rand = GPGPURAND.Create(dev, curandRngType.CURAND_RNG_PSEUDO_DEFAULT);
 
-            rand.SetPseudoRandomGeneratorSeed((ulong) DateTime.Now.Ticks);
+            rand.SetPseudoRandomGeneratorSeed((ulong)DateTime.Now.Ticks);
             rand.GenerateSeeds();
 
             Console.WriteLine("Loading Module");
             dev.LoadModule(mod);
+        }
+
+
+        protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+        {
+            base.OnPropertyChanged(e);
+
+            if (e.Property == ErrorProperty)
+            {
+                ErrorLabelBrush = (double)e.OldValue > (double)e.NewValue
+                    ? new SolidColorBrush(System.Windows.Media.Colors.Blue)
+                    : new SolidColorBrush(Colors.Red);
+            }
+
+            if (e.Property == DeltaProperty)
+            {
+                if ((double)e.NewValue > 0)
+                {
+                    DeltaLabelBrush = (double)e.OldValue > (double)e.NewValue
+                        ? new SolidColorBrush(System.Windows.Media.Colors.Orange)
+                        : new SolidColorBrush(Colors.Blue);
+                }
+                else
+                {
+                    DeltaLabelBrush = (double)e.OldValue > (double)e.NewValue
+                        ? new SolidColorBrush(System.Windows.Media.Colors.Orange)
+                        : new SolidColorBrush(Colors.Red);
+                }
+            }
         }
     }
 }

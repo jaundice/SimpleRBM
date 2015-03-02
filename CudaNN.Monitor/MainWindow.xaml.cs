@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -42,5 +43,13 @@ namespace CudaNN.Monitor
                 RenderOptions.SetBitmapScalingMode(im, BitmapScalingMode.NearestNeighbor);
             }
         }
+
+        private void Image_OnImageFailed(object sender, ExceptionRoutedEventArgs e)
+        {
+            Image im = e.Source as Image;
+            Trace.TraceWarning("Error loading image");
+        }
+
+       
     }
 }

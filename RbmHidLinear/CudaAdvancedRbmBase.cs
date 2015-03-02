@@ -59,7 +59,7 @@ namespace CudaNN
 
         protected CudaAdvancedRbmBase(GPGPU gpu, GPGPURAND rand, int layerIndex, int numVisibleNeurons,
             int numHiddenNeurons, TElement weightcost = (TElement) 0.0002,
-            TElement initialMomentum = (TElement) 0.5, TElement finalMomentum = (TElement) 0.9)
+            TElement initialMomentum = (TElement) 0.5, TElement finalMomentum = (TElement) 0.9, TElement weightInitializationStDev = (TElement)0.01)
         {
             _weightcost = weightcost;
             _initialmomentum = initialMomentum;
@@ -71,7 +71,7 @@ namespace CudaNN
             _rand = rand;
 
             _weights = _gpu.GuassianDistribution(_rand, _numVisibleNeurons, _numHiddenNeurons,
-                stDev: (TElement) 0.01);
+                stDev: weightInitializationStDev);
 
             //https://www.cs.toronto.edu/~hinton/absps/guideTR.pdf
 
@@ -235,7 +235,8 @@ namespace CudaNN
             {
                 int epoch;
                 TElement error;
-                for (epoch = 0;; epoch++)
+                EpochEventArgs<TElement> args;
+                for (epoch = 0; ; epoch++)
                 {
                     sw.Restart();
                     TElement weightLearningRate = weightLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
@@ -245,23 +246,18 @@ namespace CudaNN
                     error = BatchedTrainEpoch(data, dataTransposed, posvisact, epoch, numcases,
                         weightLearningRate, hidBiasLearningRate, visBiasLearningRate);
 
-                    OnEpochComplete(new EpochEventArgs<TElement>()
+                    TElement delta;
+                    var shouldExit = exitConditionEvaluator.Exit(epoch, error, sw.Elapsed, out delta);
+                    args = new EpochEventArgs<TElement>()
                     {
-                        Epoch = epoch,
-                        Error = error,
-                        Layer = LayerIndex
-                    });
-
-                    if (exitConditionEvaluator.Exit(epoch, error, sw.Elapsed))
+                        Epoch = epoch, Error = error, Layer = LayerIndex, LearningRate = weightLearningRate, Elapsed = sw.Elapsed, Delta = delta
+                    };
+                    OnEpochComplete(args);
+                    if (shouldExit)
                         break;
                 }
 
-                OnTrainComplete(new EpochEventArgs<TElement>()
-                {
-                    Epoch = epoch,
-                    Error = error,
-                    Layer = LayerIndex
-                });
+                OnTrainComplete(args);
             }
             SetState(state);
         }
@@ -331,7 +327,8 @@ namespace CudaNN
                 Stopwatch sw = new Stopwatch();
                 int epoch;
                 TElement error;
-                for (epoch = 0;; epoch++)
+                EpochEventArgs<TElement> args;
+                for (epoch = 0; ; epoch++)
                 {
                     sw.Restart();
                     TElement weightLearningRate = weightLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
@@ -342,23 +339,25 @@ namespace CudaNN
                         datasets.Sum(block => BatchedTrainEpoch(block.Item1, block.Item2, block.Item3, epoch, numcases,
                             weightLearningRate, hidBiasLearningRate, visBiasLearningRate));
 
-                    OnEpochComplete(new EpochEventArgs<TElement>()
+
+
+                    TElement delta;
+                    var shouldExit = exitConditionEvaluator.Exit(epoch, error, sw.Elapsed, out delta);
+                    args = new EpochEventArgs<TElement>()
                     {
                         Epoch = epoch,
                         Error = error,
-                        Layer = LayerIndex
-                    });
-
-                    if (exitConditionEvaluator.Exit(epoch, error, sw.Elapsed))
+                        Layer = LayerIndex,
+                        LearningRate = weightLearningRate,
+                        Elapsed = sw.Elapsed,
+                        Delta = delta
+                    };
+                    OnEpochComplete(args);
+                    if (shouldExit)
                         break;
                 }
 
-                OnTrainComplete(new EpochEventArgs<TElement>()
-                {
-                    Epoch = epoch,
-                    Error = error,
-                    Layer = LayerIndex
-                });
+                OnTrainComplete(args);
             }
             finally
             {
@@ -407,7 +406,8 @@ namespace CudaNN
             Stopwatch sw = new Stopwatch();
             int epoch;
             TElement error;
-            for (epoch = 0;; epoch++)
+            EpochEventArgs<TElement> args;
+            for (epoch = 0; ; epoch++)
             {
                 sw.Restart();
                 TElement weightLearningRate = weightLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
@@ -424,23 +424,23 @@ namespace CudaNN
                             visBiasLearningRate);
                 });
 
-                OnEpochComplete(new EpochEventArgs<TElement>()
+                TElement delta;
+                var shouldExit = exitConditionEvaluator.Exit(epoch, error, sw.Elapsed, out delta);
+                args = new EpochEventArgs<TElement>()
                 {
                     Epoch = epoch,
                     Error = error,
-                    Layer = LayerIndex
-                });
-
-                if (exitConditionEvaluator.Exit(epoch, error, sw.Elapsed))
+                    Layer = LayerIndex,
+                    LearningRate = weightLearningRate,
+                    Elapsed = sw.Elapsed,
+                    Delta = delta
+                };
+                OnEpochComplete(args);
+                if (shouldExit)
                     break;
             }
 
-            OnTrainComplete(new EpochEventArgs<TElement>()
-            {
-                Epoch = epoch,
-                Error = error,
-                Layer = LayerIndex
-            });
+            OnTrainComplete(args);
             exitConditionEvaluator.Stop();
             SetState(state);
         }
@@ -588,8 +588,8 @@ namespace CudaNN
             BinaryFormatter formatter = new BinaryFormatter();
             var ss = new SurrogateSelector();
             var rbmSurrogate = new RbmSurrogate(_gpu, _rand);
-            ss.AddSurrogate(typeof (CudaAdvancedRbmBinary), formatter.Context, rbmSurrogate);
-            ss.AddSurrogate(typeof (CudaAdvancedRbmLinearHidden), formatter.Context, rbmSurrogate);
+            ss.AddSurrogate(typeof(CudaAdvancedRbmBinary), formatter.Context, rbmSurrogate);
+            ss.AddSurrogate(typeof(CudaAdvancedRbmLinearHidden), formatter.Context, rbmSurrogate);
             formatter.SurrogateSelector = ss;
             using (var s = File.OpenWrite(path))
             {
@@ -603,12 +603,12 @@ namespace CudaNN
             BinaryFormatter formatter = new BinaryFormatter();
             var ss = new SurrogateSelector();
             var rbmSurrogate = new RbmSurrogate(gpu, rand);
-            ss.AddSurrogate(typeof (CudaAdvancedRbmBinary), formatter.Context, rbmSurrogate);
-            ss.AddSurrogate(typeof (CudaAdvancedRbmLinearHidden), formatter.Context, rbmSurrogate);
+            ss.AddSurrogate(typeof(CudaAdvancedRbmBinary), formatter.Context, rbmSurrogate);
+            ss.AddSurrogate(typeof(CudaAdvancedRbmLinearHidden), formatter.Context, rbmSurrogate);
             formatter.SurrogateSelector = ss;
             using (var s = File.OpenRead(path))
             {
-                return (IAdvancedRbmCuda<TElement>) formatter.Deserialize(s);
+                return (IAdvancedRbmCuda<TElement>)formatter.Deserialize(s);
             }
         }
 
@@ -633,7 +633,7 @@ namespace CudaNN
 
             public void GetObjectData(object obj, SerializationInfo info, StreamingContext context)
             {
-                var rbm = (CudaAdvancedRbmBase) obj;
+                var rbm = (CudaAdvancedRbmBase)obj;
 
                 info.AddValue("numVisNeurons", rbm.NumVisibleNeurons);
                 info.AddValue("numHidNeurons", rbm.NumHiddenNeurons);
@@ -641,25 +641,25 @@ namespace CudaNN
                 info.AddValue("initMomentum", rbm.InitialMomentum);
                 info.AddValue("finalMomentum", rbm.FinalMomentum);
                 info.AddValue("index", rbm.LayerIndex);
-                info.AddValue("state", rbm.State, typeof (SuspendState));
+                info.AddValue("state", rbm.State, typeof(SuspendState));
 
                 if (rbm.State == SuspendState.Suspended)
                 {
-                    info.AddValue("hidBias", rbm._cache[0], typeof (TElement[,]));
-                    info.AddValue("visBias", rbm._cache[1], typeof (TElement[,]));
-                    info.AddValue("weights", rbm._cache[2], typeof (TElement[,]));
-                    info.AddValue("hidBiasInc", rbm._cache[3], typeof (TElement[,]));
-                    info.AddValue("visBiasInc", rbm._cache[4], typeof (TElement[,]));
-                    info.AddValue("weightInc", rbm._cache[5], typeof (TElement[,]));
+                    info.AddValue("hidBias", rbm._cache[0], typeof(TElement[,]));
+                    info.AddValue("visBias", rbm._cache[1], typeof(TElement[,]));
+                    info.AddValue("weights", rbm._cache[2], typeof(TElement[,]));
+                    info.AddValue("hidBiasInc", rbm._cache[3], typeof(TElement[,]));
+                    info.AddValue("visBiasInc", rbm._cache[4], typeof(TElement[,]));
+                    info.AddValue("weightInc", rbm._cache[5], typeof(TElement[,]));
                 }
                 else
                 {
-                    info.AddValue("hidBias", rbm._hiddenBiases.CopyLocal(), typeof (TElement[,]));
-                    info.AddValue("visBias", rbm._visibleBiases.CopyLocal(), typeof (TElement[,]));
-                    info.AddValue("weights", rbm._weights.CopyLocal(), typeof (TElement[,]));
-                    info.AddValue("hidBiasInc", rbm._hidbiasinc.CopyLocal(), typeof (TElement[,]));
-                    info.AddValue("visBiasInc", rbm._visbiasinc.CopyLocal(), typeof (TElement[,]));
-                    info.AddValue("weightInc", rbm._vishidinc.CopyLocal(), typeof (TElement[,]));
+                    info.AddValue("hidBias", rbm._hiddenBiases.CopyLocal(), typeof(TElement[,]));
+                    info.AddValue("visBias", rbm._visibleBiases.CopyLocal(), typeof(TElement[,]));
+                    info.AddValue("weights", rbm._weights.CopyLocal(), typeof(TElement[,]));
+                    info.AddValue("hidBiasInc", rbm._hidbiasinc.CopyLocal(), typeof(TElement[,]));
+                    info.AddValue("visBiasInc", rbm._visbiasinc.CopyLocal(), typeof(TElement[,]));
+                    info.AddValue("weightInc", rbm._vishidinc.CopyLocal(), typeof(TElement[,]));
                 }
 
                 rbm.SaveSpecific(info);
@@ -668,22 +668,22 @@ namespace CudaNN
             public object SetObjectData(object obj, SerializationInfo info, StreamingContext context,
                 ISurrogateSelector selector)
             {
-                var rbm = (CudaAdvancedRbmBase) obj;
+                var rbm = (CudaAdvancedRbmBase)obj;
                 rbm._gpu = _gpu;
                 rbm._rand = _rand;
                 rbm._numVisibleNeurons = info.GetInt32("numVisNeurons");
                 rbm._numHiddenNeurons = info.GetInt32("numHidNeurons");
-                rbm._weightcost = (TElement) info.GetValue("weightCost", typeof (TElement));
-                rbm._initialmomentum = (TElement) info.GetValue("initMomentum", typeof (TElement));
-                rbm._finalmomentum = (TElement) info.GetValue("finalMomentum", typeof (TElement));
+                rbm._weightcost = (TElement)info.GetValue("weightCost", typeof(TElement));
+                rbm._initialmomentum = (TElement)info.GetValue("initMomentum", typeof(TElement));
+                rbm._finalmomentum = (TElement)info.GetValue("finalMomentum", typeof(TElement));
                 rbm._layerIndex = info.GetInt32("index");
-                var state = (SuspendState) info.GetValue("state", typeof (SuspendState));
-                rbm._hiddenBiases = _gpu.Upload((TElement[,]) info.GetValue("hidBias", typeof (TElement[,])));
-                rbm._visibleBiases = _gpu.Upload((TElement[,]) info.GetValue("visBias", typeof (TElement[,])));
-                rbm._weights = _gpu.Upload((TElement[,]) info.GetValue("weights", typeof (TElement[,])));
-                rbm._hidbiasinc = _gpu.Upload((TElement[,]) info.GetValue("hidBiasInc", typeof (TElement[,])));
-                rbm._visbiasinc = _gpu.Upload((TElement[,]) info.GetValue("visBiasInc", typeof (TElement[,])));
-                rbm._vishidinc = _gpu.Upload((TElement[,]) info.GetValue("weightInc", typeof (TElement[,])));
+                var state = (SuspendState)info.GetValue("state", typeof(SuspendState));
+                rbm._hiddenBiases = _gpu.Upload((TElement[,])info.GetValue("hidBias", typeof(TElement[,])));
+                rbm._visibleBiases = _gpu.Upload((TElement[,])info.GetValue("visBias", typeof(TElement[,])));
+                rbm._weights = _gpu.Upload((TElement[,])info.GetValue("weights", typeof(TElement[,])));
+                rbm._hidbiasinc = _gpu.Upload((TElement[,])info.GetValue("hidBiasInc", typeof(TElement[,])));
+                rbm._visbiasinc = _gpu.Upload((TElement[,])info.GetValue("visBiasInc", typeof(TElement[,])));
+                rbm._vishidinc = _gpu.Upload((TElement[,])info.GetValue("weightInc", typeof(TElement[,])));
 
                 rbm.LoadSpecific(info);
 
@@ -723,7 +723,8 @@ namespace CudaNN
             Stopwatch sw = new Stopwatch();
             int epoch;
             TElement error;
-            for (epoch = 0;; epoch++)
+            EpochEventArgs<TElement> args;
+            for (epoch = 0; ; epoch++)
             {
                 sw.Restart();
                 TElement weightLearningRate = weightLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
@@ -740,23 +741,23 @@ namespace CudaNN
                             visBiasLearningRate);
                 });
 
-                OnEpochComplete(new EpochEventArgs<TElement>()
+                TElement delta;
+                var shouldExit = exitConditionEvaluator.Exit(epoch, error, sw.Elapsed, out delta);
+                args = new EpochEventArgs<TElement>()
                 {
                     Epoch = epoch,
                     Error = error,
-                    Layer = LayerIndex
-                });
-
-                if (exitConditionEvaluator.Exit(epoch, error, sw.Elapsed))
+                    Layer = LayerIndex,
+                    LearningRate = weightLearningRate,
+                    Elapsed = sw.Elapsed,
+                    Delta = delta
+                };
+                OnEpochComplete(args);
+                if (shouldExit)
                     break;
             }
 
-            OnTrainComplete(new EpochEventArgs<TElement>()
-            {
-                Epoch = epoch,
-                Error = error,
-                Layer = LayerIndex
-            });
+            OnTrainComplete(args);
             exitConditionEvaluator.Stop();
             SetState(state);
         }

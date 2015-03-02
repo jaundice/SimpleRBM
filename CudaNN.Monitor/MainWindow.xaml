@@ -3,6 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:app="clr-namespace:CudaNN.Monitor"
         xmlns:system="clr-namespace:System;assembly=mscorlib"
+        xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+        xmlns:ei="http://schemas.microsoft.com/expression/2010/interactions"
         Title="MainWindow" >
     <Window.DataContext>
         <app:MonitorViewModel></app:MonitorViewModel>
@@ -26,69 +28,85 @@
             </x:Array>
         </ResourceDictionary>
     </Window.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"></RowDefinition>
-            <RowDefinition Height="Auto"></RowDefinition>
-            <RowDefinition Height="Auto"></RowDefinition>
-            <RowDefinition></RowDefinition>
-
+            <RowDefinition Height="*"></RowDefinition>
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
 
-        <Grid Grid.Row="0" Margin="4">
+        <Grid Grid.Row="0" Grid.Column="0" Margin="4">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"></ColumnDefinition>
-                <ColumnDefinition Width="Auto"></ColumnDefinition>
-                <ColumnDefinition Width="Auto"></ColumnDefinition>
+                <ColumnDefinition></ColumnDefinition>
             </Grid.ColumnDefinitions>
-            <Label Margin="4" Grid.Column="0">Demo</Label>
-            <ComboBox Margin="4" Grid.Column="1" ItemsSource="{StaticResource DemoNames}" DisplayMemberPath="." SelectedValuePath="."  SelectedValue="{Binding Path=DemoMode, Mode=TwoWay}" SelectedIndex="0" />
-            <Button Margin="4" Grid.Column="2" Command="{Binding Path=RunCommand}">Run</Button>
-        </Grid>
-        <Grid Grid.Row="1" Margin="4">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"></ColumnDefinition>
-                <ColumnDefinition Width="*"></ColumnDefinition>
-                <ColumnDefinition Width="Auto"></ColumnDefinition>
-                <ColumnDefinition Width="*"></ColumnDefinition>
-                <ColumnDefinition Width="Auto"></ColumnDefinition>
-                <ColumnDefinition Width="*"></ColumnDefinition>
-                <ColumnDefinition Width="Auto"></ColumnDefinition>
-                <ColumnDefinition Width="*"></ColumnDefinition>
-                <ColumnDefinition Width="70"></ColumnDefinition>
-
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"></RowDefinition>
-                <RowDefinition Height="Auto"></RowDefinition>
-            </Grid.RowDefinitions>
-            <Label Grid.Column="0" Grid.Row="0">Layer</Label>
-            <Label Grid.Column="1" Grid.Row="0" Content="{Binding Path=Layer, Mode=OneWay}" ></Label>
-            <Label Grid.Column="2" Grid.Row="0">Epoch</Label>
-            <Label Grid.Column="3" Grid.Row="0" Content="{Binding Path=Epoch, Mode=OneWay}" ></Label>
-            <Label Grid.Column="4" Grid.Row="0">Error</Label>
-            <Label Grid.Column="5" Grid.Row="0" Content="{Binding Path=Error, Mode=OneWay}" ></Label>
-            <Label Grid.Column="6" Grid.Row="0">Delta</Label>
-            <Label Grid.Column="7" Grid.Row="0" Content="{Binding Path=Delta, Mode=OneWay}" ></Label>
-            <Label Grid.Column="0" Grid.Row="1">Learning Rate</Label>
-            <TextBox Grid.Column="1" Grid.Row="1" Text="{Binding Path=LearningRate, Mode=TwoWay, TargetNullValue=0.0001}" ></TextBox>
-            <Label Grid.Column="2" Grid.Row="1">Update Frequency</Label>
-            <TextBox Grid.Column="3" Grid.Row="1" Text="{Binding Path=UpdateFrequency, Mode=TwoWay, TargetNullValue=20}" ></TextBox>
-            <Label Grid.Column="4" Grid.Row="1">Backup Frequency</Label>
-            <TextBox Grid.Column="5" Grid.Row="1" Text="{Binding Path=BackupFrequency, Mode=TwoWay, TargetNullValue=1000}" ></TextBox>
-            <Label Grid.Column="6" Grid.Row="1">#Training Examples</Label>
-            <Label Grid.Column="7" Grid.Row="1" Content="{Binding Path=NumTrainingExamples, Mode=OneWay}" ></Label>
-            <Grid Grid.Row="0" Column="8" RowSpan="2">
+            <Grid Grid.Row="0" Grid.Column="0" Margin="4">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"></ColumnDefinition>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="*"></RowDefinition>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Image  Margin="4" Grid.Row="0" Stretch="Uniform" UseLayoutRounding="False"  StretchDirection="Both" Source="{Binding Path=ActivationFrequency, Mode=OneWay}"  Loaded="FrameworkElement_OnLoaded" ></Image>
+                <Label Grid.Column="0" Grid.Row="0" Content="Layer"/>
+                <Label Grid.Column="0" Grid.Row="1" Content="{Binding Layer, Mode=OneWay}" />
+                <Label Grid.Column="1" Grid.Row="0" Content="Epoch"/>
+                <Label Grid.Column="1" Grid.Row="1" Content="{Binding Epoch, Mode=OneWay}" />
+                <Label Grid.Column="2" Grid.Row="0" Content="Error"/>
+                <Label Grid.Column="2" Grid.Row="1" Content="{Binding Error, Mode=OneWay}" Foreground="{Binding ErrorLabelBrush}" />
+                <Label Grid.Column="3" Grid.Row="0" Content="Delta"/>
+                <Label Grid.Column="3" Grid.Row="1" Content="{Binding Delta, Mode=OneWay}" Foreground="{Binding DeltaLabelBrush}" />
+                <Label Grid.Column="4" Grid.Row="0" Content="Elapsed"/>
+                <Label Grid.Column="4" Grid.Row="1" Content="{Binding Elapsed, Mode=OneWay}" />
+                <Label Grid.Column="5" Grid.Row="0" Content="Learning Rate"/>
+                <Label Grid.Column="5" Grid.Row="1" Content="{Binding LearningRate, Mode=OneWay}" />
+                <Label Grid.Column="0" Grid.Row="2" Content="Update Frequency"/>
+                <TextBox Grid.Column="0" Grid.Row="3" Text="{Binding UpdateFrequency, Mode=TwoWay}" />
+                <Label Grid.Column="1" Grid.Row="2" Content="Backup Frequency"/>
+                <TextBox Grid.Column="1" Grid.Row="3" Text="{Binding BackupFrequency, Mode=TwoWay}" />
+                <Label Grid.Column="2" Grid.Row="2" Content="#Training Examples"/>
+                <TextBox Grid.Column="2" Grid.Row="3" Text="{Binding NumTrainingExamples, Mode=TwoWay}" />
+                <Label Grid.Column="3" Grid.Row="2" Content="Init weight stdev"/>
+                <TextBox Grid.Column="3" Grid.Row="3" Text="{Binding InitStDev, Mode=TwoWay}" />
+                <Label Grid.Column="4" Grid.Row="2" Content="Max Epochs"/>
+                <TextBox Grid.Column="4" Grid.Row="3" Text="{Binding ExitEvaluatorFactory.MaxEpochs, Mode=TwoWay}" />
+                <Label Grid.Column="5" Grid.Row="2" Content="Learning Rate"/>
+                <TextBox Grid.Column="5" Grid.Row="3" Text="{Binding WeightLearningRateFactory.LearningRate, Mode=TwoWay}" />
+                <Label Grid.Column="6" Grid.Row="2" Content="Vis Bias Learning Rate"/>
+                <TextBox Grid.Column="6" Grid.Row="3" Text="{Binding VisBiasLearningRateFactory.LearningRate, Mode=TwoWay}" />
+                <Label Grid.Column="7" Grid.Row="2" Content="Hid Bias Learning Rate"/>
+                <TextBox Grid.Column="7" Grid.Row="3" Text="{Binding HidBiasLearningRateFactory.LearningRate, Mode=TwoWay}" />
+
+                <ComboBox Margin="4" Grid.Column="8" Grid.Row="0" ItemsSource="{StaticResource DemoNames}" DisplayMemberPath="." SelectedValuePath="."  SelectedValue="{Binding DemoMode, Mode=TwoWay}" SelectedIndex="0" />
+                <Button Margin="4" Grid.Column="8"  Grid.Row="1" Command="{Binding RunCommand}" Content="Start"/>
+                <Button Margin="4" Grid.Column="8"  Grid.Row="2" Command="{Binding ExitEvaluatorFactory.ExitNextCommand, Mode=OneWay}" Content="Exit Next"/>
+                <Button Margin="4" Grid.Column="8"  Grid.Row="3" Command="{Binding ExitEvaluatorFactory.ExitNowCommand, Mode=OneWay}" Content="Exit Now"/>
+
             </Grid>
         </Grid>
-        <Grid Grid.Row="3">
+
+        <Grid Grid.Row="0" Column="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"></RowDefinition>
+            </Grid.RowDefinitions>
+
+        </Grid>
+        <Grid Grid.Row="1" Grid.Column="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"></ColumnDefinition>
                 <ColumnDefinition Width="*"></ColumnDefinition>
@@ -102,7 +120,10 @@
                     <RowDefinition Height="Auto"></RowDefinition>
                     <RowDefinition Height="*"></RowDefinition>
                 </Grid.RowDefinitions>
-                <Label  Margin="4" Grid.Column="0" Grid.Row="0">Reconstructions</Label>
+                <WrapPanel Grid.Column="0" Grid.Row="0">
+                    <Label  Margin="4">Reconstructions</Label>
+                    <Label Margin="4" Content="{Binding DisplayedEpoch}"></Label>
+                </WrapPanel>
                 <ScrollViewer Margin="4" Grid.Row="1" Grid.Column="0">
                     <ItemsControl  HorizontalAlignment="Left" ItemsSource="{Binding Path=Reconstructions}"  ItemTemplate="{Binding Source={StaticResource  ResourceKey=ImageComparison}}">
                         <ItemsControl.ItemsPanel>
@@ -147,7 +168,7 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Image Margin="4" Stretch="Uniform" UseLayoutRounding="False"  Source="{Binding Path=.}" Loaded="FrameworkElement_OnLoaded" ></Image>
+                                <Image Margin="4" Stretch="Uniform" UseLayoutRounding="False"  Source="{Binding Path=.}" Loaded="FrameworkElement_OnLoaded" ImageFailed="Image_OnImageFailed" ></Image>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -155,6 +176,7 @@
             </Grid>
             <Grid Grid.Column="2">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"></ColumnDefinition>
                     <ColumnDefinition Width="*"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
@@ -176,6 +198,24 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </ScrollViewer>
+
+                <Label Grid.Column="1" Grid.Row="0">Info</Label>
+                <StackPanel Grid.Column="1" Grid.Row="1" Margin="4">
+                    <Label>Activations</Label>
+                    <Image  Margin="4" Stretch="Uniform" UseLayoutRounding="False"  StretchDirection="Both" Source="{Binding Path=ActivationFrequency, Mode=OneWay}"  Loaded="FrameworkElement_OnLoaded">
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="MouseMove" >
+                                <ei:CallMethodAction MethodName="DisplayFeature" TargetObject="{Binding}"></ei:CallMethodAction>
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
+                    </Image>
+                    <WrapPanel>
+                        <Label>Highlighted Feature</Label>
+                        <Label Content="{Binding SelectedFeatureIndex}"></Label>
+                    </WrapPanel>
+
+                    <Image  Margin="4" Stretch="Uniform"  Source="{Binding SelectedFeature}" Loaded="FrameworkElement_OnLoaded"></Image>
+                </StackPanel>
             </Grid>
         </Grid>
     </Grid>

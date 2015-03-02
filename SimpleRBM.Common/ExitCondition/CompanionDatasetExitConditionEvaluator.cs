@@ -181,7 +181,7 @@ namespace SimpleRBM.Common.ExitCondition
          
         }
 
-        public bool Exit(int epochNumber, T lastError, TimeSpan elapsedTime)
+        public bool Exit(int epochNumber, T lastError, TimeSpan elapsedTime, out T delta)
         {
             throw new NotImplementedException();
         }

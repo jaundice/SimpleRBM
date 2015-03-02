@@ -62,11 +62,17 @@ namespace SimpleRBM.Common.ExitCondition
             _reportFrequency = reportFrequency;
         }
 
-        public bool Exit(int epochNumber, T lastError, TimeSpan elapsedTime)
+        public bool Exit(int epochNumber, T lastError, TimeSpan elapsedTime, out T delta)
         {
-            _epochErrorTracker.LogEpochError(_layerDepth, epochNumber, lastError);
+            
+
 
             T tempLowest = _lowestErrorSeen;
+
+            delta = (T) Convert.ChangeType((double) Convert.ChangeType(tempLowest, typeof (double)) -
+                                           (double) Convert.ChangeType(lastError, typeof (double)), typeof (T));
+
+            _epochErrorTracker.LogEpochError(_layerDepth, epochNumber, lastError, delta, elapsedTime);
 
             if (Comparer<T>.Default.Compare(lastError, _minError) < 0)
             {
@@ -110,9 +116,7 @@ namespace SimpleRBM.Common.ExitCondition
                 Console.WriteLine(
                     "Epoch: {0}\tLayer: {1}\tError: {2:F6}\tElapsed: {3}\tdelta: {4:F6}\tepochs since improvement: {5}",
                     epochNumber,
-                    _layerDepth, lastError, elapsedTime,
-                    (double)Convert.ChangeType(tempLowest, typeof(double)) -
-                    (double)Convert.ChangeType(lastError, typeof(double)), _epochsSinceLastErrorImprovement);
+                    _layerDepth, lastError, elapsedTime,delta, _epochsSinceLastErrorImprovement);
 
 
 

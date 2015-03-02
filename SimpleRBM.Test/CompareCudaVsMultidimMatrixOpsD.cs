@@ -569,7 +569,7 @@ namespace SimpleRBM.Test
 
             cudaMatrix = dev.AllocateAndSet<double>(rows, cols);
 
-            dev.CopyToDevice(netMatrix, cudaMatrix);
+            dev.CopyToDevice(netMatrix, cudaMatrix.Matrix);
         }
 
         public static void CreateRandomMatricesF(GPGPU dev, int rows, int cols, out float[,] netMatrix,
@@ -579,7 +579,7 @@ namespace SimpleRBM.Test
 
             cudaMatrix = dev.AllocateAndSet<float>(rows, cols);
 
-            dev.CopyToDevice(netMatrix, cudaMatrix);
+            dev.CopyToDevice(netMatrix, cudaMatrix.Matrix);
         }
 
         public static void CreateRandomMatricesIntD(GPGPU dev, int rows, int cols, out double[,] netMatrix,
@@ -599,7 +599,7 @@ namespace SimpleRBM.Test
             netMatrix = m;
             cudaMatrix = dev.AllocateAndSet<double>(rows, cols);
 
-            dev.CopyToDevice(netMatrix, cudaMatrix);
+            dev.CopyToDevice(netMatrix, cudaMatrix.Matrix);
         }
 
         public static void CreateRandomMatricesIntF(GPGPU dev, int rows, int cols, out float[,] netMatrix,
@@ -619,7 +619,7 @@ namespace SimpleRBM.Test
             netMatrix = m;
             cudaMatrix = dev.AllocateAndSet<float>(rows, cols);
 
-            dev.CopyToDevice(netMatrix, cudaMatrix);
+            dev.CopyToDevice(netMatrix, cudaMatrix.Matrix);
         }
     }
 }

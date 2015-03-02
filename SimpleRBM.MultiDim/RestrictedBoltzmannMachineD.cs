@@ -202,7 +202,8 @@ namespace SimpleRBM.MultiDim
                 RaiseEpochEnd(i, error);
 
 
-                if (exitEvaluator.Exit(i, error, sw.Elapsed))
+                double delta;
+                if (exitEvaluator.Exit(i, error, sw.Elapsed, out delta))
                     break; 
                 
                 sw.Reset();

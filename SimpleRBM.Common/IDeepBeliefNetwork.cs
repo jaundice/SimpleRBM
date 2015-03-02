@@ -36,11 +36,4 @@ namespace SimpleRBM.Common
         event EventHandler<EpochEventArgs<TElement>> EpochEnd;
         event EventHandler<EpochEventArgs<TElement>> TrainEnd;
     }
-
-    public class EpochEventArgs<T> : EventArgs
-    {
-        public int Layer { get; set; }
-        public int Epoch { get; set; }
-        public T Error { get; set; }
-    }
 }

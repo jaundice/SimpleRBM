@@ -135,11 +135,11 @@ namespace CudaNN
             int numHiddenNeurons, bool convertActivationsToStates,
             TElement weightcost = (TElement) 0.0002,
             TElement initialMomentum = (TElement) 0.5, TElement finalMomentum = (TElement) 0.9,
-            TElement encodingNoiseLevel = (TElement) 1, TElement decodingNoiseLevel = (TElement) 1)
+            TElement encodingNoiseLevel = (TElement) 1, TElement decodingNoiseLevel = (TElement) 1, TElement weightInitializationStDev = (TElement)0.01)
             : base(
                 gpu, rand, layerIndex, numVisibleNeurons, numHiddenNeurons, /*epsilonw, epsilonvb, epsilonhb,*/
                 weightcost,
-                initialMomentum, finalMomentum)
+                initialMomentum, finalMomentum, weightInitializationStDev)
         {
             ConvertActivationsToStates = convertActivationsToStates;
             _decodingNoiseLevel = decodingNoiseLevel;

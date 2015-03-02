@@ -277,7 +277,8 @@ namespace SimpleRBM.Cuda
                     }
 
                     RaiseEpochEnd(i, error);
-                    if (exitEvaluator.Exit(i, error, sw.Elapsed))
+                    TElement delta;
+                    if (exitEvaluator.Exit(i, error, sw.Elapsed, out delta))
                         break;
                 }
             }
@@ -423,7 +424,8 @@ namespace SimpleRBM.Cuda
 
                 RaiseEpochEnd(i, error);
 
-                if (exitEvaluator.Exit(i, error, sw.Elapsed))
+                TElement delta;
+                if (exitEvaluator.Exit(i, error, sw.Elapsed, out delta))
                     break;
             }
 
@@ -470,7 +472,8 @@ namespace SimpleRBM.Cuda
 
                         RaiseEpochEnd(i, error);
 
-                        if (exitEvaluator.Exit(i, error, sw.Elapsed))
+                        TElement delta;
+                        if (exitEvaluator.Exit(i, error, sw.Elapsed, out delta))
                             break;
                     }
                 }

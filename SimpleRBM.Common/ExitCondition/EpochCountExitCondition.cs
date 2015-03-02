@@ -6,7 +6,7 @@ namespace SimpleRBM.Common.ExitCondition
 {
     public class EpochCountExitCondition<T> : IExitConditionEvaluator<T> where T : struct, IComparable<T>
     {
-        private T _lowestErrorSeen ;
+        private T _lowestErrorSeen;
         private readonly IEpochErrorTracker<T> _epochErrorTracker;
         public int MaxEpoch { get; set; }
         public int CurrentEpoch { get; protected set; }
@@ -15,18 +15,19 @@ namespace SimpleRBM.Common.ExitCondition
         public EpochCountExitCondition(IEpochErrorTracker<T> epochErrorTracker)
         {
             _epochErrorTracker = epochErrorTracker;
-        } 
+        }
 
-        public bool Exit( int epochNumber, T lastError, TimeSpan elapsedTime)
+        public bool Exit(int epochNumber, T lastError, TimeSpan elapsedTime, out T delta)
         {
-            _epochErrorTracker.LogEpochError(LayerDepth, epochNumber, lastError);
+            delta = (T) Convert.ChangeType((double) Convert.ChangeType(_lowestErrorSeen, typeof (double)) -
+                                           (double) Convert.ChangeType(lastError, typeof (double)), typeof (T));
 
-            if (epochNumber % 20 == 0)
+            _epochErrorTracker.LogEpochError(LayerDepth, epochNumber, lastError, delta, elapsedTime);
+            if (epochNumber%20 == 0)
                 Console.WriteLine("Epoch: {0}\tLayer: {1}\tError: {2}\tElapsed: {3}, delta: {4}", epochNumber,
-                    LayerDepth, lastError, elapsedTime,
-                    (double)Convert.ChangeType(_lowestErrorSeen, typeof(double)) -
-                    (double)Convert.ChangeType(lastError, typeof(double))); 
-            
+                    LayerDepth, lastError, elapsedTime, delta)
+                    ;
+
             CurrentEpoch++;
 
             if (epochNumber == 0)
@@ -52,7 +53,6 @@ namespace SimpleRBM.Common.ExitCondition
 
         public void Stop()
         {
-            
         }
     }
 }

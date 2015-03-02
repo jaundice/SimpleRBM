@@ -11,13 +11,13 @@ namespace CudaNN.Monitor
         public BitmapSource Item1
         {
             get { return Dispatcher.InvokeIfRequired(() => (BitmapSource)GetValue(Item1Property)).Result; }
-            set { Dispatcher.InvokeIfRequired(() => SetValue(Item1Property, value)); }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(Item1Property, value)).Wait(); }
         }
 
         public BitmapSource Item2
         {
             get { return Dispatcher.InvokeIfRequired(() => (BitmapSource)GetValue(Item2Property)).Result; }
-            set { Dispatcher.InvokeIfRequired(() => SetValue(Item2Property, value)); }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(Item2Property, value)).Wait(); }
         }
     }
 }

@@ -92,6 +92,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DataIOBase.cs" />
+    <Compile Include="EpochEventArgs.cs" />
     <Compile Include="ExitCondition\CompanionDatasetExitConditionEvaluator.cs" />
     <Compile Include="ExitCondition\CompanionDatasetExitConditionEvaluatorFactory.cs" />
     <Compile Include="ExitCondition\EpochCountExitCondition.cs" />
