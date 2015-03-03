@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using Cudafy.Host;
 using Cudafy.Maths.RAND;
 using SimpleRBM.Common;
@@ -31,25 +32,25 @@ namespace CudaNN
             IExitConditionEvaluator<TElement> exitConditionEvaluator,
             ILearningRateCalculator<TElement> weightLearningRateCalculator,
             ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
-            ILearningRateCalculator<TElement> visBiasLearningRateCalculator);
+            ILearningRateCalculator<TElement> visBiasLearningRateCalculator, CancellationToken cancelToken);
 
         void GreedyBatchedTrain(Matrix2D<TElement> data, int batchSize,
             IExitConditionEvaluator<TElement> exitConditionEvaluator,
             ILearningRateCalculator<TElement> weightLearningRateCalculator,
             ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
-            ILearningRateCalculator<TElement> visBiasLearningRateCalculator);
+            ILearningRateCalculator<TElement> visBiasLearningRateCalculator, CancellationToken cancelToken);
 
         void GreedyBatchedTrainMem(Matrix2D<TElement> data, int batchSize,
             IExitConditionEvaluator<TElement> exitConditionEvaluator,
             ILearningRateCalculator<TElement> weightLearningRateCalculator,
             ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
-            ILearningRateCalculator<TElement> visBiasLearningRateCalculator);
+            ILearningRateCalculator<TElement> visBiasLearningRateCalculator, CancellationToken cancelToken);
 
         void GreedyBatchedTrainMem(IList<TElement[,]> batches,
            IExitConditionEvaluator<TElement> exitConditionEvaluator,
            ILearningRateCalculator<TElement> weightLearningRateCalculator,
            ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
-           ILearningRateCalculator<TElement> visBiasLearningRateCalculator);
+           ILearningRateCalculator<TElement> visBiasLearningRateCalculator, CancellationToken cancelToken);
 
         Matrix2D<TElement> HiddenBiases { get; }
         Matrix2D<TElement> VisibleBiases { get; }

@@ -80,7 +80,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="MainWindow.xaml">
+    <Page Include="DefineNetwork.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Believe.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -89,12 +93,24 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="CommandHandler.cs" />
+    <Compile Include="ConstructBinaryLayer.cs" />
+    <Compile Include="ConstructLayerBase.cs" />
+    <Compile Include="ConstructLinearHiddenLayer.cs" />
+    <Compile Include="ConstructNewLayer.cs" />
+    <Compile Include="DefineNetwork.xaml.cs">
+      <DependentUpon>DefineNetwork.xaml</DependentUpon>
+    </Compile>
     <Compile Include="DispatcherEx.cs" />
     <Compile Include="ImagePair.cs" />
     <Compile Include="InteractiveLearningRateCalculator.cs" />
     <Compile Include="InteractiveLearningRateCalculatorFactory.cs" />
-    <Compile Include="MainWindow.xaml.cs">
-      <DependentUpon>MainWindow.xaml</DependentUpon>
+    <Compile Include="LayerBuilderViewModel.cs" />
+    <Compile Include="LayerBuilderTemplateSelector.cs" />
+    <Compile Include="LayerConfigViewerTemplateSelector.cs" />
+    <Compile Include="LayerSpecificLearningRateCalculator.cs" />
+    <Compile Include="LoadLayerInfo.cs" />
+    <Compile Include="Believe.xaml.cs">
+      <DependentUpon>Believe.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Cudafy.Host;
 using Cudafy.Maths.RAND;
@@ -171,28 +172,29 @@ namespace SimpleRBM.Cuda
 
         public void GreedyTrainAll(TElement[,] visibleData,
             IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory)
+            ILearningRateCalculatorFactory<TElement> learningRateFactory, CancellationToken cancelToken)
         {
             using (var d = _gpu.Upload(visibleData))
             {
                 ((IBasicNetworkCuda<TElement>)this).GreedyTrainAll(d, exitConditionEvaluatorFactory,
-                    learningRateFactory);
+                    learningRateFactory, cancelToken);
             }
         }
 
 
         void IBasicNetworkCuda<TElement>.UpDownTrainAll(Matrix2D<TElement> visibleData, int iterations,
             IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory)
+            ILearningRateCalculatorFactory<TElement> learningRateFactory, CancellationToken cancelToken)
         {
             TElement error;
 
             for (int i = 0; i < iterations; i++)
             {
+                cancelToken.ThrowIfCancellationRequested();
                 Matrix2D<TElement> penultimateActivations = ((IBasicNetworkCuda<TElement>)this).Encode(visibleData, Machines.Count - 2);
 
                 Machines[Machines.Count - 1].GreedyTrain(penultimateActivations, exitConditionEvaluatorFactory.Create(Machines.Count - 1),
-                    learningRateFactory.Create(Machines.Count - 1));
+                    learningRateFactory.Create(Machines.Count - 1), cancelToken);
 
 
 
@@ -201,8 +203,9 @@ namespace SimpleRBM.Cuda
 
                 for (int j = Machines.Count - 2; j > -1; j--)
                 {
+                    cancelToken.ThrowIfCancellationRequested();
                     Machines[j].DownPass(visible, exitConditionEvaluatorFactory.Create(j), learningRateFactory.Create(j),
-                        out error);
+                        out error, cancelToken);
 
                     var visible2 = Machines[j].Decode(visible);
                     visible.Dispose();
@@ -214,12 +217,13 @@ namespace SimpleRBM.Cuda
 
         void IBasicNetworkCuda<TElement>.UpDownSupervisedTrainAll(Matrix2D<TElement> visibleData, Matrix2D<TElement> labels, int iterations,
             IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory)
+            ILearningRateCalculatorFactory<TElement> learningRateFactory, CancellationToken cancelToken)
         {
             TElement error;
 
             for (int i = 0; i < iterations; i++)
             {
+                cancelToken.ThrowIfCancellationRequested();
                 Matrix2D<TElement> penultimateActivations = ((IBasicNetworkCuda<TElement>)this).Encode(visibleData, Machines.Count - 2);
 
                 var combined = Machines[0].GPU.AllocateNoSet<TElement>(penultimateActivations.GetLength(0),
@@ -232,7 +236,7 @@ namespace SimpleRBM.Cuda
 
 
                 Machines[Machines.Count - 1].GreedyTrain(penultimateActivations, exitConditionEvaluatorFactory.Create(Machines.Count - 1),
-                    learningRateFactory.Create(Machines.Count - 1));
+                    learningRateFactory.Create(Machines.Count - 1), cancelToken);
 
 
 
@@ -245,8 +249,9 @@ namespace SimpleRBM.Cuda
 
                 for (int j = Machines.Count - 2; j > -1; j--)
                 {
+                    cancelToken.ThrowIfCancellationRequested();
                     Machines[j].DownPass(visible, exitConditionEvaluatorFactory.Create(j), learningRateFactory.Create(j),
-                        out error);
+                        out error, cancelToken);
 
                     var visible2 = Machines[j].Decode(visible);
                     visible.Dispose();
@@ -374,23 +379,24 @@ namespace SimpleRBM.Cuda
 
         void IBasicNetworkCuda<TElement>.GreedyTrainAll(Matrix2D<TElement> visibleData,
             IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory)
+            ILearningRateCalculatorFactory<TElement> learningRateFactory, CancellationToken cancelToken)
         {
             ((IBasicNetworkCuda<TElement>)this).GreedyTrainLayersFrom(visibleData, -1, exitConditionEvaluatorFactory,
-                learningRateFactory);
+                learningRateFactory, cancelToken);
         }
 
         void IBasicNetworkCuda<TElement>.GreedyTrainLayersFrom(Matrix2D<TElement> visibleData, int startDepth,
             IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory)
+            ILearningRateCalculatorFactory<TElement> learningRateFactory, CancellationToken cancelToken)
         {
             var layerTrainData = visibleData;
             for (var i = 0; i < Machines.Count; i++)
             {
+                cancelToken.ThrowIfCancellationRequested();
                 if (i >= startDepth)
                 {
                     Machines[i].GreedyTrain(layerTrainData, exitConditionEvaluatorFactory.Create(i),
-                        learningRateFactory.Create(i));
+                        learningRateFactory.Create(i), cancelToken);
                 }
                 var encoded = Machines[i].Encode(layerTrainData);
                 if (!ReferenceEquals(layerTrainData, visibleData))
@@ -494,15 +500,15 @@ namespace SimpleRBM.Cuda
 
         void IBasicNetworkCuda<TElement>.GreedyBatchedTrainAll(Matrix2D<TElement> data,
             int batchRows, IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory, out TElement error)
+            ILearningRateCalculatorFactory<TElement> learningRateFactory, out TElement error, CancellationToken cancelToken)
         {
             error = 0;
             var layerTrainData = data;
             for (var i = 0; i < Machines.Count; i++)
             {
-
+                cancelToken.ThrowIfCancellationRequested();
                 error = Machines[i].GreedyBatchedTrain(layerTrainData, batchRows, exitConditionEvaluatorFactory.Create(i),
-                     learningRateFactory.Create(i));
+                     learningRateFactory.Create(i), cancelToken);
 
                 var encoded = Machines[i].Encode(layerTrainData);
                 if (!ReferenceEquals(layerTrainData, data))
@@ -514,11 +520,12 @@ namespace SimpleRBM.Cuda
             layerTrainData.Dispose();
         }
 
-        void IBasicNetworkCuda<TElement>.GreedySupervisedTrain(Matrix2D<TElement> data, Matrix2D<TElement> labels, IExitConditionEvaluatorFactory<TElement> exitConditionFactory, ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory)
+        void IBasicNetworkCuda<TElement>.GreedySupervisedTrain(Matrix2D<TElement> data, Matrix2D<TElement> labels, IExitConditionEvaluatorFactory<TElement> exitConditionFactory, ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory, CancellationToken cancelToken)
         {
             var layerTrainData = data;
             for (var i = 0; i < Machines.Count; i++)
             {
+                cancelToken.ThrowIfCancellationRequested();
                 if (i == Machines.Count - 1)
                 {
                     var combined = Machines[0].GPU.AllocateNoSet<TElement>(data.GetLength(0),
@@ -532,7 +539,7 @@ namespace SimpleRBM.Cuda
 
 
                 Machines[i].GreedyTrain(layerTrainData, exitConditionFactory.Create(i),
-                    weightLearningRateCalculatorFactory.Create(i));
+                    weightLearningRateCalculatorFactory.Create(i), cancelToken);
 
 
                 var encoded = Machines[i].Encode(layerTrainData);
@@ -546,11 +553,12 @@ namespace SimpleRBM.Cuda
 
         }
 
-        void IBasicNetworkCuda<TElement>.GreedyBatchedSupervisedTrain(Matrix2D<TElement> data, Matrix2D<TElement> labels, int batchRows, IExitConditionEvaluatorFactory<TElement> exitConditionFactory, ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory)
+        void IBasicNetworkCuda<TElement>.GreedyBatchedSupervisedTrain(Matrix2D<TElement> data, Matrix2D<TElement> labels, int batchRows, IExitConditionEvaluatorFactory<TElement> exitConditionFactory, ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory, CancellationToken cancelToken)
         {
             var layerTrainData = data;
             for (var i = 0; i < Machines.Count; i++)
             {
+                cancelToken.ThrowIfCancellationRequested();
                 if (i == Machines.Count - 1)
                 {
                     var combined = Machines[0].GPU.AllocateNoSet<TElement>(data.GetLength(0),
@@ -564,7 +572,7 @@ namespace SimpleRBM.Cuda
 
 
                 Machines[i].GreedyBatchedTrain(layerTrainData, batchRows, exitConditionFactory.Create(i),
-                    weightLearningRateCalculatorFactory.Create(i));
+                    weightLearningRateCalculatorFactory.Create(i), cancelToken);
 
 
                 var encoded = Machines[i].Encode(layerTrainData);
@@ -585,51 +593,51 @@ namespace SimpleRBM.Cuda
                 return ret.CopyLocal();
         }
 
-        public void GreedySupervisedTrainAll(TElement[,] srcData, TElement[,] labels, IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory, ILearningRateCalculatorFactory<TElement> learningRateFactory)
+        public void GreedySupervisedTrainAll(TElement[,] srcData, TElement[,] labels, IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory, ILearningRateCalculatorFactory<TElement> learningRateFactory, CancellationToken cancelToken)
         {
             using (var d = _gpu.Upload(srcData))
             using (var l = _gpu.Upload(labels))
             {
                 ((IBasicNetworkCuda<TElement>)this).GreedySupervisedTrain(d, l, exitConditionEvaluatorFactory,
-                    learningRateFactory);
+                    learningRateFactory, cancelToken);
             }
         }
 
 
-        public void UpDownTrainAll(TElement[,] visibleData, int iterations, IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory, ILearningRateCalculatorFactory<TElement> learningRateFactory)
+        public void UpDownTrainAll(TElement[,] visibleData, int iterations, IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory, ILearningRateCalculatorFactory<TElement> learningRateFactory, CancellationToken cancelToken)
         {
             using (var d = _gpu.Upload(visibleData))
             {
-                ((IBasicNetworkCuda<TElement>)this).UpDownTrainAll(d, iterations, exitConditionEvaluatorFactory, learningRateFactory);
+                ((IBasicNetworkCuda<TElement>)this).UpDownTrainAll(d, iterations, exitConditionEvaluatorFactory, learningRateFactory, cancelToken);
             }
         }
 
-        public void UpDownTrainSupervisedAll(TElement[,] visibleData, TElement[,] labels, int iterations, IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory, ILearningRateCalculatorFactory<TElement> learningRateFactory)
-        {
-            using (var d = _gpu.Upload(visibleData))
-            using (var l = _gpu.Upload(labels))
-            {
-                ((IBasicNetworkCuda<TElement>)this).UpDownSupervisedTrainAll(d, l, iterations, exitConditionEvaluatorFactory, learningRateFactory);
-            }
-        }
-
-
-        public void GreedyBatchedSupervisedTrainAll(TElement[,] visibleData, TElement[,] labels, int batchSize, IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory, ILearningRateCalculatorFactory<TElement> learningRateFactory)
+        public void UpDownTrainSupervisedAll(TElement[,] visibleData, TElement[,] labels, int iterations, IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory, ILearningRateCalculatorFactory<TElement> learningRateFactory, CancellationToken cancelToken)
         {
             using (var d = _gpu.Upload(visibleData))
             using (var l = _gpu.Upload(labels))
             {
-                ((IBasicNetworkCuda<TElement>)this).GreedyBatchedSupervisedTrain(d, l, batchSize, exitConditionEvaluatorFactory, learningRateFactory);
+                ((IBasicNetworkCuda<TElement>)this).UpDownSupervisedTrainAll(d, l, iterations, exitConditionEvaluatorFactory, learningRateFactory, cancelToken);
             }
         }
 
 
-        public void GreedyBatchedTrainAll(TElement[,] visibleData, int batchRows, IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory, ILearningRateCalculatorFactory<TElement> learningRateFactory)
+        public void GreedyBatchedSupervisedTrainAll(TElement[,] visibleData, TElement[,] labels, int batchSize, IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory, ILearningRateCalculatorFactory<TElement> learningRateFactory, CancellationToken cancelToken)
+        {
+            using (var d = _gpu.Upload(visibleData))
+            using (var l = _gpu.Upload(labels))
+            {
+                ((IBasicNetworkCuda<TElement>)this).GreedyBatchedSupervisedTrain(d, l, batchSize, exitConditionEvaluatorFactory, learningRateFactory, cancelToken);
+            }
+        }
+
+
+        public void GreedyBatchedTrainAll(TElement[,] visibleData, int batchRows, IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory, ILearningRateCalculatorFactory<TElement> learningRateFactory, CancellationToken cancelToken)
         {
             using (var d = _gpu.Upload(visibleData))
             {
                 TElement error;
-                ((IBasicNetworkCuda<TElement>)this).GreedyBatchedTrainAll(d, batchRows, exitConditionEvaluatorFactory, learningRateFactory, out error);
+                ((IBasicNetworkCuda<TElement>)this).GreedyBatchedTrainAll(d, batchRows, exitConditionEvaluatorFactory, learningRateFactory, out error, cancelToken);
             }
         }
     }

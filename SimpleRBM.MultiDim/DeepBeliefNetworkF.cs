@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using SimpleRBM.Common;
 using SimpleRBM.Common.Save;
@@ -69,13 +70,14 @@ namespace SimpleRBM.MultiDim
 
         public void GreedyTrainLayersFrom(TElement[,] visibleData, int startDepth,
             IExitConditionEvaluatorFactory<TElement> exitEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<TElement> learningRateCalculatorFactory, CancellationToken cancelToken)
         {
             for (int i = 0; i < Machines.Length; i++)
             {
+                cancelToken.ThrowIfCancellationRequested();
                 visibleData = i < startDepth
                     ? Machines[i].Encode(visibleData)
-                    : GreedyTrain(visibleData, i, exitEvaluatorFactory, learningRateCalculatorFactory);
+                    : GreedyTrain(visibleData, i, exitEvaluatorFactory, learningRateCalculatorFactory, cancelToken);
             }
         }
 
@@ -121,29 +123,30 @@ namespace SimpleRBM.MultiDim
 
         public TElement[,] GreedyTrain(TElement[,] data, int layerIndex,
             IExitConditionEvaluatorFactory<TElement> exitEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<TElement> learningRateCalculatorFactory, CancellationToken cancelToken)
         {
             Machines[layerIndex].GreedyTrain(data, exitEvaluatorFactory.Create(layerIndex),
-                learningRateCalculatorFactory.Create(layerIndex));
-           
+                learningRateCalculatorFactory.Create(layerIndex), cancelToken);
+
             return Machines[layerIndex].Encode(data);
         }
 
         public Task AsyncGreedyTrain(TElement[,] data, int layerIndex,
             IExitConditionEvaluatorFactory<TElement> exitEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<TElement> learningRateCalculatorFactory, CancellationToken cancelToken)
         {
             return Task.Run(
-                () => GreedyTrain(data, layerIndex, exitEvaluatorFactory, learningRateCalculatorFactory));
+                () => GreedyTrain(data, layerIndex, exitEvaluatorFactory, learningRateCalculatorFactory, cancelToken), cancelToken);
         }
 
         public void GreedyTrainAll(TElement[,] visibleData, IExitConditionEvaluatorFactory<TElement> exitEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<TElement> learningRateCalculatorFactory, CancellationToken cancelToken)
         {
 
             for (int i = 0; i < Machines.Length; i++)
             {
-                visibleData = GreedyTrain(visibleData, i, exitEvaluatorFactory, learningRateCalculatorFactory);
+                cancelToken.ThrowIfCancellationRequested();
+                visibleData = GreedyTrain(visibleData, i, exitEvaluatorFactory, learningRateCalculatorFactory, cancelToken);
             }
         }
 
@@ -163,7 +166,7 @@ namespace SimpleRBM.MultiDim
 
         public void GreedyBatchedTrainAll(TElement[,] visibleData, int batchRows,
             IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory)
+            ILearningRateCalculatorFactory<TElement> learningRateFactory, CancellationToken cancelToken)
         {
             throw new NotImplementedException();
         }

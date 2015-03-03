@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using SimpleRBM.Common;
 
 namespace CudaNN
@@ -34,47 +35,48 @@ namespace CudaNN
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken);
 
         void GreedyBatchedTrain(TElement[,] data, int batchSize,
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken);
 
         void GreedyBatchedTrainMem(TElement[,] data, int batchSize,
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken);
 
         void GreedySupervisedTrain(TElement[,] data, TElement[,] labels,
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken);
 
         void GreedyBatchedSupervisedTrain(TElement[,] data, TElement[,] labels, int batchSize,
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken);
 
         void GreedyBatchedSupervisedTrainMem(TElement[,] data, TElement[,] labels, int batchSize,
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken);
 
      void GreedyBatchedTrainMem(IList<TElement[,]> batches,
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken);
 
      void GreedyBatchedSupervisedTrainMem(IList<TElement[,]> batches, IList<TElement[,]> labels,
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);}
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken);
+    }
 }

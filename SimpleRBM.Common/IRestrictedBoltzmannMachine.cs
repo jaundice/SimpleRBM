@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SimpleRBM.Common
@@ -15,7 +16,7 @@ namespace SimpleRBM.Common
         TElement[,] DayDream(int numberOfSamples);
 
         void GreedyTrain(TElement[,] visibleData, IExitConditionEvaluator<TElement> exitEvaluator,
-            ILearningRateCalculator<TElement> learningRateCalculator);
+            ILearningRateCalculator<TElement> learningRateCalculator, CancellationToken cancelToken);
 
         ILayerSaveInfo<TElement> GetSaveInfo();
 

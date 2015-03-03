@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using SimpleRBM.Common;
 using SimpleRBM.Common.Save;
@@ -142,19 +143,19 @@ namespace SimpleRBM.MultiDim
         }
 
         public void GreedyTrain(TElement[][] data, IExitConditionEvaluator<TElement> exitEvaluator,
-            ILearningRateCalculator<TElement> learningRateCalculator)
+            ILearningRateCalculator<TElement> learningRateCalculator, CancellationToken cancelToken)
         {
-            GreedyTrain(Matrix2D.JaggedToMultidimesional(data), exitEvaluator, learningRateCalculator);
+            GreedyTrain(Matrix2D.JaggedToMultidimesional(data), exitEvaluator, learningRateCalculator, cancelToken);
         }
 
         public Task AsyncGreedyTrain(TElement[][] data, IExitConditionEvaluator<TElement> exitEvaluator,
-            ILearningRateCalculator<TElement> learningRateCalculator)
+            ILearningRateCalculator<TElement> learningRateCalculator, CancellationToken cancelToken)
         {
-            return AsyncGreedyTrain(Matrix2D.JaggedToMultidimesional(data), exitEvaluator, learningRateCalculator);
+            return AsyncGreedyTrain(Matrix2D.JaggedToMultidimesional(data), exitEvaluator, learningRateCalculator, cancelToken);
         }
 
         public void GreedyTrain(TElement[,] visibleData, IExitConditionEvaluator<TElement> exitEvaluator,
-            ILearningRateCalculator<TElement> learningRateCalculator)
+            ILearningRateCalculator<TElement> learningRateCalculator, CancellationToken cancelToken)
         {
             exitEvaluator.Start();
             TElement error;
@@ -169,6 +170,7 @@ namespace SimpleRBM.MultiDim
             int i;
             for (i = 0; ; i++)
             {
+                cancelToken.ThrowIfCancellationRequested();
                 sw.Start();
 
                 TElement[,] posHiddenActivations = Matrix2D.Multiply(data, Weights);
@@ -213,9 +215,9 @@ namespace SimpleRBM.MultiDim
         }
 
         public Task AsyncGreedyTrain(TElement[,] data, IExitConditionEvaluator<TElement> exitEvaluator,
-            ILearningRateCalculator<TElement> learningRateCalculator)
+            ILearningRateCalculator<TElement> learningRateCalculator, CancellationToken cancelToken)
         {
-            return Task.Run(() => GreedyTrain(data, exitEvaluator, learningRateCalculator));
+            return Task.Run(() => GreedyTrain(data, exitEvaluator, learningRateCalculator, cancelToken), cancelToken);
         }
 
         public event EventHandler<EpochEventArgs<TElement>> EpochEnd;

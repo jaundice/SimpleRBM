@@ -17,13 +17,13 @@ using Cudafy;
 using Cudafy.Host;
 using Cudafy.Maths.RAND;
 using Cudafy.Translator;
+using Mono.CSharp;
 using SimpleRBM.Common;
 using SimpleRBM.Common.ExitCondition;
 using SimpleRBM.Cuda;
 using SimpleRBM.Demo;
 using SimpleRBM.Demo.IO;
 using Brush = System.Windows.Media.Brush;
-using Color = System.Windows.Media.Color;
 using Image = System.Windows.Controls.Image;
 using Point = System.Windows.Point;
 #if USEFLOAT
@@ -38,7 +38,7 @@ using xxx = SimpleRBM.Cuda.CudaRbmD;
 
 namespace CudaNN.Monitor
 {
-    public class MonitorViewModel : DependencyObject
+    public class MonitorViewModel : DependencyObject, IDisposable
     {
         public static readonly DependencyProperty DemoModeProperty = DependencyProperty.Register("DemoMode",
             typeof(string), typeof(MonitorViewModel), new PropertyMetadata(default(string)));
@@ -58,7 +58,7 @@ namespace CudaNN.Monitor
 
         public static readonly DependencyProperty UpdateFrequencyProperty =
             DependencyProperty.Register("UpdateFrequency", typeof(int), typeof(MonitorViewModel),
-                new PropertyMetadata(default(int)));
+                new PropertyMetadata(200));
 
         public static readonly DependencyProperty ActivationFrequencyProperty =
             DependencyProperty.Register("ActivationFrequency", typeof(BitmapSource), typeof(MonitorViewModel),
@@ -83,7 +83,7 @@ namespace CudaNN.Monitor
 
         public static readonly DependencyProperty BackupFrequencyProperty =
             DependencyProperty.Register("BackupFrequency", typeof(int), typeof(MonitorViewModel),
-                new PropertyMetadata(default(int)));
+                new PropertyMetadata(1000));
 
         public static readonly DependencyProperty ErrorProperty = DependencyProperty.Register("Error", typeof(TElement),
             typeof(MonitorViewModel), new PropertyMetadata(default(TElement)));
@@ -93,7 +93,7 @@ namespace CudaNN.Monitor
 
         public static readonly DependencyProperty NumTrainingExamplesProperty =
             DependencyProperty.Register("NumTrainingExamples", typeof(int), typeof(MonitorViewModel),
-                new PropertyMetadata(default(int)));
+                new PropertyMetadata(1000));
 
         public static readonly DependencyProperty DayDreamsProperty = DependencyProperty.Register("DayDreams",
             typeof(ObservableCollection<BitmapSource>), typeof(MonitorViewModel),
@@ -113,13 +113,10 @@ namespace CudaNN.Monitor
         public static readonly DependencyProperty DisplayedEpochProperty = DependencyProperty.Register(
             "DisplayedEpoch", typeof(int), typeof(MonitorViewModel), new PropertyMetadata(default(int)));
 
-        public static readonly DependencyProperty InitStDevProperty = DependencyProperty.Register("InitStDev",
-            typeof(double), typeof(MonitorViewModel), new PropertyMetadata(default(double)));
-
         public static readonly DependencyProperty WeightLearningRateFactoryProperty =
-            DependencyProperty.Register("WeightLearningRateFactory",
-                typeof(InteractiveLearningRateCalculatorFactory<double>), typeof(MonitorViewModel),
-                new PropertyMetadata(default(InteractiveLearningRateCalculatorFactory<double>)));
+                   DependencyProperty.Register("WeightLearningRateFactory",
+                       typeof(LayerSpecificLearningRateCalculatorFactory<double>), typeof(MonitorViewModel),
+                       new PropertyMetadata(default(LayerSpecificLearningRateCalculatorFactory<double>)));
 
         public static readonly DependencyProperty DisplayFeatureCommandProperty =
             DependencyProperty.Register("DisplayFeatureCommand", typeof(ICommand), typeof(MonitorViewModel),
@@ -131,15 +128,13 @@ namespace CudaNN.Monitor
 
         public static readonly DependencyProperty VisBiasLearningRateFactoryProperty =
             DependencyProperty.Register("VisBiasLearningRateFactory",
-                typeof(InteractiveLearningRateCalculatorFactory<double>), typeof(MonitorViewModel),
-                new PropertyMetadata(default(InteractiveLearningRateCalculatorFactory<double>)));
+                typeof(LayerSpecificLearningRateCalculatorFactory<double>), typeof(MonitorViewModel),
+                new PropertyMetadata(default(LayerSpecificLearningRateCalculatorFactory<double>)));
 
         public static readonly DependencyProperty HidBiasLearningRateFactoryProperty =
             DependencyProperty.Register("HidBiasLearningRateFactory",
-                typeof(InteractiveLearningRateCalculatorFactory<double>), typeof(MonitorViewModel),
-                new PropertyMetadata(default(InteractiveLearningRateCalculatorFactory<double>)));
-
-        private CancellationTokenSource _cancelSource;
+                typeof(LayerSpecificLearningRateCalculatorFactory<double>), typeof(MonitorViewModel),
+                new PropertyMetadata(default(LayerSpecificLearningRateCalculatorFactory<double>)));
 
         public static readonly DependencyProperty ErrorLabelBrushProperty =
             DependencyProperty.Register("ErrorLabelBrush", typeof(Brush), typeof(MonitorViewModel),
@@ -148,6 +143,13 @@ namespace CudaNN.Monitor
         public static readonly DependencyProperty DeltaLabelBrushProperty =
             DependencyProperty.Register("DeltaLabelBrush", typeof(Brush), typeof(MonitorViewModel),
                 new PropertyMetadata(default(Brush)));
+
+        public static readonly DependencyProperty LayerConfigsProperty = DependencyProperty.Register("LayerConfigs",
+            typeof(ObservableCollection<ConstructLayerBase>), typeof(MonitorViewModel),
+            new PropertyMetadata(default(ObservableCollection<ConstructLayerBase>)));
+
+
+        private CancellationTokenSource _cancelSource;
 
 
         public MonitorViewModel()
@@ -303,20 +305,14 @@ namespace CudaNN.Monitor
             set { Dispatcher.InvokeIfRequired(() => SetValue(DisplayedEpochProperty, value)).Wait(); }
         }
 
-        public double InitStDev
-        {
-            get { return Dispatcher.InvokeIfRequired(() => (double)GetValue(InitStDevProperty)).Result; }
-            set { Dispatcher.InvokeIfRequired(() => SetValue(InitStDevProperty, value)).Wait(); }
-        }
-
-        public InteractiveLearningRateCalculatorFactory<double> WeightLearningRateFactory
+        public LayerSpecificLearningRateCalculatorFactory<double> WeightLearningRateFactory
         {
             get
             {
                 return
                     Dispatcher.InvokeIfRequired(
                         () =>
-                            (InteractiveLearningRateCalculatorFactory<double>)
+                            (LayerSpecificLearningRateCalculatorFactory<double>)
                                 GetValue(WeightLearningRateFactoryProperty))
                         .Result;
             }
@@ -335,28 +331,28 @@ namespace CudaNN.Monitor
             set { Dispatcher.InvokeIfRequired(() => SetValue(SelectedFeatureProperty, value)).Wait(); }
         }
 
-        public InteractiveLearningRateCalculatorFactory<double> VisBiasLearningRateFactory
+        public LayerSpecificLearningRateCalculatorFactory<double> VisBiasLearningRateFactory
         {
             get
             {
                 return
                     Dispatcher.InvokeIfRequired(
                         () =>
-                            (InteractiveLearningRateCalculatorFactory<double>)
+                            (LayerSpecificLearningRateCalculatorFactory<double>)
                                 GetValue(VisBiasLearningRateFactoryProperty))
                         .Result;
             }
             set { Dispatcher.InvokeIfRequired(() => SetValue(VisBiasLearningRateFactoryProperty, value)).Wait(); }
         }
 
-        public InteractiveLearningRateCalculatorFactory<double> HidBiasLearningRateFactory
+        public LayerSpecificLearningRateCalculatorFactory<double> HidBiasLearningRateFactory
         {
             get
             {
                 return
                     Dispatcher.InvokeIfRequired(
                         () =>
-                            (InteractiveLearningRateCalculatorFactory<double>)
+                            (LayerSpecificLearningRateCalculatorFactory<double>)
                                 GetValue(HidBiasLearningRateFactoryProperty))
                         .Result;
             }
@@ -375,6 +371,23 @@ namespace CudaNN.Monitor
             set { Dispatcher.InvokeIfRequired(() => SetValue(DeltaLabelBrushProperty, value)).Wait(); }
         }
 
+        public bool IsDisposed { get; protected set; }
+
+        public ObservableCollection<ConstructLayerBase> LayerConfigs
+        {
+            get { return (ObservableCollection<ConstructLayerBase>)GetValue(LayerConfigsProperty); }
+            set { SetValue(LayerConfigsProperty, value); }
+        }
+
+        public void Dispose()
+        {
+            if (IsDisposed)
+                return;
+            IsDisposed = true;
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
         public void DisplayFeature(object sender, MouseEventArgs mouseArgs)
         {
             if (mouseArgs != null)
@@ -383,8 +396,8 @@ namespace CudaNN.Monitor
                 Point pos = mouseArgs.GetPosition(image);
 
                 var imgSrc = (BitmapSource)image.Source;
-                var pixX = pos.X * imgSrc.PixelWidth / image.ActualWidth;
-                var pixY = pos.Y * imgSrc.PixelHeight / image.ActualHeight;
+                double pixX = pos.X * imgSrc.PixelWidth / image.ActualWidth;
+                double pixY = pos.Y * imgSrc.PixelHeight / image.ActualHeight;
 
                 int idx = (int)(pixY) * imgSrc.PixelWidth + (int)pixX;
                 SelectedFeatureIndex = idx;
@@ -409,8 +422,6 @@ namespace CudaNN.Monitor
             Directory.CreateDirectory(pathBase);
             UpdateFrequency = UpdateFrequency > 0 ? UpdateFrequency : (UpdateFrequency = 20);
             BackupFrequency = BackupFrequency > 0 ? BackupFrequency : (BackupFrequency = 500);
-            InitStDev = InitStDev > 0 ? InitStDev : (InitStDev = 0.01);
-            //MaxEpochs = MaxEpochs > 0 ? MaxEpochs : (MaxEpochs = 5000);
 
             Task t = null;
             try
@@ -420,37 +431,145 @@ namespace CudaNN.Monitor
             }
             catch (TaskCanceledException)
             {
+
+            }
+            catch (OperationCanceledException)
+            {
+
             }
 
             _cancelSource = new CancellationTokenSource();
 
-
-            switch (DemoMode)
+            try
             {
-                case "Faces":
-                    {
-                        NumTrainingExamples = NumTrainingExamples > 0 ? NumTrainingExamples : (NumTrainingExamples = 5000);
-                        t = Task.Run(() => FacesDemo(NumTrainingExamples, pathBase), _cancelSource.Token);
-                        break;
-                    }
-                case "Data":
-                    {
-                        NumTrainingExamples = NumTrainingExamples > 0 ? NumTrainingExamples : (NumTrainingExamples = 185945);
-                        t = Task.Run(() => CsvDemo(NumTrainingExamples, pathBase), _cancelSource.Token);
-                        break;
-                    }
-                case "Kaggle":
-                    {
-                        //int numexamples = 40000;
-                        NumTrainingExamples = NumTrainingExamples > 0 ? NumTrainingExamples : (NumTrainingExamples = 40000);
+                var defineDlg = new DefineNetwork { Owner = Window.GetWindow(this) };
+                var builder = defineDlg.DataContext as LayerBuilderViewModel;
+                LayerConfigs = builder.LayerConstructionInfo;
+                switch (DemoMode)
+                {
+                    case "Faces":
+                        {
+                            NumTrainingExamples = NumTrainingExamples > 0
+                                ? NumTrainingExamples
+                                : (NumTrainingExamples = 5000);
+                            ConfigureDefaultFacesLayers(builder);
 
-                        t = Task.Run(() => KaggleDemo(NumTrainingExamples, pathBase), _cancelSource.Token);
-                        break;
-                    }
+                            defineDlg.ShowDialog();
+                            t = Task.Run(() => FacesDemo(builder, NumTrainingExamples, pathBase), _cancelSource.Token);
+                            break;
+                        }
+                    case "Data":
+                        {
+                            ConfigureDefaultDataLayers(builder);
+
+                            defineDlg.ShowDialog();
+
+                            NumTrainingExamples = NumTrainingExamples > 0
+                                ? NumTrainingExamples
+                                : (NumTrainingExamples = 185945);
+                            t = Task.Run(() => CsvDemo(builder, NumTrainingExamples, pathBase), _cancelSource.Token);
+                            break;
+                        }
+                    case "Kaggle":
+                        {
+                            ConfigureDefaultKaggleLayers(builder);
+
+                            defineDlg.ShowDialog();
+
+                            //int numexamples = 40000;
+                            NumTrainingExamples = NumTrainingExamples > 0
+                                ? NumTrainingExamples
+                                : (NumTrainingExamples = 40000);
+
+                            t = Task.Run(() => KaggleDemo(builder, NumTrainingExamples, pathBase), _cancelSource.Token);
+                            break;
+                        }
+                }
+
+            }
+            catch (TaskCanceledException)
+            {
+
+            }
+            catch (OperationCanceledException)
+            {
+
             }
         }
 
-        private async void CsvDemo(int numTrainingExamples, string pathBase)
+        private void ConfigureDefaultKaggleLayers(LayerBuilderViewModel builderViewModel)
+        {
+            builderViewModel.LayerConstructionInfo.Add(new ConstructBinaryLayer
+            {
+                NumVisibleNeurons = 784,
+                NumHiddenNeurons = 500,
+                ConvertActivationsToStates = false,
+                WeightInitializationStDev = 0.01
+            });
+            builderViewModel.LayerConstructionInfo.Add(new ConstructBinaryLayer
+            {
+                NumVisibleNeurons = 500,
+                NumHiddenNeurons = 500,
+                ConvertActivationsToStates = true,
+                WeightInitializationStDev = 0.01
+            });
+            builderViewModel.LayerConstructionInfo.Add(new ConstructBinaryLayer
+            {
+                NumVisibleNeurons = 510,
+                NumHiddenNeurons = 2000,
+                ConvertActivationsToStates = true,
+                WeightInitializationStDev = 0.01
+            });
+        }
+
+        private void ConfigureDefaultDataLayers(LayerBuilderViewModel builderViewModel)
+        {
+            builderViewModel.LayerConstructionInfo.Add(new ConstructBinaryLayer
+            {
+                NumVisibleNeurons = 178,
+                NumHiddenNeurons = 500,
+                ConvertActivationsToStates = false,
+                WeightInitializationStDev = 0.01
+            });
+            builderViewModel.LayerConstructionInfo.Add(new ConstructBinaryLayer
+            {
+                NumVisibleNeurons = 500,
+                NumHiddenNeurons = 500,
+                ConvertActivationsToStates = true,
+                WeightInitializationStDev = 0.01
+            });
+            builderViewModel.LayerConstructionInfo.Add(new ConstructBinaryLayer
+            {
+                NumVisibleNeurons = 500,
+                NumHiddenNeurons = 50,
+                ConvertActivationsToStates = true,
+                WeightInitializationStDev = 0.01
+            });
+        }
+
+        private void ConfigureDefaultFacesLayers(LayerBuilderViewModel builderViewModel)
+        {
+            builderViewModel.LayerConstructionInfo.Add(new ConstructLinearHiddenLayer
+            {
+                NumVisibleNeurons = 75 * 75,
+                NumHiddenNeurons = 2000,
+                WeightInitializationStDev = 0.01
+            });
+            builderViewModel.LayerConstructionInfo.Add(new ConstructLinearHiddenLayer
+            {
+                NumVisibleNeurons = 2000,
+                NumHiddenNeurons = 4000,
+                WeightInitializationStDev = 0.01
+            });
+            builderViewModel.LayerConstructionInfo.Add(new ConstructLinearHiddenLayer
+            {
+                NumVisibleNeurons = 4000,
+                NumHiddenNeurons = 4000,
+                WeightInitializationStDev = 0.01
+            });
+        }
+
+        private async void CsvDemo(LayerBuilderViewModel layerBuilderViewModel, int numTrainingExamples, string pathBase)
         {
             GPGPU dev;
             GPGPURAND rand;
@@ -460,12 +579,7 @@ namespace CudaNN.Monitor
                 ConfigurationManager.AppSettings["CsvDataTest"], true, true);
 
 
-            using (var net = new CudaAdvancedNetwork(new CudaAdvancedRbmBase[]
-            {
-                new CudaAdvancedRbmBinary(dev, rand, 0, 178, 500, false, weightInitializationStDev: InitStDev),
-                new CudaAdvancedRbmBinary(dev, rand, 1, 500, 500, true, weightInitializationStDev: InitStDev),
-                new CudaAdvancedRbmBinary(dev, rand, 2, 500, 50, true, weightInitializationStDev: InitStDev)
-            }))
+            using (var net = new CudaAdvancedNetwork(layerBuilderViewModel.CreateLayers(dev, rand)))
             {
                 net.SetDefaultMachineState(SuspendState.Active);
                 string[] lbl;
@@ -483,45 +597,9 @@ namespace CudaNN.Monitor
 
                 dev.SetCurrentContext();
 
-                net.EpochComplete += async (a, b) =>
-                {
-                    var nn = ((ICudaNetwork<TElement>)a);
-                    IAdvancedRbmCuda<double> m = nn.Machines[b.Layer];
-                    if (b.Epoch > 0 && b.Epoch % BackupFrequency == 0)
-                    {
-                        m.Save(Path.Combine(pathBase,
-                            string.Format("Layer_{0}_{1}x{2}_{3}_Temp_{4}.dat", b.Layer, m.NumVisibleNeurons,
-                                m.NumHiddenNeurons,
-                                typeof(TElement).Name, b.Epoch)));
-                    }
+                net.EpochComplete += NetOnEpochComplete(pathBase, dev, tdata, identityMatrices);
 
-                    double[,] activations = GetActivations(dev, nn, tdata, b);
-
-                    if (b.Epoch % UpdateFrequency == 0)
-                    {
-                        double[,] dreams = ((CudaAdvancedNetwork)nn).Daydream(1.0, 100, b.Layer);
-                        double[,] recon = nn.Reconstruct(tdata, b.Layer);
-                        double[,] feats = nn.Decode(identityMatrices[b.Layer], b.Layer);
-
-
-                        Task.Run(() => UpdateUIProperties(pathBase, b, recon, feats, activations, dreams,
-                            dd => GenerateImageSources(dd)));
-                    }
-                    else
-                    {
-                        Task.Run(
-                            () => UpdateUIProperties(pathBase, b, activations, dd => GenerateImageSourcesPosNeg(dd)));
-                    }
-                };
-
-                net.LayerTrainComplete += (a, b) =>
-                {
-                    IAdvancedRbmCuda<double> m = ((ICudaNetwork<TElement>)a).Machines[b.Layer];
-                    m.Save(Path.Combine(pathBase,
-                        string.Format("Layer_{0}_{1}x{2}_{3}_Final.dat", b.Layer, m.NumVisibleNeurons,
-                            m.NumHiddenNeurons,
-                            typeof(TElement).Name)));
-                };
+                net.LayerTrainComplete += NetOnLayerTrainComplete(pathBase);
 
                 //batch the data in gpu memory
                 using (
@@ -545,9 +623,9 @@ namespace CudaNN.Monitor
 
                     await Dispatcher.InvokeIfRequired(() =>
                     {
-                        WeightLearningRateFactory = new InteractiveLearningRateCalculatorFactory<double>(3E-05);
-                        HidBiasLearningRateFactory = new InteractiveLearningRateCalculatorFactory<double>(3E-05);
-                        VisBiasLearningRateFactory = new InteractiveLearningRateCalculatorFactory<double>(3E-05);
+                        WeightLearningRateFactory = new LayerSpecificLearningRateCalculatorFactory<double>(layerBuilderViewModel.LayerConstructionInfo.Select(a => new InteractiveLearningRateCalculatorFactory<double>(3E-05))); ;
+                        HidBiasLearningRateFactory = new LayerSpecificLearningRateCalculatorFactory<double>(layerBuilderViewModel.LayerConstructionInfo.Select(a => new InteractiveLearningRateCalculatorFactory<double>(3E-05)));
+                        VisBiasLearningRateFactory = new LayerSpecificLearningRateCalculatorFactory<double>(layerBuilderViewModel.LayerConstructionInfo.Select(a => new InteractiveLearningRateCalculatorFactory<double>(3E-05)));
                     });
 
                     //var trainingData = d.ReadTestData(0, numTrainingExamples);
@@ -557,7 +635,8 @@ namespace CudaNN.Monitor
                         ExitEvaluatorFactory,
                         WeightLearningRateFactory,
                         HidBiasLearningRateFactory,
-                        VisBiasLearningRateFactory
+                        VisBiasLearningRateFactory,
+                        _cancelSource.Token
                         );
                 }
 
@@ -587,15 +666,62 @@ namespace CudaNN.Monitor
             }
         }
 
+        private EventHandler<EpochEventArgs<double>> NetOnEpochComplete(string pathBase, GPGPU dev, double[,] tdata,
+            List<double[,]> identityMatrices)
+        {
+            return async (a, b) =>
+            {
+                var nn = ((ICudaNetwork<TElement>)a);
+                IAdvancedRbmCuda<double> m = nn.Machines[b.Layer];
+                if (b.Epoch > 0 && b.Epoch % BackupFrequency == 0)
+                {
+                    m.Save(Path.Combine(pathBase,
+                        string.Format("Layer_{0}_{1}x{2}_{3}_Temp_{4}.dat", b.Layer, m.NumVisibleNeurons,
+                            m.NumHiddenNeurons,
+                            typeof(TElement).Name, b.Epoch)));
+                }
 
-        private async void FacesDemo(int numTrainingExamples, string pathBase)
+                double[,] activations = GetActivations(dev, nn, tdata, b);
+
+                if (b.Epoch % UpdateFrequency == 0)
+                {
+                    double[,] dreams = ((CudaAdvancedNetwork)nn).Daydream(1.0, 100, b.Layer);
+                    double[,] recon = nn.Reconstruct(tdata, b.Layer);
+                    double[,] feats = nn.Decode(identityMatrices[b.Layer], b.Layer);
+
+
+                    Task.Run(() => UpdateUIProperties(pathBase, b, recon, feats, activations, dreams,
+                        dd => GenerateImageSources(dd)));
+                }
+                else
+                {
+                    Task.Run(
+                        () => UpdateUIProperties(pathBase, b, activations, dd => GenerateImageSourcesPosNeg(dd)));
+                }
+            };
+        }
+
+        private static EventHandler<EpochEventArgs<double>> NetOnLayerTrainComplete(string pathBase)
+        {
+            return (a, b) =>
+            {
+                IAdvancedRbmCuda<double> m = ((ICudaNetwork<TElement>)a).Machines[b.Layer];
+                m.Save(Path.Combine(pathBase,
+                    string.Format("Layer_{0}_{1}x{2}_{3}_Final.dat", b.Layer, m.NumVisibleNeurons,
+                        m.NumHiddenNeurons,
+                        typeof(TElement).Name)));
+            };
+        }
+
+
+        private async void FacesDemo(LayerBuilderViewModel builderViewModel, int numTrainingExamples, string pathBase)
         {
             GPGPU dev;
             GPGPURAND rand;
             InitCuda(out dev, out rand);
 
             dev.SetCurrentContext();
-            bool useLinear = true;
+            bool useLinear = builderViewModel.LayerConstructionInfo[0] is ConstructLinearHiddenLayer;
 
             IDataIO<TElement, string> dataProvider =
                 new FacesData(ConfigurationManager.AppSettings["FacesDirectory"],
@@ -603,27 +729,11 @@ namespace CudaNN.Monitor
                     FacesData.ConversionMode.RgbToGreyPosNegReal);
 
 
-            Func<TElement[,], Task<IList<BitmapSource>>> imageSaveMethod = useLinear
+            Func<TElement[,], Task<IList<BitmapSource>>> imgGenerationMethod = useLinear
                 ? (Func<TElement[,], Task<IList<BitmapSource>>>)(dd => GenerateImageSourcesPosNeg(dd))
                 : (dd => GenerateImageSources(dd));
 
-            using (var net = new CudaAdvancedNetwork(useLinear
-                ? new CudaAdvancedRbmBase[]
-                {
-                    //new CudaAdvancedRbmLinearHidden(dev, rand, 0, 250*250, 500, 0.02),
-                    new CudaAdvancedRbmLinearHidden(dev, rand, 0, 75*75, 2000, weightInitializationStDev: InitStDev,
-                        finalMomentum: 0.7),
-                    //crop selection 3 is cropped to 150px x 150px centred, resized to 50% with 1 gimp unit of blur
-                    new CudaAdvancedRbmLinearHidden(dev, rand, 1, 2000, 4000, weightInitializationStDev: InitStDev),
-                    new CudaAdvancedRbmLinearHidden(dev, rand, 2, 4000, 4000, weightInitializationStDev: InitStDev)
-                }
-                : new CudaAdvancedRbmBase[]
-                {
-                    //new CudaAdvancedRbmBinary(dev, rand, 0, 250*250, 200, false),
-                    new CudaAdvancedRbmBinary(dev, rand, 0, 75*75, 2000, false, weightInitializationStDev: InitStDev),
-                    new CudaAdvancedRbmBinary(dev, rand, 1, 2000, 4000, true, weightInitializationStDev: InitStDev),
-                    new CudaAdvancedRbmBinary(dev, rand, 2, 4000, 4000, true, weightInitializationStDev: InitStDev)
-                }))
+            using (var net = new CudaAdvancedNetwork(builderViewModel.CreateLayers(dev, rand)))
             {
                 net.SetDefaultMachineState(SuspendState.Suspended);
                 //keep data in main memory as much as possible at the expense of more memory movement between System and GPU
@@ -637,55 +747,22 @@ namespace CudaNN.Monitor
                 Task.Run(() => Dispatcher.InvokeIfRequired(async () =>
                     Reconstructions =
                         new ObservableCollection<ImagePair>(
-                            (await GenerateImageSourcesPosNeg(tdata)).Select(a => new ImagePair { Item1 = a }))));
+                            (await imgGenerationMethod(tdata)).Select(a => new ImagePair { Item1 = a }))));
 
                 dev.SetCurrentContext();
 
-                net.EpochComplete += async (a, b) =>
-                {
-                    var nn = ((ICudaNetwork<TElement>)a);
-                    IAdvancedRbmCuda<double> m = nn.Machines[b.Layer];
-                    if (b.Epoch > 0 && b.Epoch % BackupFrequency == 0)
-                    {
-                        m.Save(Path.Combine(pathBase,
-                            string.Format("Layer_{0}_{1}x{2}_{3}_Temp_{4}.dat", b.Layer, m.NumVisibleNeurons,
-                                m.NumHiddenNeurons,
-                                typeof(TElement).Name, b.Epoch)));
-                    }
-
-                    double[,] activations = GetActivations(dev, nn, tdata, b);
-                    if (b.Epoch % UpdateFrequency == 0)
-                    {
-                        double[,] dreams = ((CudaAdvancedNetwork)nn).Daydream(1.0, 100, b.Layer);
-                        double[,] recon = nn.Reconstruct(tdata, b.Layer);
-                        double[,] feats = nn.Decode(identityMatrices[b.Layer], b.Layer);
-
-                        //var activations = GetActivations(dev, nn, tdata, b);
-
-                        Task.Run(() => UpdateUIProperties(pathBase, b, recon, feats, activations, dreams,
-                            dd => GenerateImageSourcesPosNeg(dd)));
-                    }
-                    else
-                    {
-                        Task.Run(
-                            () => UpdateUIProperties(pathBase, b, activations, dd => GenerateImageSourcesPosNeg(dd)));
-                    }
-                };
-
-                net.LayerTrainComplete += (a, b) =>
-                {
-                    IAdvancedRbmCuda<double> m = ((ICudaNetwork<TElement>)a).Machines[b.Layer];
-                    m.Save(Path.Combine(pathBase,
-                        string.Format("Layer_{0}_{1}x{2}_{3}.dat", b.Layer, m.NumVisibleNeurons, m.NumHiddenNeurons,
-                            typeof(TElement).Name)));
-                };
+                net.EpochComplete += NetOnEpochComplete(pathBase, dev, tdata, identityMatrices);
+                net.LayerTrainComplete += NetOnLayerTrainComplete(pathBase);
 
                 IList<string[]> lbl;
                 IList<TElement[,]> coded;
+
                 IList<double[,]> training = dataProvider.ReadTrainingData(0, numTrainingExamples, 50, out lbl,
                     out coded);
 
                 Dispatcher.InvokeIfRequired(() => NumTrainingExamples = training.Sum(a => a.GetLength(0)));
+
+                //await (() => NumTrainingExamples = training.Sum(a => a.GetLength(0))).InvokeIfRequired(Dispatcher);
 
                 int maxtrain = 1000;
 
@@ -713,9 +790,9 @@ namespace CudaNN.Monitor
 
                 await Dispatcher.InvokeIfRequired(() =>
                 {
-                    WeightLearningRateFactory = new InteractiveLearningRateCalculatorFactory<double>(3E-04);
-                    HidBiasLearningRateFactory = new InteractiveLearningRateCalculatorFactory<double>(3E-05);
-                    VisBiasLearningRateFactory = new InteractiveLearningRateCalculatorFactory<double>(3E-05);
+                    WeightLearningRateFactory = new LayerSpecificLearningRateCalculatorFactory<double>(builderViewModel.LayerConstructionInfo.Select(a => new InteractiveLearningRateCalculatorFactory<double>(3E-05))); ;
+                    HidBiasLearningRateFactory = new LayerSpecificLearningRateCalculatorFactory<double>(builderViewModel.LayerConstructionInfo.Select(a => new InteractiveLearningRateCalculatorFactory<double>(3E-05)));
+                    VisBiasLearningRateFactory = new LayerSpecificLearningRateCalculatorFactory<double>(builderViewModel.LayerConstructionInfo.Select(a => new InteractiveLearningRateCalculatorFactory<double>(3E-05)));
                 });
 
                 using (
@@ -726,19 +803,21 @@ namespace CudaNN.Monitor
                         await
                             Dispatcher.InvokeIfRequired(
                                 () => new InteractiveExitEvaluatorFactory<double>(greedyTracker, 0.5, 5000));
+
                     dev.SetCurrentContext();
                     net.GreedyBatchedTrainMem(training,
                         ExitEvaluatorFactory,
                         WeightLearningRateFactory,
                         HidBiasLearningRateFactory,
-                        VisBiasLearningRateFactory
+                        VisBiasLearningRateFactory,
+                        _cancelSource.Token
                         );
                 }
             }
         }
 
 
-        private async void KaggleDemo(int numTrainingExamples, string pathBase)
+        private async void KaggleDemo(LayerBuilderViewModel builderViewModel, int numTrainingExamples, string pathBase)
         {
             GPGPU dev;
             GPGPURAND rand;
@@ -748,13 +827,8 @@ namespace CudaNN.Monitor
                 new KaggleData(ConfigurationManager.AppSettings["KaggleTrainingData"],
                     ConfigurationManager.AppSettings["KaggleTestData"]);
 
-            using (var net = new CudaAdvancedNetwork(new CudaAdvancedRbmBase[]
-            {
-                new CudaAdvancedRbmBinary(dev, rand, 0, 784, 500, false, weightInitializationStDev: InitStDev),
-                new CudaAdvancedRbmBinary(dev, rand, 1, 500, 500, true, weightInitializationStDev: InitStDev),
-                new CudaAdvancedRbmBinary(dev, rand, 2, 510, 2000, true, weightInitializationStDev: InitStDev)
-                //visible buffer expanded by 10 for labeling
-            }))
+
+            using (var net = new CudaAdvancedNetwork(builderViewModel.CreateLayers(dev, rand)))
             {
                 //keep data in gpu memory as much as possible
                 net.SetDefaultMachineState(SuspendState.Active);
@@ -773,61 +847,8 @@ namespace CudaNN.Monitor
 
                 dev.SetCurrentContext();
 
-                net.EpochComplete += async (a, b) =>
-                {
-                    var nn = ((ICudaNetwork<TElement>)a);
-                    IAdvancedRbmCuda<double> m = nn.Machines[b.Layer];
-                    if (b.Epoch > 0 && b.Epoch % BackupFrequency == 0)
-                    {
-                        m.Save(Path.Combine(pathBase,
-                            string.Format("Layer_{0}_{1}x{2}_{3}_Temp_{4}.dat", b.Layer, m.NumVisibleNeurons,
-                                m.NumHiddenNeurons,
-                                typeof(TElement).Name, b.Epoch)));
-                    }
-
-                    if (b.Epoch % UpdateFrequency == 0)
-                    {
-                        double[,] dreams;
-                        double[,] recon;
-                        double[,] feats;
-                        double[,] activations;
-                        if (b.Layer == nn.Machines.Count - 1)
-                        {
-                            double[,] lbls;
-                            dreams = ((CudaAdvancedNetwork)nn).DaydreamWithLabels(1.0, 100, out lbls);
-                            double[,] llbl;
-                            recon = nn.ReconstructWithLabels(tdata, out llbl);
-                            double[,] llbls;
-                            feats = nn.DecodeWithLabels(identityMatrices[b.Layer], out llbls);
-                            activations = GetActivationsWithLabelExpansion(dev, nn, tdata);
-                        }
-                        else
-                        {
-                            dreams = ((CudaAdvancedNetwork)nn).Daydream(1.0, 100, b.Layer);
-                            recon = nn.Reconstruct(tdata, b.Layer);
-                            feats = nn.Decode(identityMatrices[b.Layer], b.Layer);
-                            activations = GetActivations(dev, nn, tdata, b);
-                        }
-
-
-                        Task.Run(() => UpdateUIProperties(pathBase, b, recon, feats, activations, dreams,
-                            dd => GenerateImageSources(dd)));
-                    }
-                    else
-                    {
-                        double[,] activations;
-                        if (b.Layer == nn.Machines.Count - 1)
-                        {
-                            activations = GetActivationsWithLabelExpansion(dev, nn, tdata);
-                        }
-                        else
-                        {
-                            activations = GetActivations(dev, nn, tdata, b);
-                        }
-                        Task.Run(
-                            () => UpdateUIProperties(pathBase, b, activations, dd => GenerateImageSourcesPosNeg(dd)));
-                    }
-                };
+                net.EpochComplete += NetEpochCompleteCodingEventHandler(pathBase, tdata, identityMatrices, dev);
+                net.LayerTrainComplete += NetOnLayerTrainComplete(pathBase);
 
                 double[,] trainingData = dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded);
                 Task.Run(() =>
@@ -847,11 +868,12 @@ namespace CudaNN.Monitor
                             Dispatcher.InvokeIfRequired(
                                 () => new InteractiveExitEvaluatorFactory<double>(greedyTracker, 0.5, 5000));
 
+
                     await Dispatcher.InvokeIfRequired(() =>
                     {
-                        WeightLearningRateFactory = new InteractiveLearningRateCalculatorFactory<double>(3E-05);
-                        HidBiasLearningRateFactory = new InteractiveLearningRateCalculatorFactory<double>(3E-05);
-                        VisBiasLearningRateFactory = new InteractiveLearningRateCalculatorFactory<double>(3E-05);
+                        WeightLearningRateFactory = new LayerSpecificLearningRateCalculatorFactory<double>(builderViewModel.LayerConstructionInfo.Select(a => new InteractiveLearningRateCalculatorFactory<double>(3E-05))); ;
+                        HidBiasLearningRateFactory = new LayerSpecificLearningRateCalculatorFactory<double>(builderViewModel.LayerConstructionInfo.Select(a => new InteractiveLearningRateCalculatorFactory<double>(3E-05)));
+                        VisBiasLearningRateFactory = new LayerSpecificLearningRateCalculatorFactory<double>(builderViewModel.LayerConstructionInfo.Select(a => new InteractiveLearningRateCalculatorFactory<double>(3E-05)));
                     });
 
                     dev.SetCurrentContext();
@@ -861,22 +883,73 @@ namespace CudaNN.Monitor
                         ExitEvaluatorFactory,
                         WeightLearningRateFactory,
                         HidBiasLearningRateFactory,
-                        VisBiasLearningRateFactory
+                        VisBiasLearningRateFactory,
+                        _cancelSource.Token
                         );
                 }
-                //int[] testSrcLabels;
-                //TElement[,] testSourceCoded;
-                //double[,] testData = dataProvider.ReadTrainingData(numTrainingExamples, 500, out testSrcLabels,
-                //    out testSourceCoded);
-
-                //TElement[,] computedLabels;
-                //double[,] reconstructions = net.ReconstructWithLabels(testData, out computedLabels, softmaxLabels: true);
-                //Console.WriteLine("Reconstructions");
-                //DisplayResults(pathBase, dataProvider, reconstructions, testData, testSrcLabels, testSourceCoded,
-                //    computedLabels);
-                //Console.WriteLine("Daydream by class");
             }
         }
+
+        private EventHandler<EpochEventArgs<double>> NetEpochCompleteCodingEventHandler(string pathBase, double[,] tdata,
+            List<double[,]> identityMatrices, GPGPU dev)
+        {
+            return async (a, b) =>
+            {
+                var nn = ((ICudaNetwork<TElement>)a);
+                IAdvancedRbmCuda<double> m = nn.Machines[b.Layer];
+                if (b.Epoch > 0 && b.Epoch % BackupFrequency == 0)
+                {
+                    m.Save(Path.Combine(pathBase,
+                        string.Format("Layer_{0}_{1}x{2}_{3}_Temp_{4}.dat", b.Layer, m.NumVisibleNeurons,
+                            m.NumHiddenNeurons,
+                            typeof(TElement).Name, b.Epoch)));
+                }
+
+                if (b.Epoch % UpdateFrequency == 0)
+                {
+                    double[,] dreams;
+                    double[,] recon;
+                    double[,] feats;
+                    double[,] activations;
+                    if (b.Layer == nn.Machines.Count - 1)
+                    {
+                        double[,] lbls;
+                        dreams = ((CudaAdvancedNetwork)nn).DaydreamWithLabels(1.0, 100, out lbls);
+                        double[,] llbl;
+                        recon = nn.ReconstructWithLabels(tdata, out llbl);
+                        double[,] llbls;
+                        feats = nn.DecodeWithLabels(identityMatrices[b.Layer], out llbls);
+                        activations = GetActivationsWithLabelExpansion(dev, nn, tdata);
+                    }
+                    else
+                    {
+                        dreams = ((CudaAdvancedNetwork)nn).Daydream(1.0, 100, b.Layer);
+                        recon = nn.Reconstruct(tdata, b.Layer);
+                        feats = nn.Decode(identityMatrices[b.Layer], b.Layer);
+                        activations = GetActivations(dev, nn, tdata, b);
+                    }
+
+
+                    Task.Run(() => UpdateUIProperties(pathBase, b, recon, feats, activations, dreams,
+                        dd => GenerateImageSources(dd)));
+                }
+                else
+                {
+                    double[,] activations;
+                    if (b.Layer == nn.Machines.Count - 1)
+                    {
+                        activations = GetActivationsWithLabelExpansion(dev, nn, tdata);
+                    }
+                    else
+                    {
+                        activations = GetActivations(dev, nn, tdata, b);
+                    }
+                    Task.Run(
+                        () => UpdateUIProperties(pathBase, b, activations, dd => GenerateImageSourcesPosNeg(dd)));
+                }
+            };
+        }
+
 
         private static double[,] GetActivations(GPGPU dev, ICudaNetwork<double> nn, double[,] tdata,
             EpochEventArgs<double> b)
@@ -1110,7 +1183,7 @@ namespace CudaNN.Monitor
             if (e.Property == ErrorProperty)
             {
                 ErrorLabelBrush = (double)e.OldValue > (double)e.NewValue
-                    ? new SolidColorBrush(System.Windows.Media.Colors.Blue)
+                    ? new SolidColorBrush(Colors.Blue)
                     : new SolidColorBrush(Colors.Red);
             }
 
@@ -1119,15 +1192,23 @@ namespace CudaNN.Monitor
                 if ((double)e.NewValue > 0)
                 {
                     DeltaLabelBrush = (double)e.OldValue > (double)e.NewValue
-                        ? new SolidColorBrush(System.Windows.Media.Colors.Orange)
+                        ? new SolidColorBrush(Colors.Orange)
                         : new SolidColorBrush(Colors.Blue);
                 }
                 else
                 {
                     DeltaLabelBrush = (double)e.OldValue > (double)e.NewValue
-                        ? new SolidColorBrush(System.Windows.Media.Colors.Orange)
+                        ? new SolidColorBrush(Colors.Orange)
                         : new SolidColorBrush(Colors.Red);
                 }
+            }
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _cancelSource.Cancel();
             }
         }
     }

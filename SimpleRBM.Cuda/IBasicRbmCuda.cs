@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Cudafy.Host;
 using Cudafy.Maths.RAND;
@@ -19,16 +20,16 @@ namespace SimpleRBM.Cuda
         new Matrix2D<TElement> DayDream(int numberOfSamples);
 
         TElement GreedyTrain(Matrix2D<TElement> visibleData, IExitConditionEvaluator<TElement> exitEvaluator,
-            ILearningRateCalculator<TElement> learningRateCalculator);
+            ILearningRateCalculator<TElement> learningRateCalculator, CancellationToken cancelToken);
 
 
         TElement GreedyBatchedTrain(Matrix2D<TElement> data, int batchRows,
             IExitConditionEvaluator<TElement> exitEvaluator,
-            ILearningRateCalculator<TElement> learningRateCalculator);
+            ILearningRateCalculator<TElement> learningRateCalculator, CancellationToken cancelToken);
 
         TElement CalculateReconstructionError(Matrix2D<TElement> data);
 
         void DownPass(Matrix2D<TElement> hiddenStates, IExitConditionEvaluator<TElement> exitEvaluator,
-            ILearningRateCalculator<TElement> learningRateCalculator, out TElement error);
+            ILearningRateCalculator<TElement> learningRateCalculator, out TElement error, CancellationToken cancelToken);
     }
 }

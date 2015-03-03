@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using SimpleRBM.Common;
 
@@ -22,19 +23,19 @@ namespace SimpleRBM.Cuda
 
         void GreedyTrainAll(Matrix2D<TElement> visibleData,
             IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory);
+            ILearningRateCalculatorFactory<TElement> learningRateFactory, CancellationToken cancelToken);
 
         void GreedyTrainLayersFrom(Matrix2D<TElement> visibleData, int startDepth,
             IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory);
+            ILearningRateCalculatorFactory<TElement> learningRateFactory, CancellationToken cancelToken);
 
         void GreedyBatchedTrainAll(Matrix2D<TElement> data, int batchRows,
             IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory, out TElement error);
+            ILearningRateCalculatorFactory<TElement> learningRateFactory, out TElement error, CancellationToken cancelToken);
 
         void UpDownTrainAll(Matrix2D<TElement> visibleData, int iterations,
             IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory);
+            ILearningRateCalculatorFactory<TElement> learningRateFactory, CancellationToken cancelToken);
 
         Matrix2D<TElement> DecodeWithLabels(Matrix2D<TElement> activations,
             out Matrix2D<TElement> labels, bool softmaxLabels = true);
@@ -46,14 +47,14 @@ namespace SimpleRBM.Cuda
 
         void GreedySupervisedTrain(Matrix2D<TElement> data, Matrix2D<TElement> labels,
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
-            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory);
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory, CancellationToken cancelToken);
 
         void GreedyBatchedSupervisedTrain(Matrix2D<TElement> data, Matrix2D<TElement> labels, int batchRows,
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
-            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory);
+            ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory, CancellationToken cancelToken);
 
         void UpDownSupervisedTrainAll(Matrix2D<TElement> visibleData, Matrix2D<TElement> labels, int iterations,
             IExitConditionEvaluatorFactory<TElement> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<TElement> learningRateFactory);
+            ILearningRateCalculatorFactory<TElement> learningRateFactory, CancellationToken cancelToken);
     }
 }

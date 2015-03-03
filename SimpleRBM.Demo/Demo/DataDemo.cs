@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Mono.CSharp;
 using SimpleRBM.Common;
@@ -87,10 +88,10 @@ namespace SimpleRBM.Demo.Demo
                         if (classify && extended != null)
                             extended.GreedySupervisedTrainAll(trainingData,
                                 referenceLabelsCoded, preTrainExitConditionEvaluatorFactory,
-                                preTrainLearningRateCalculatorFactory);
+                                preTrainLearningRateCalculatorFactory, CancellationToken.None);
                         else
                             dbn.GreedyTrainAll(trainingData, preTrainExitConditionEvaluatorFactory,
-                                preTrainLearningRateCalculatorFactory);
+                                preTrainLearningRateCalculatorFactory, CancellationToken.None);
                     }
                     else
                     {
@@ -100,10 +101,10 @@ namespace SimpleRBM.Demo.Demo
                             extended.GreedyBatchedSupervisedTrainAll(
                                 trainingData,
                                 referenceLabelsCoded, batchSize, preTrainExitConditionEvaluatorFactory,
-                                preTrainLearningRateCalculatorFactory);
+                                preTrainLearningRateCalculatorFactory, CancellationToken.None);
                         else
                             dbn.GreedyBatchedTrainAll(trainingData, batchSize, preTrainExitConditionEvaluatorFactory,
-                                preTrainLearningRateCalculatorFactory);
+                                preTrainLearningRateCalculatorFactory, CancellationToken.None);
                     }
                 }
 
@@ -119,13 +120,13 @@ namespace SimpleRBM.Demo.Demo
                     if (!classify)
                     {
                         ((IDeepBeliefNetworkExtended<TDataElement>)dbn).UpDownTrainAll(trainingData, 2,
-                            fineTrainExitConditionEvaluatorFactory, fineTrainLearningRateCalculatorFactory);
+                            fineTrainExitConditionEvaluatorFactory, fineTrainLearningRateCalculatorFactory, CancellationToken.None);
                     }
                     else
                     {
                         ((IDeepBeliefNetworkExtended<TDataElement>)dbn).UpDownTrainSupervisedAll(trainingData,
                             referenceLabelsCoded, 2, fineTrainExitConditionEvaluatorFactory,
-                            fineTrainLearningRateCalculatorFactory);
+                            fineTrainLearningRateCalculatorFactory, CancellationToken.None);
                     }
                 }
 

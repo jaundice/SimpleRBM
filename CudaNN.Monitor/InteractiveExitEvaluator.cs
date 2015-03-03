@@ -19,7 +19,7 @@ namespace CudaNN.Monitor
         private readonly IEpochErrorTracker<T> _epochErrorTracker;
 
         public InteractiveExitEvaluator(IEpochErrorTracker<T> epochErrorTracker, int layerIndex, int maxEpochs,
-            T minError, int reportFrequency)
+            T minError)
         {
             _maxEpochs = maxEpochs;
             _minError = minError;

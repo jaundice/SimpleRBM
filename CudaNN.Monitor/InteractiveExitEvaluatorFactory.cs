@@ -17,7 +17,7 @@ namespace CudaNN.Monitor
                 new PropertyMetadata(default(ICommand)));
 
 
-        public static readonly DependencyProperty MaxEpochsProperty = DependencyProperty.Register("MaxEpochs", typeof(int), typeof(InteractiveExitEvaluatorFactory<T>), new PropertyMetadata(default(int)));
+        public static readonly DependencyProperty MaxEpochsProperty = DependencyProperty.Register("MaxEpochs", typeof(int), typeof(InteractiveExitEvaluatorFactory<T>), new PropertyMetadata(5000));
 
 
         public int MaxEpochs
@@ -28,7 +28,6 @@ namespace CudaNN.Monitor
 
         private readonly T _minError;
         private readonly IEpochErrorTracker<T> _epochErrorTracker;
-        private int _reportFrequency;
         private InteractiveExitEvaluator<T> _activeEvaluator;
 
         public InteractiveExitEvaluatorFactory(IEpochErrorTracker<T> epochErrorTracker, T minError,
@@ -66,7 +65,7 @@ namespace CudaNN.Monitor
         public IExitConditionEvaluator<T> Create(int layerIndex)
         {
             _activeEvaluator = _activeEvaluator ?? (_activeEvaluator = new InteractiveExitEvaluator<T>(_epochErrorTracker, layerIndex, MaxEpochs,
-                _minError, _reportFrequency));
+                _minError));
             _activeEvaluator._layerIndex = layerIndex;
 
             return _activeEvaluator;

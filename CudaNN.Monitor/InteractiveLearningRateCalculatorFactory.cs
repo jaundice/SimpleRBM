@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using System.Collections.Generic;
+using System.Windows;
+using Mono.CSharp;
 using SimpleRBM.Common;
 
 namespace CudaNN.Monitor
@@ -8,17 +10,12 @@ namespace CudaNN.Monitor
         public static readonly DependencyProperty LearningRateProperty = DependencyProperty.Register("LearningRate",
             typeof(T), typeof(InteractiveLearningRateCalculatorFactory<T>), new PropertyMetadata(default(T)));
 
-        public static readonly DependencyProperty InitialLearningRateProperty = DependencyProperty.Register("InitialLearningRate",
-            typeof(T), typeof(InteractiveLearningRateCalculatorFactory<T>), new PropertyMetadata(default(T)));
-
+        public static readonly DependencyProperty InitialLearningRateProperty =
+            DependencyProperty.Register("InitialLearningRate",
+                typeof(T), typeof(InteractiveLearningRateCalculatorFactory<T>), new PropertyMetadata(3E-05));
 
         private InteractiveLearningRateCalculator<T> _active;
 
-        public T LearningRate
-        {
-            get { return Dispatcher.InvokeIfRequired(() => (T)GetValue(LearningRateProperty)).Result; }
-            set { Dispatcher.InvokeIfRequired(() => SetValue(LearningRateProperty, value)).Wait(); }
-        }
 
         public T InitialLearningRate
         {
@@ -26,13 +23,26 @@ namespace CudaNN.Monitor
             set { Dispatcher.InvokeIfRequired(() => SetValue(InitialLearningRateProperty, value)).Wait(); }
         }
 
+        public T LearningRate
+        {
+            get { return Dispatcher.InvokeIfRequired(() => (T)GetValue(LearningRateProperty)).Result; }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(LearningRateProperty, value)).Wait(); }
+
+        }
+
         public ILearningRateCalculator<T> Create(int layer)
         {
-            LearningRate = InitialLearningRate;
-            return _active ?? (_active = new InteractiveLearningRateCalculator<T>()
+
+            if (_active == null)
             {
-                LearningRate = InitialLearningRate
-            });
+                LearningRate = Comparer<T>.Default.Compare(LearningRate, default(T)) > 0 ? LearningRate : InitialLearningRate;
+                _active = new InteractiveLearningRateCalculator<T>()
+                {
+                    LearningRate = LearningRate
+                };
+            }
+
+            return _active;
         }
 
         protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
@@ -51,7 +61,6 @@ namespace CudaNN.Monitor
         public InteractiveLearningRateCalculatorFactory(T initialLearningRate)
         {
             InitialLearningRate = initialLearningRate;
-
         }
     }
 }

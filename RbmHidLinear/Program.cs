@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Cudafy;
 using Cudafy.Host;
@@ -143,7 +144,7 @@ namespace CudaNN
                         new ManualKeyPressExitEvaluatorFactory<TElement>(greedyTracker, 0.005, 5000),
                         new ConstantLearningRateFactory<double>(0.0001, 20),
                         new ConstantLearningRateFactory<double>(0.00005),
-                        new ConstantLearningRateFactory<double>(0.000001)
+                        new ConstantLearningRateFactory<double>(0.000001), CancellationToken.None
                         );
                 }
 
@@ -247,7 +248,7 @@ namespace CudaNN
                         new ManualKeyPressExitEvaluatorFactory<TElement>(greedyTracker, 0.0005, 50000, 5),
                         new ConstantLearningRateFactory<double>(0.000003, 5),
                         new ConstantLearningRateFactory<double>(0.000003),
-                        new ConstantLearningRateFactory<double>(0.000003)
+                        new ConstantLearningRateFactory<double>(0.000003), CancellationToken.None
                         );
                 }
 
@@ -319,7 +320,7 @@ namespace CudaNN
                         new ManualKeyPressExitEvaluatorFactory<TElement>(greedyTracker, 0.0005, 3920),
                         new DecayingLearningRateFactory<TElement>(initialRate, decayRate, minRate, decayType, 20),
                         new DecayingLearningRateFactory<TElement>(initialRate, decayRate, minRate, decayType),
-                        new DecayingLearningRateFactory<TElement>(initialRate, decayRate, minRate, decayType));
+                        new DecayingLearningRateFactory<TElement>(initialRate, decayRate, minRate, decayType), CancellationToken.None);
 
                 int[] testSrcLabels;
                 TElement[,] testSourceCoded;

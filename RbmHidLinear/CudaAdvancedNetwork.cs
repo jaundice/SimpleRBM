@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Cudafy.Host;
 using Cudafy.Maths.RAND;
 using SimpleRBM.Common;
@@ -347,23 +349,23 @@ namespace CudaNN
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken)
         {
             using (var d = Machines[0].GPU.Upload(data))
                 AsCuda.GreedyTrain(d, exitConditionFactory, weightLearningRateCalculatorFactory,
-                    hidBiasLearningRateCalculatorFactory, visBiasLearningRateCalculatorFactory);
+                    hidBiasLearningRateCalculatorFactory, visBiasLearningRateCalculatorFactory, cancelToken);
         }
 
         public void GreedySupervisedTrain(TElement[,] data, TElement[,] labels,
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken)
         {
             using (var d = Machines[0].GPU.Upload(data))
             using (var l = Machines[0].GPU.Upload(labels))
                 AsCuda.GreedySupervisedTrain(d, l, exitConditionFactory, weightLearningRateCalculatorFactory,
-                    hidBiasLearningRateCalculatorFactory, visBiasLearningRateCalculatorFactory);
+                    hidBiasLearningRateCalculatorFactory, visBiasLearningRateCalculatorFactory, cancelToken);
         }
 
 
@@ -371,15 +373,16 @@ namespace CudaNN
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken)
         {
             var layerTrainData = data;
             for (var i = 0; i < Machines.Count; i++)
             {
+                cancelToken.ThrowIfCancellationRequested();
                 Machines[i].GreedyTrain(layerTrainData, exitConditionFactory.Create(i),
                     weightLearningRateCalculatorFactory.Create(i),
                     hidBiasLearningRateCalculatorFactory.Create(i),
-                    visBiasLearningRateCalculatorFactory.Create(i));
+                    visBiasLearningRateCalculatorFactory.Create(i), cancelToken);
                 var encoded = Machines[i].Encode(layerTrainData);
                 if (!ReferenceEquals(layerTrainData, data))
                 {
@@ -393,11 +396,12 @@ namespace CudaNN
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken)
         {
             var layerTrainData = data;
             for (var i = 0; i < Machines.Count; i++)
             {
+                cancelToken.ThrowIfCancellationRequested();
                 if (i == Machines.Count - 1)
                 {
                     var combined = Machines[0].GPU.AllocateNoSet<TElement>(data.GetLength(0),
@@ -413,7 +417,7 @@ namespace CudaNN
                 Machines[i].GreedyTrain(layerTrainData, exitConditionFactory.Create(i),
                     weightLearningRateCalculatorFactory.Create(i),
                     hidBiasLearningRateCalculatorFactory.Create(i),
-                    visBiasLearningRateCalculatorFactory.Create(i));
+                    visBiasLearningRateCalculatorFactory.Create(i), cancelToken);
 
 
                 var encoded = Machines[i].Encode(layerTrainData);
@@ -474,15 +478,16 @@ namespace CudaNN
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken)
         {
             var layerTrainData = data;
             for (var i = 0; i < Machines.Count; i++)
             {
+                cancelToken.ThrowIfCancellationRequested();
                 Machines[i].GreedyBatchedTrain(layerTrainData, batchSize, exitConditionFactory.Create(i),
                     weightLearningRateCalculatorFactory.Create(i),
                     hidBiasLearningRateCalculatorFactory.Create(i),
-                    visBiasLearningRateCalculatorFactory.Create(i));
+                    visBiasLearningRateCalculatorFactory.Create(i), cancelToken);
                 var encoded = Machines[i].Encode(layerTrainData);
                 if (!ReferenceEquals(layerTrainData, data))
                 {
@@ -496,11 +501,12 @@ namespace CudaNN
             int batchSize, IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken)
         {
             var layerTrainData = data;
             for (var i = 0; i < Machines.Count; i++)
             {
+                cancelToken.ThrowIfCancellationRequested();
                 if (i == Machines.Count - 1)
                 {
                     var combined = Machines[0].GPU.AllocateNoSet<TElement>(data.GetLength(0),
@@ -516,7 +522,7 @@ namespace CudaNN
                 Machines[i].GreedyBatchedTrain(layerTrainData, batchSize, exitConditionFactory.Create(i),
                     weightLearningRateCalculatorFactory.Create(i),
                     hidBiasLearningRateCalculatorFactory.Create(i),
-                    visBiasLearningRateCalculatorFactory.Create(i));
+                    visBiasLearningRateCalculatorFactory.Create(i), cancelToken);
 
 
                 var encoded = Machines[i].Encode(layerTrainData);
@@ -538,12 +544,12 @@ namespace CudaNN
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken)
         {
             using (var d = Machines[0].GPU.Upload(data))
             {
                 AsCuda.GreedyBatchedTrain(d, batchSize, exitConditionFactory, weightLearningRateCalculatorFactory,
-                    hidBiasLearningRateCalculatorFactory, visBiasLearningRateCalculatorFactory);
+                    hidBiasLearningRateCalculatorFactory, visBiasLearningRateCalculatorFactory, cancelToken);
             }
         }
 
@@ -551,13 +557,13 @@ namespace CudaNN
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken)
         {
             using (var d = Machines[0].GPU.Upload(data))
             using (var l = Machines[0].GPU.Upload(labels))
                 AsCuda.GreedyBatchedSupervisedTrainMem(d, l, batchSize, exitConditionFactory,
                     weightLearningRateCalculatorFactory, hidBiasLearningRateCalculatorFactory,
-                    visBiasLearningRateCalculatorFactory);
+                    visBiasLearningRateCalculatorFactory, cancelToken);
         }
 
 
@@ -565,17 +571,18 @@ namespace CudaNN
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken)
         {
             var layerTrainData = data;
             for (var i = 0; i < Machines.Count; i++)
             {
+                cancelToken.ThrowIfCancellationRequested();
                 var localCopy = layerTrainData.CopyLocal();
 
                 Machines[i].GreedyBatchedTrainMem(layerTrainData, batchSize, exitConditionFactory.Create(i),
                     weightLearningRateCalculatorFactory.Create(i),
                     hidBiasLearningRateCalculatorFactory.Create(i),
-                    visBiasLearningRateCalculatorFactory.Create(i));
+                    visBiasLearningRateCalculatorFactory.Create(i), cancelToken);
 
                 Matrix2D<TElement> encoded;
                 using (var up = Machines[0].GPU.Upload(localCopy))
@@ -591,11 +598,12 @@ namespace CudaNN
             int batchSize, IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken)
         {
             var layerTrainData = data;
             for (var i = 0; i < Machines.Count; i++)
             {
+                cancelToken.ThrowIfCancellationRequested();
                 if (i == Machines.Count - 1)
                 {
                     var combined = Machines[0].GPU.AllocateNoSet<TElement>(data.GetLength(0),
@@ -614,7 +622,7 @@ namespace CudaNN
                 Machines[i].GreedyBatchedTrainMem(layerTrainData, batchSize, exitConditionFactory.Create(i),
                     weightLearningRateCalculatorFactory.Create(i),
                     hidBiasLearningRateCalculatorFactory.Create(i),
-                    visBiasLearningRateCalculatorFactory.Create(i));
+                    visBiasLearningRateCalculatorFactory.Create(i), cancelToken);
 
                 Matrix2D<TElement> encoded;
                 using (var d = Machines[0].GPU.Upload(local))
@@ -634,12 +642,12 @@ namespace CudaNN
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken)
         {
             using (var d = Machines[0].GPU.Upload(data))
             {
                 AsCuda.GreedyBatchedTrainMem(d, batchSize, exitConditionFactory, weightLearningRateCalculatorFactory,
-                    hidBiasLearningRateCalculatorFactory, visBiasLearningRateCalculatorFactory);
+                    hidBiasLearningRateCalculatorFactory, visBiasLearningRateCalculatorFactory, cancelToken);
             }
         }
 
@@ -647,13 +655,13 @@ namespace CudaNN
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken)
         {
             using (var d = Machines[0].GPU.Upload(data))
             using (var l = Machines[0].GPU.Upload(labels))
                 AsCuda.GreedyBatchedSupervisedTrainMem(d, l, batchSize, exitConditionFactory,
                     weightLearningRateCalculatorFactory, hidBiasLearningRateCalculatorFactory,
-                    visBiasLearningRateCalculatorFactory);
+                    visBiasLearningRateCalculatorFactory, cancelToken);
         }
 
         public void SetDefaultMachineState(SuspendState state)
@@ -665,22 +673,22 @@ namespace CudaNN
         }
 
 
-        public void GreedyBatchedTrainMem(IList<TElement[,]> batches, IExitConditionEvaluatorFactory<TElement> exitConditionFactory, ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory, ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory, ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+        public void GreedyBatchedTrainMem(IList<TElement[,]> batches, IExitConditionEvaluatorFactory<TElement> exitConditionFactory, ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory, ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory, ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken)
         {
             var layerTrainData = batches;
             for (var i = 0; i < Machines.Count; i++)
             {
-
+                cancelToken.ThrowIfCancellationRequested();
                 Machines[i].GreedyBatchedTrainMem(layerTrainData, exitConditionFactory.Create(i),
                     weightLearningRateCalculatorFactory.Create(i),
                     hidBiasLearningRateCalculatorFactory.Create(i),
-                    visBiasLearningRateCalculatorFactory.Create(i));
+                    visBiasLearningRateCalculatorFactory.Create(i), cancelToken);
 
                 layerTrainData = layerTrainData.Select(Machines[i].Encode).ToList();
             }
         }
 
-        public void GreedyBatchedSupervisedTrainMem(IList<TElement[,]> batches, IList<TElement[,]> labels, IExitConditionEvaluatorFactory<TElement> exitConditionFactory, ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory, ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory, ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory)
+        public void GreedyBatchedSupervisedTrainMem(IList<TElement[,]> batches, IList<TElement[,]> labels, IExitConditionEvaluatorFactory<TElement> exitConditionFactory, ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory, ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory, ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken)
         {
             if (batches.Select((a, i) => a.GetLength(0) != labels[i].GetLength(0)).Any())
             {
@@ -689,30 +697,39 @@ namespace CudaNN
             var layerTrainData = batches;
             for (var i = 0; i < Machines.Count; i++)
             {
+                cancelToken.ThrowIfCancellationRequested();
                 if (i == Machines.Count - 1)
                 {
-                    var combined = layerTrainData.Select((a, j) =>
+                    try
                     {
-                        using (var gp = Machines[0].GPU.Upload(a))
-                        using (var gk = Machines[0].GPU.Upload(labels[j]))
-                        using (var c = Machines[0].GPU.AllocateNoSet<TElement>(gp.GetLength(0),
-                                gp.GetLength(1) + gk.GetLength(1)))
+                        var combined = layerTrainData.Select((a, j) =>
                         {
-                            c.InsertValuesFrom(0, 0, gp);
-                            c.InsertValuesFrom(0, gp.GetLength(1), gk);
-                            return c.CopyLocal();
-                        }
+                            using (var gp = Machines[0].GPU.Upload(a))
+                            using (var gk = Machines[0].GPU.Upload(labels[j]))
+                            using (var c = Machines[0].GPU.AllocateNoSet<TElement>(gp.GetLength(0),
+                                gp.GetLength(1) + gk.GetLength(1)))
+                            {
+                                c.InsertValuesFrom(0, 0, gp);
+                                c.InsertValuesFrom(0, gp.GetLength(1), gk);
+                                return c.CopyLocal();
+                            }
 
-                    }).ToList();
+                        }).ToList();
 
-                    layerTrainData = combined;
+                        layerTrainData = combined;
+                    }
+                    catch (AggregateException agg)
+                    {
+                        if (agg.InnerException is TaskCanceledException || agg.InnerException is OperationCanceledException)
+                            throw agg.InnerException;
+                    }
                 }
 
 
                 Machines[i].GreedyBatchedTrainMem(layerTrainData, exitConditionFactory.Create(i),
                     weightLearningRateCalculatorFactory.Create(i),
                     hidBiasLearningRateCalculatorFactory.Create(i),
-                    visBiasLearningRateCalculatorFactory.Create(i));
+                    visBiasLearningRateCalculatorFactory.Create(i), cancelToken);
 
 
 

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Cudafy;
 using Cudafy.Host;
@@ -150,10 +151,10 @@ namespace SimpleRBM.Cuda
         }
 
         public void GreedyTrain(TElement[,] visibleData, IExitConditionEvaluator<TElement> exitEvaluator,
-            ILearningRateCalculator<TElement> learningRateCalculator)
+            ILearningRateCalculator<TElement> learningRateCalculator, CancellationToken cancelToken)
         {
             using (var d = GPU.Upload(visibleData))
-                ((IBasicRbmCuda<TElement>)this).GreedyTrain(d, exitEvaluator, learningRateCalculator);
+                ((IBasicRbmCuda<TElement>)this).GreedyTrain(d, exitEvaluator, learningRateCalculator, cancelToken);
         }
 
 
@@ -168,12 +169,12 @@ namespace SimpleRBM.Cuda
 
         public TElement GreedyBatchedTrain(TElement[,] srcData, int batchRows,
             IExitConditionEvaluator<TElement> exitEvaluator,
-            ILearningRateCalculator<TElement> learningRateCalculator)
+            ILearningRateCalculator<TElement> learningRateCalculator, CancellationToken cancelToken)
         {
             using (var d = _gpu.Upload(srcData))
             {
                 return ((IBasicRbmCuda<TElement>)this).GreedyBatchedTrain(d, batchRows, exitEvaluator,
-                    learningRateCalculator);
+                    learningRateCalculator, cancelToken);
             }
         }
 
@@ -207,7 +208,7 @@ namespace SimpleRBM.Cuda
 
         void IBasicRbmCuda<TElement>.DownPass(Matrix2D<TElement> hiddenStates,
             IExitConditionEvaluator<TElement> exitEvaluator,
-            ILearningRateCalculator<TElement> learningRateCalculator, out TElement error)
+            ILearningRateCalculator<TElement> learningRateCalculator, out TElement error, CancellationToken cancelToken)
         {
             error = TElement.MaxValue;
             //reconstruct visible
@@ -225,6 +226,7 @@ namespace SimpleRBM.Cuda
 
                 for (int i = 0; ; i++)
                 {
+                    cancelToken.ThrowIfCancellationRequested();
                     sw.Restart();
                     Matrix2D<TElement> posVisibleProbs;
                     Matrix2D<TElement> negHiddenProbs;
@@ -386,7 +388,7 @@ namespace SimpleRBM.Cuda
         }
 
         TElement IBasicRbmCuda<TElement>.GreedyBatchedTrain(Matrix2D<TElement> allData, int batchRows,
-            IExitConditionEvaluator<TElement> exitEvaluator, ILearningRateCalculator<TElement> learningRateCalculator)
+            IExitConditionEvaluator<TElement> exitEvaluator, ILearningRateCalculator<TElement> learningRateCalculator, CancellationToken cancelToken)
         {
             exitEvaluator.Start();
             TElement error = 0f;
@@ -396,49 +398,57 @@ namespace SimpleRBM.Cuda
             int numExamples = allData.GetLength(0);
             var partitions = new List<Tuple<Matrix2D<TElement>, Matrix2D<TElement>>>();
             var transposedPartitions = new List<Matrix2D<TElement>>();
-            using (Matrix2D<TElement> dataBlock = GPU.AllocateNoSet<TElement>(allData.GetLength(0), numCols + 1))
+            try
             {
-                dataBlock.InsertValuesFrom(0, 1, allData);
-                dataBlock.UpdateValuesAlongAxis(0, 1.0f, Axis.Column);
-
-
-                for (int j = 0; j < allData.GetLength(0); j += batchRows)
+                using (Matrix2D<TElement> dataBlock = GPU.AllocateNoSet<TElement>(allData.GetLength(0), numCols + 1))
                 {
-                    int endIndex = j + batchRows;
-                    if (endIndex > allData.GetLength(0) - 1)
-                        endIndex = allData.GetLength(0) - 1;
+                    dataBlock.InsertValuesFrom(0, 1, allData);
+                    dataBlock.UpdateValuesAlongAxis(0, 1.0f, Axis.Column);
 
-                    int examples = endIndex - j;
-                    Matrix2D<TElement> part = dataBlock.SubMatrix(j, 0, examples);
 
-                    partitions.Add(Tuple.Create(part, part.Transpose()));
+                    for (int j = 0; j < allData.GetLength(0); j += batchRows)
+                    {
+                        cancelToken.ThrowIfCancellationRequested();
+                        int endIndex = j + batchRows;
+                        if (endIndex > allData.GetLength(0) - 1)
+                            endIndex = allData.GetLength(0) - 1;
+
+                        int examples = endIndex - j;
+                        Matrix2D<TElement> part = dataBlock.SubMatrix(j, 0, examples);
+
+                        partitions.Add(Tuple.Create(part, part.Transpose()));
+                    }
+                }
+
+                var sw = new Stopwatch();
+
+                for (i = 0;; i++)
+                {
+                    cancelToken.ThrowIfCancellationRequested();
+                    sw.Restart();
+                    error =
+                        partitions.Sum(
+                            part => GreedyTrainInternal(part.Item1, part.Item2, i, numExamples, learningRateCalculator));
+
+                    RaiseEpochEnd(i, error);
+
+                    TElement delta;
+                    if (exitEvaluator.Exit(i, error, sw.Elapsed, out delta))
+                        break;
                 }
             }
-
-            var sw = new Stopwatch();
-
-            for (i = 0; ; i++)
+            finally
             {
-                sw.Restart();
-                error = partitions.Sum(part => GreedyTrainInternal(part.Item1, part.Item2, i, numExamples, learningRateCalculator));
 
-                RaiseEpochEnd(i, error);
-
-                TElement delta;
-                if (exitEvaluator.Exit(i, error, sw.Elapsed, out delta))
-                    break;
+                foreach (var partition in partitions)
+                {
+                    partition.Item2.Dispose();
+                }
+                foreach (var transposedPartition in transposedPartitions)
+                {
+                    transposedPartition.Dispose();
+                }
             }
-
-
-            foreach (var partition in partitions)
-            {
-                partition.Item2.Dispose();
-            }
-            foreach (var transposedPartition in transposedPartitions)
-            {
-                transposedPartition.Dispose();
-            }
-
             RaiseTrainEnd(i, error);
             exitEvaluator.Stop();
             return error;
@@ -446,7 +456,7 @@ namespace SimpleRBM.Cuda
 
 
         TElement IBasicRbmCuda<TElement>.GreedyTrain(Matrix2D<TElement> visibleData,
-            IExitConditionEvaluator<TElement> exitEvaluator, ILearningRateCalculator<TElement> learningRateCalculator)
+            IExitConditionEvaluator<TElement> exitEvaluator, ILearningRateCalculator<TElement> learningRateCalculator, CancellationToken cancelToken)
         {
             exitEvaluator.Start();
             TElement error = 0f;
@@ -466,6 +476,7 @@ namespace SimpleRBM.Cuda
 
                     for (i = 0; ; i++)
                     {
+                        cancelToken.ThrowIfCancellationRequested();
                         sw.Restart();
 
                         error = GreedyTrainInternal(data, dataTransposed, i, numExamples, learningRateCalculator);

@@ -1,4 +1,5 @@
 using System;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 
@@ -20,5 +21,7 @@ namespace CudaNN.Monitor
                 return action();
             return await self.InvokeAsync(action);
         }
+
+       
     }
 }

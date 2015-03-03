@@ -5,6 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
+using System.Threading.Tasks;
 using Cudafy.Host;
 using Cudafy.Maths.RAND;
 using Mono.CSharp;
@@ -175,12 +177,12 @@ namespace CudaNN
             IExitConditionEvaluator<TElement> exitConditionEvaluator,
             ILearningRateCalculator<TElement> weightLearningRateCalculator,
             ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
-            ILearningRateCalculator<TElement> visBiasLearningRateCalculator)
+            ILearningRateCalculator<TElement> visBiasLearningRateCalculator, CancellationToken cancelToken)
         {
             using (Matrix2D<TElement> data = _gpu.Upload(visibleData))
             {
                 GreedyTrain(data, exitConditionEvaluator, weightLearningRateCalculator, hidBiasLearningRateCalculator,
-                    visBiasLearningRateCalculator);
+                    visBiasLearningRateCalculator, cancelToken);
             }
         }
 
@@ -223,7 +225,7 @@ namespace CudaNN
             IExitConditionEvaluator<TElement> exitConditionEvaluator,
             ILearningRateCalculator<TElement> weightLearningRateCalculator,
             ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
-            ILearningRateCalculator<TElement> visBiasLearningRateCalculator)
+            ILearningRateCalculator<TElement> visBiasLearningRateCalculator, CancellationToken cancelToken)
         {
             var state = State;
             Wake();
@@ -238,6 +240,7 @@ namespace CudaNN
                 EpochEventArgs<TElement> args;
                 for (epoch = 0; ; epoch++)
                 {
+                    cancelToken.ThrowIfCancellationRequested();
                     sw.Restart();
                     TElement weightLearningRate = weightLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
                     TElement visBiasLearningRate = visBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
@@ -250,7 +253,12 @@ namespace CudaNN
                     var shouldExit = exitConditionEvaluator.Exit(epoch, error, sw.Elapsed, out delta);
                     args = new EpochEventArgs<TElement>()
                     {
-                        Epoch = epoch, Error = error, Layer = LayerIndex, LearningRate = weightLearningRate, Elapsed = sw.Elapsed, Delta = delta
+                        Epoch = epoch,
+                        Error = error,
+                        Layer = LayerIndex,
+                        LearningRate = weightLearningRate,
+                        Elapsed = sw.Elapsed,
+                        Delta = delta
                     };
                     OnEpochComplete(args);
                     if (shouldExit)
@@ -293,10 +301,10 @@ namespace CudaNN
         }
 
         public void GreedyTrain(TElement[,] visibleData, IExitConditionEvaluator<TElement> exitEvaluator,
-            ILearningRateCalculator<TElement> learningRateCalculator)
+            ILearningRateCalculator<TElement> learningRateCalculator, CancellationToken cancelToken)
         {
             GreedyTrain(visibleData, exitEvaluator, learningRateCalculator, learningRateCalculator,
-                learningRateCalculator);
+                learningRateCalculator, cancelToken);
         }
 
         public ILayerSaveInfo<TElement> GetSaveInfo()
@@ -314,7 +322,7 @@ namespace CudaNN
             IExitConditionEvaluator<TElement> exitConditionEvaluator,
             ILearningRateCalculator<TElement> weightLearningRateCalculator,
             ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
-            ILearningRateCalculator<TElement> visBiasLearningRateCalculator)
+            ILearningRateCalculator<TElement> visBiasLearningRateCalculator, CancellationToken cancelToken)
         {
             var state = State;
             Wake();
@@ -324,21 +332,33 @@ namespace CudaNN
             var datasets = PartitionDataAsMatrices(data, batchSize);
             try
             {
+                cancelToken.ThrowIfCancellationRequested();
                 Stopwatch sw = new Stopwatch();
                 int epoch;
                 TElement error;
                 EpochEventArgs<TElement> args;
                 for (epoch = 0; ; epoch++)
                 {
+
+
                     sw.Restart();
                     TElement weightLearningRate = weightLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
                     TElement visBiasLearningRate = visBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
                     TElement hidBiasLearningRate = hidBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
 
-                    error =
-                        datasets.Sum(block => BatchedTrainEpoch(block.Item1, block.Item2, block.Item3, epoch, numcases,
-                            weightLearningRate, hidBiasLearningRate, visBiasLearningRate));
-
+                    try
+                    {
+                        error =
+                            datasets.Sum(
+                                block => BatchedTrainEpoch(block.Item1, block.Item2, block.Item3, epoch, numcases,
+                                    weightLearningRate, hidBiasLearningRate, visBiasLearningRate));
+                    }
+                    catch (AggregateException agg)
+                    {
+                        if (agg.InnerException is TaskCanceledException || agg.InnerException is OperationCanceledException)
+                            throw agg.InnerException;
+                        throw;
+                    }
 
 
                     TElement delta;
@@ -386,7 +406,7 @@ namespace CudaNN
             IExitConditionEvaluator<TElement> exitConditionEvaluator,
             ILearningRateCalculator<TElement> weightLearningRateCalculator,
             ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
-            ILearningRateCalculator<TElement> visBiasLearningRateCalculator)
+            ILearningRateCalculator<TElement> visBiasLearningRateCalculator, CancellationToken cancelToken)
         {
             var state = State;
 
@@ -409,20 +429,31 @@ namespace CudaNN
             EpochEventArgs<TElement> args;
             for (epoch = 0; ; epoch++)
             {
+                cancelToken.ThrowIfCancellationRequested();
                 sw.Restart();
                 TElement weightLearningRate = weightLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
                 TElement visBiasLearningRate = visBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
                 TElement hidBiasLearningRate = hidBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
-
-                error = datasets.Sum(block =>
+                try
                 {
-                    using (var d = AsCuda.GPU.Upload(block.Item1))
-                    using (var t = AsCuda.GPU.Upload(block.Item2))
-                    using (var p = AsCuda.GPU.Upload(block.Item3))
-                        return BatchedTrainEpoch(d, t, p, epoch, numcases,
-                            weightLearningRate, hidBiasLearningRate,
-                            visBiasLearningRate);
-                });
+                    error = datasets.Sum(block =>
+                    {
+                        using (var d = AsCuda.GPU.Upload(block.Item1))
+                        using (var t = AsCuda.GPU.Upload(block.Item2))
+                        using (var p = AsCuda.GPU.Upload(block.Item3))
+                            return BatchedTrainEpoch(d, t, p, epoch, numcases,
+                                weightLearningRate, hidBiasLearningRate,
+                                visBiasLearningRate);
+                    });
+                }
+                catch (AggregateException agg)
+                {
+                    if (agg.InnerException is TaskCanceledException || agg.InnerException is OperationCanceledException)
+                        throw agg.InnerException;
+                    else
+                        throw;
+                    
+                }
 
                 TElement delta;
                 var shouldExit = exitConditionEvaluator.Exit(epoch, error, sw.Elapsed, out delta);
@@ -698,7 +729,7 @@ namespace CudaNN
             IExitConditionEvaluator<TElement> exitConditionEvaluator,
             ILearningRateCalculator<TElement> weightLearningRateCalculator,
             ILearningRateCalculator<TElement> hidBiasLearningRateCalculator,
-            ILearningRateCalculator<TElement> visBiasLearningRateCalculator)
+            ILearningRateCalculator<TElement> visBiasLearningRateCalculator, CancellationToken cancelToken)
         {
             var state = State;
 
@@ -726,20 +757,32 @@ namespace CudaNN
             EpochEventArgs<TElement> args;
             for (epoch = 0; ; epoch++)
             {
+                cancelToken.ThrowIfCancellationRequested();
                 sw.Restart();
                 TElement weightLearningRate = weightLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
                 TElement visBiasLearningRate = visBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
                 TElement hidBiasLearningRate = hidBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
-
-                error = datasets.Sum(block =>
+                try
                 {
-                    using (var d = AsCuda.GPU.Upload(block.Item1))
-                    using (var t = AsCuda.GPU.Upload(block.Item2))
-                    using (var p = AsCuda.GPU.Upload(block.Item3))
-                        return BatchedTrainEpoch(d, t, p, epoch, numcases,
-                            weightLearningRate, hidBiasLearningRate,
-                            visBiasLearningRate);
-                });
+                    error = datasets.Sum(block =>
+                    {
+                        using (var d = AsCuda.GPU.Upload(block.Item1))
+                        using (var t = AsCuda.GPU.Upload(block.Item2))
+                        using (var p = AsCuda.GPU.Upload(block.Item3))
+                            return BatchedTrainEpoch(d, t, p, epoch, numcases,
+                                weightLearningRate, hidBiasLearningRate,
+                                visBiasLearningRate);
+                    });
+                }
+                catch (AggregateException agg)
+                {
+                    if (agg.InnerException is TaskCanceledException || agg.InnerException is OperationCanceledException)
+                        throw agg.InnerException;
+                    else
+                    {
+                        throw;
+                    }
+                }
 
                 TElement delta;
                 var shouldExit = exitConditionEvaluator.Exit(epoch, error, sw.Elapsed, out delta);

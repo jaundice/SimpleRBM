@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using SimpleRBM.Common;
 using SimpleRBM.Cuda;
 
@@ -44,37 +45,37 @@ namespace CudaNN
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken);
 
         void GreedyBatchedTrain(Matrix2D<TElement> data, int batchSize,
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken);
 
         void GreedyBatchedTrainMem(Matrix2D<TElement> data, int batchSize,
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken);
 
         void GreedySupervisedTrain(Matrix2D<TElement> data, Matrix2D<TElement> labels,
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken);
 
         void GreedyBatchedSupervisedTrain(Matrix2D<TElement> data, Matrix2D<TElement> labels, int batchSize,
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken);
 
         void GreedyBatchedSupervisedTrainMem(Matrix2D<TElement> data, Matrix2D<TElement> labels, int batchSize,
             IExitConditionEvaluatorFactory<TElement> exitConditionFactory,
             ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory,
             ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory,
-            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory);
+            ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken);
 
      //   void GreedyBatchedTrain(IList<Matrix2D<TElement>> batches, 
      //      IExitConditionEvaluatorFactory<TElement> exitConditionFactory,

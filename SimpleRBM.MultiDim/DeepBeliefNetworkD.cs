@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using SimpleRBM.Common;
 using SimpleRBM.Common.Save;
@@ -68,13 +69,14 @@ namespace SimpleRBM.MultiDim
 
         public void GreedyTrainLayersFrom(double[,] visibleData, int startDepth,
             IExitConditionEvaluatorFactory<double> exitEvaluatorFactory,
-            ILearningRateCalculatorFactory<double> learningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<double> learningRateCalculatorFactory, CancellationToken cancelToken)
         {
             for (int i = 0; i < Machines.Length; i++)
             {
+                cancelToken.ThrowIfCancellationRequested();
                 visibleData = i < startDepth
                     ? Machines[i].Encode(visibleData)
-                    : GreedyTrain(visibleData, i, exitEvaluatorFactory, learningRateCalculatorFactory);
+                    : GreedyTrain(visibleData, i, exitEvaluatorFactory, learningRateCalculatorFactory, cancelToken);
             }
         }
 
@@ -120,38 +122,39 @@ namespace SimpleRBM.MultiDim
 
         public double[,] GreedyTrain(double[,] data, int layerIndex,
             IExitConditionEvaluatorFactory<double> exitEvaluatorFactory,
-            ILearningRateCalculatorFactory<double> learningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<double> learningRateCalculatorFactory, CancellationToken cancelToken)
         {
-           Machines[layerIndex].GreedyTrain(data, exitEvaluatorFactory.Create(layerIndex),
-                learningRateCalculatorFactory.Create(layerIndex));
-            
+            Machines[layerIndex].GreedyTrain(data, exitEvaluatorFactory.Create(layerIndex),
+                 learningRateCalculatorFactory.Create(layerIndex), cancelToken);
+
             return Machines[layerIndex].Encode(data);
         }
 
         public Task AsyncGreedyTrain(double[,] data, int layerIndex,
             IExitConditionEvaluatorFactory<double> exitEvaluatorFactory,
-            ILearningRateCalculatorFactory<double> learningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<double> learningRateCalculatorFactory, CancellationToken cancelToken)
         {
             return Task.Run(
-                () => GreedyTrain(data, layerIndex, exitEvaluatorFactory, learningRateCalculatorFactory));
+                () => GreedyTrain(data, layerIndex, exitEvaluatorFactory, learningRateCalculatorFactory, cancelToken), cancelToken);
         }
 
         public void GreedyTrainAll(double[,] visibleData, IExitConditionEvaluatorFactory<double> exitEvaluatorFactory,
-            ILearningRateCalculatorFactory<double> learningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<double> learningRateCalculatorFactory, CancellationToken cancelToken)
         {
             double error;
 
             for (int i = 0; i < Machines.Length; i++)
             {
-                visibleData = GreedyTrain(visibleData, i, exitEvaluatorFactory, learningRateCalculatorFactory);
+                cancelToken.ThrowIfCancellationRequested();
+                visibleData = GreedyTrain(visibleData, i, exitEvaluatorFactory, learningRateCalculatorFactory, cancelToken);
             }
         }
 
         public Task AsyncGreedyTrainAll(double[,] visibleData,
             IExitConditionEvaluatorFactory<double> exitEvaluatorFactory,
-            ILearningRateCalculatorFactory<double> learningRateCalculatorFactory)
+            ILearningRateCalculatorFactory<double> learningRateCalculatorFactory, CancellationToken cancelToken)
         {
-            return Task.Run(() => GreedyTrainAll(visibleData, exitEvaluatorFactory, learningRateCalculatorFactory));
+            return Task.Run(() => GreedyTrainAll(visibleData, exitEvaluatorFactory, learningRateCalculatorFactory, cancelToken), cancelToken);
         }
 
 
@@ -172,7 +175,7 @@ namespace SimpleRBM.MultiDim
 
         public void GreedyBatchedTrainAll(double[,] visibleData, int batchRows,
             IExitConditionEvaluatorFactory<double> exitConditionEvaluatorFactory,
-            ILearningRateCalculatorFactory<double> learningRateFactory)
+            ILearningRateCalculatorFactory<double> learningRateFactory, CancellationToken cancelToken)
         {
             throw new NotImplementedException();
         }
