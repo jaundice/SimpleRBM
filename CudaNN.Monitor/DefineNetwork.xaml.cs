@@ -1,19 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
+﻿using System.Windows;
+using CudaNN.DeepBelief.LayerBuilders;
+using CudaNN.DeepBelief.ViewModels;
 using Microsoft.Win32;
 
-namespace CudaNN.Monitor
+namespace CudaNN.DeepBelief
 {
     /// <summary>
     /// Interaction logic for DefineNetwork.xaml
@@ -25,7 +15,7 @@ namespace CudaNN.Monitor
             InitializeComponent();
         }
 
-        private void LoadLayerFromFile(object sender, RoutedEventArgs e)
+        private void LoadBinaryLayerFromFile(object sender, RoutedEventArgs e)
         {
             var dlg = new OpenFileDialog { DefaultExt = ".dat", Filter = "Dat Files (.dat)|*.dat" };
 
@@ -34,7 +24,22 @@ namespace CudaNN.Monitor
             {
                 ((LayerBuilderViewModel)this.DataContext).LayerConstructionInfo.Add(new LoadLayerInfo()
                 {
-                    Path = dlg.FileName
+                    Path = dlg.FileName,
+                    LayerType = LoadLayerType.Binary
+                });
+            }
+        }
+        private void LoadLinearLayerFromFile(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog { DefaultExt = ".dat", Filter = "Dat Files (.dat)|*.dat" };
+
+            var res = dlg.ShowDialog(this);
+            if (res == true)
+            {
+                ((LayerBuilderViewModel)this.DataContext).LayerConstructionInfo.Add(new LoadLayerInfo()
+                {
+                    Path = dlg.FileName,
+                    LayerType = LoadLayerType.Linear
                 });
             }
         }
@@ -55,15 +60,24 @@ namespace CudaNN.Monitor
             });
         }
 
-        private void CloseWindow(object sender, RoutedEventArgs e)
+        private void Cancel(object sender, RoutedEventArgs e)
         {
-            this.DialogResult = true;
+            this.DialogResult = false;
             Close();
         }
 
         private void ClearLayers(object sender, RoutedEventArgs e)
         {
             ((LayerBuilderViewModel)this.DataContext).LayerConstructionInfo.Clear();
+        }
+
+        private void Next(object sender, RoutedEventArgs e)
+        {
+            if (((LayerBuilderViewModel)this.DataContext).LayerConstructionInfo.Count > 0)
+            {
+                DialogResult = true;
+                Close();
+            }
         }
     }
 }

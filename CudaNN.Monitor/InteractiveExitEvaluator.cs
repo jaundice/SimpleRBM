@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Windows;
 using SimpleRBM.Common;
 using SimpleRBM.Common.ExitCondition;
 
-namespace CudaNN.Monitor
+namespace CudaNN.DeepBelief
 {
 
     public class InteractiveExitEvaluator<T> : IExitConditionEvaluator<T> where T : struct, IComparable<T>

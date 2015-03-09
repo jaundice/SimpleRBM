@@ -117,8 +117,9 @@
     <Compile Include="IO\HandwrittenNumbersData.cs" />
     <Compile Include="Demo\DemoApp.cs" />
     <Compile Include="IO\KaggleData.cs" />
+    <Compile Include="Util\GrayCodes.cs" />
     <Compile Include="Util\KeyEncoder.cs" />
-    <Compile Include="Util\LabelEncoder.cs" />
+    <Compile Include="Util\FieldGrayEncoder.cs" />
     <Compile Include="IO\FacesData.cs" />
     <Compile Include="IO\WavData.cs" />
     <Compile Include="IDemo.cs" />

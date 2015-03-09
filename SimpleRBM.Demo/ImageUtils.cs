@@ -49,6 +49,18 @@ namespace SimpleRBM.Demo
             return -0.5f + ((R * 0.3f) + (G * 0.59f) + (B * 0.11f)) / 255f;
         }
 
+        //public static unsafe double ConvertRGBToGreyD(IntPtr startAddress, int stride, int x, int y, int pixelWidth)
+        //{
+        //    var data = (byte*)startAddress;
+        //    int ost = y * stride + (x * pixelWidth);
+
+        //    byte B = data[ost];
+        //    byte G = data[ost + 1];
+        //    byte R = data[ost + 2];
+
+        //    return ((R * 0.3) + (G * 0.59) + (B * 0.11)) / 255.0;
+        //}
+
         public static unsafe double ConvertRGBToGreyD(IntPtr startAddress, int stride, int x, int y, int pixelWidth)
         {
             var data = (byte*)startAddress;
@@ -58,7 +70,7 @@ namespace SimpleRBM.Demo
             byte G = data[ost + 1];
             byte R = data[ost + 2];
 
-            return ((R * 0.3) + (G * 0.59) + (B * 0.11)) / 255.0;
+            return (((R * 0.3) + (G * 0.59) + (B * 0.11)) - 127.0) / 255.0;
         }
 
         public static unsafe double ConvertRGBToGreyPosNegD(IntPtr startAddress, int stride, int x, int y,
@@ -92,6 +104,48 @@ namespace SimpleRBM.Demo
             ConvertPixel<T> pixelConverter)
         {
             return files.Select(a => ReadImageFile(a, pixelConverter));
+        }
+
+        public static void CopyImageDataTo<T>(string filePath, T[,] target, int targetRow, int rowOffset, ConvertPixel<T> pixelConverter)
+        {
+            using (var img = (Bitmap)Image.FromFile(filePath))
+            {
+                BitmapData data = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.ReadOnly,
+                    img.PixelFormat);
+
+                int pixWidth = 0;
+                switch (img.PixelFormat)
+                {
+                    case PixelFormat.Format24bppRgb:
+                        {
+                            pixWidth = 3;
+                            break;
+                        }
+                    case PixelFormat.Format32bppRgb:
+                        {
+                            pixWidth = 4;
+                            break;
+                        }
+                    default:
+                        throw new NotImplementedException();
+                }
+                try
+                {
+                    var w = img.Width;
+                    var h = img.Height;
+
+
+                    Parallel.For(0, w,
+                        a =>
+                            Parallel.For(0, h,
+                                b => { target[targetRow, b * w + a + rowOffset] = pixelConverter(data.Scan0, data.Stride, a, b, pixWidth); }));
+                }
+                finally
+                {
+                    img.UnlockBits(data);
+                }
+
+            }
         }
 
         private static T[] ReadImageFile<T>(FileInfo fileInfo, ConvertPixel<T> pixelConverter)
@@ -164,7 +218,7 @@ namespace SimpleRBM.Demo
                 byte* row = (byte*)imgData.Scan0;
                 Parallel.For(0, w, ww =>
                 Parallel.For(0, h, hh =>
-                
+
                     //for (var hh = 0; hh < h; hh++)
                     {
                         var idx = hh * dimension + ww;
@@ -172,8 +226,8 @@ namespace SimpleRBM.Demo
                         row[hh * imgData.Stride + ww * pixelSize] = (byte)intensity;
                         row[hh * imgData.Stride + ww * pixelSize + 1] = (byte)intensity;
                         row[hh * imgData.Stride + ww * pixelSize + 2] = (byte)intensity;
-                    //}
-                }));
+                        //}
+                    }));
             }
             finally
             {

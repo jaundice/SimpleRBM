@@ -11,11 +11,17 @@ namespace SimpleRBM.Demo.IO
     public class WavData : DataIOBase<string>
     {
         private readonly int _maxSamples;
+        private FieldGrayEncoder<string> _labelGrayEncoder;
 
         public WavData(string dataPath, int maxSamples)
             : base(dataPath, dataPath)
         {
             _maxSamples = maxSamples;
+
+            _labelGrayEncoder = new FieldGrayEncoder<string>(
+                new DirectoryInfo(dataPath).EnumerateDirectories("*", SearchOption.AllDirectories)
+                    .Select(a => a.Name)
+                    .ToArray());
         }
 
         public float[,] ReadTrainingData(int skipRecords, int count, out string[] labels, out float[,] labelsCoded)
@@ -70,12 +76,9 @@ namespace SimpleRBM.Demo.IO
 
             labels = files.Select(a => a.Directory.Name).ToArray();
 
-            string[] allLabelOptions =
-                new DirectoryInfo(filePath).EnumerateDirectories("*", SearchOption.AllDirectories)
-                    .Select(a => a.Name)
-                    .ToArray();
 
-            labelsCoded = LabelEncoder.EncodeLabels<string, double>(labels, allLabelOptions);
+
+            labelsCoded = _labelGrayEncoder.Encode<double>(labels, 1.0, 0.0); //FieldGrayEncoder.EncodeLabels<string, double>(labels, allLabelOptions);
             return ReadWavData(files);
         }
 

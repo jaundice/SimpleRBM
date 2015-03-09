@@ -1,0 +1,301 @@
+﻿<Window x:Class="CudaNN.DeepBelief.ConfigureData"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:system="clr-namespace:System;assembly=mscorlib"
+        xmlns:templateSelectors="clr-namespace:CudaNN.DeepBelief.TemplateSelectors"
+        xmlns:viewModels="clr-namespace:CudaNN.DeepBelief.ViewModels"
+        xmlns:converters="clr-namespace:CudaNN.DeepBelief.Converters"
+        Title="ConfigureData" Height="600" Width="600">
+    <Window.DataContext>
+        <viewModels:ImageDataConfigViewModel></viewModels:ImageDataConfigViewModel>
+    </Window.DataContext>
+    <Window.Resources>
+        <converters:BooleanNotConverter x:Key="BooleanNotConverter"/>
+        <templateSelectors:DataFieldTemplateSelector x:Key="DataFieldTemplateSelector"></templateSelectors:DataFieldTemplateSelector>
+        <templateSelectors:DataTypeTemplateSelector x:Key="DataTypeTemplateSelector"></templateSelectors:DataTypeTemplateSelector>
+        <DataTemplate x:Key="ImageSourceTemplate" DataType="viewModels:ImageDataConfigViewModel">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <WrapPanel Grid.Row="0" Grid.Column="0">
+                    <Button Padding="4" Margin="4" Content="Browse For Training Data" Command="{Binding BrowseTrainingDataCommand}"  />
+                    <Button Padding="4" Margin="4" Content="Browse For Test Data" Command="{Binding BrowseTestDataCommand}"  />
+                </WrapPanel>
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition></ColumnDefinition>
+                        <ColumnDefinition></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <Label Margin="4" Grid.Row="0" Grid.Column="0">Training Data Path</Label>
+                    <Label Margin="4" Grid.Row="0" Grid.Column="1">Test Data Path</Label>
+                    <Label Margin="4" Grid.Row="1" Grid.Column="0" Content="{Binding TrainingDataPath}"></Label>
+                    <Label Margin="4" Grid.Row="1" Grid.Column="1" Content="{Binding TestDataPath}"></Label>
+                </Grid>
+                <StackPanel Grid.Row="2" >
+                    <CheckBox Margin="4"  Content="Randomize Training Data" IsChecked="{Binding RandomizeTrainingData}"></CheckBox>
+                    <CheckBox Margin="4" Content="Randomize Validation Data" IsChecked="{Binding RandomizeValidationData}"></CheckBox>
+                    <CheckBox Margin="4" Content="Randomize Test Data" IsChecked="{Binding RandomizeTestData}"></CheckBox>
+                    <CheckBox Margin="4" Content="Use Gray code for labels" IsChecked="{Binding UseGrayCodeForLabels}"></CheckBox>
+                    <WrapPanel>
+                        <ComboBox Margin="4" ItemsSource="{Binding AllAvailableTransformationTypes}" SelectedValue="{Binding DataTransformationType}"></ComboBox><Label>Data Transformation</Label>
+                    </WrapPanel>
+                    <WrapPanel>
+                        <ComboBox Margin="4" ItemsSource="{Binding AllNetworkUsageTypes}" SelectedValue="{Binding NetworkUsageType}"></ComboBox><Label>Network Usage</Label>
+                    </WrapPanel>
+                </StackPanel>
+                <Grid Grid.Row="3">
+                    <Grid.RowDefinitions>
+                        <RowDefinition></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition></ColumnDefinition>
+                        <ColumnDefinition></ColumnDefinition>
+                        <ColumnDefinition></ColumnDefinition>
+                        <ColumnDefinition></ColumnDefinition>
+                        <ColumnDefinition></ColumnDefinition>
+                        <ColumnDefinition></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Label Margin="4" Grid.Row="1" Grid.Column="0">Training</Label>
+                    <Label Margin="4" Grid.Row="2" Grid.Column="0">Test</Label>
+                    <Label Margin="4" Grid.Column="1" Grid.Row="0">Total Records Available</Label>
+                    <Label Margin="4" Grid.Column="2" Grid.Row="0">Skip Records</Label>
+                    <Label Margin="4" Grid.Column="3" Grid.Row="0">Take Records</Label>
+                    <Label Margin="4" Grid.Column="4" Grid.Row="0">Skip Validation Records</Label>
+                    <Label Margin="4" Grid.Column="5" Grid.Row="0">Take Validation Records</Label>
+                    <Label Margin="4" Grid.Column="1" Grid.Row="1" Content="{Binding TotalTrainingRecordsAvailableCount}" ></Label>
+                    <TextBox Margin="4" Grid.Column="2" Grid.Row="1" Text="{Binding SkipTrainingRecordCount}" IsEnabled="{Binding RandomizeTrainingData, Converter={StaticResource BooleanNotConverter}}" ></TextBox>
+                    <TextBox Margin="4" Grid.Column="3" Grid.Row="1" Text="{Binding TrainingRecordCount}"></TextBox>
+                    <TextBox Margin="4" Grid.Column="4" Grid.Row="1" Text="{Binding SkipValidationRecordCount}"  IsEnabled="{Binding RandomizeValidationData, Converter={StaticResource BooleanNotConverter}}" ></TextBox>
+                    <TextBox Margin="4" Grid.Column="5" Grid.Row="1" Text="{Binding ValidationRecordCount}"></TextBox>
+                    <Label Margin="4" Grid.Column="1" Grid.Row="2" Content="{Binding TotalTestRecordsAvailableCount}" ></Label>
+                    <TextBox Margin="4" Grid.Column="2" Grid.Row="2" Text="{Binding SkipTestRecordCount}"  IsEnabled="{Binding RandomizeTestData, Converter={StaticResource BooleanNotConverter}}"></TextBox>
+                    <TextBox Margin="4" Grid.Column="3" Grid.Row="2" Text="{Binding TestRecordCount}"></TextBox>
+                    <Label Margin="4" Grid.Column="0" Grid.Row="3" Content="Data Width"></Label>
+                    <Label Margin="4" Grid.Column="1" Grid.Row="3" Content="{Binding DataWidth}"></Label>
+                    <Label Margin="4" Grid.Column="2" Grid.Row="3" Content="Label Width"></Label>
+                    <Label Margin="4" Grid.Column="3" Grid.Row="3" Content="{Binding LabelWidth}"></Label>
+                </Grid>
+                <ScrollViewer Grid.Row="4">
+                    <ItemsControl  ItemsSource="{Binding Labels}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel></StackPanel>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Label Content="{Binding .}"></Label>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+            </Grid>
+
+        </DataTemplate>
+
+        <DataTemplate x:Key="DisabledFieldTemplate" DataType="viewModels:FieldDefinitionViewModel">
+            <StackPanel  Margin="4">
+                <WrapPanel>
+                    <Label Margin="4" Content="{Binding FieldName}" Foreground="DarkBlue" FontWeight="ExtraBlack"></Label>
+                    <CheckBox Margin="4" Content="Enabled" IsChecked="{Binding IsEnabled}"></CheckBox>
+                </WrapPanel>
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="RealValueFieldTemplate"  DataType="viewModels:FieldDefinitionViewModel">
+            <StackPanel  Margin="4">
+                <WrapPanel>
+                    <Label Margin="4" Content="{Binding FieldName}" Foreground="DarkBlue"  FontWeight="ExtraBlack"></Label>
+                </WrapPanel>
+                <CheckBox Margin="4" Content="Enabled" IsChecked="{Binding IsEnabled}"></CheckBox>
+                <WrapPanel>
+                    <Label Margin="4" Content="Field Type"></Label>
+                    <ComboBox Margin="4" ItemsSource="{Binding AllFieldTypes}" SelectedValue="{Binding FieldType}"></ComboBox>
+                </WrapPanel>
+                <WrapPanel>
+                    <Label Margin="4" Content="Parse Errors"></Label>
+                    <Label Margin="4" Content="{Binding ParseErrors}"></Label>
+                </WrapPanel>
+                <WrapPanel>
+                    <Label Margin="4" Content="Min Value"></Label>
+                    <Label Margin="4" Content="{Binding MinRealValue}"></Label>
+                </WrapPanel>
+                <WrapPanel>
+                    <Label Margin="4" Content="Max Value"></Label>
+                    <Label Margin="4" Content="{Binding MaxRealValue}"></Label>
+                </WrapPanel>
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="OneOfNFieldTemplate" DataType="viewModels:FieldDefinitionViewModel">
+            <StackPanel Margin="4">
+                <WrapPanel>
+                    <Label Margin="4" Content="{Binding FieldName}" Foreground="DarkBlue" FontWeight="ExtraBlack" ></Label>
+                </WrapPanel>
+                <CheckBox Margin="4" Content="Enabled" IsChecked="{Binding IsEnabled}"></CheckBox>
+                <WrapPanel>
+                    <Label Margin="4" Content="Field Type"></Label>
+                    <ComboBox Margin="4" ItemsSource="{Binding AllFieldTypes}" SelectedValue="{Binding FieldType}"></ComboBox>
+                </WrapPanel>
+                <WrapPanel>
+                    <Label Margin="4" Content="Parse Errors"></Label>
+                    <Label Margin="4" Content="{Binding ParseErrors}"></Label>
+                </WrapPanel>
+                <CheckBox Margin="4" Content="Is Label" IsChecked="{Binding IsLabels}"></CheckBox>
+                <CheckBox Margin="4" Content="Use Gray Codes To Compress Data Width" IsChecked="{Binding UseGrayCodeForOneOfNOptions}"></CheckBox>
+                <Expander Margin="4">
+                    <Expander.Header>
+                        <Label>Options</Label>
+                    </Expander.Header>
+                    <Expander.Content>
+                        <ItemsControl ItemsSource="{Binding OneOfNOptions}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Label  Margin="4" Content="{Binding .}"></Label>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Expander.Content>
+                </Expander>
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="FileSourceTemplate" DataType="viewModels:TextDataConfigViewModel">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <WrapPanel Grid.Row="0" Grid.Column="0">
+                    <Button Padding="4" Margin="4" Content="Browse For Training Data" Command="{Binding BrowseTrainingDataCommand}"  />
+                    <Button Padding="4" Margin="4" Content="Browse For Test Data" Command="{Binding BrowseTestDataCommand}"  />
+                    <Button Padding="4" Margin="4" Content="Resync Fields" Command="{Binding ReparseFileCommand}" IsEnabled="{Binding UIIsOutOfSync}" />
+                </WrapPanel>
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition></ColumnDefinition>
+                        <ColumnDefinition></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <Label Margin="4" Grid.Row="0" Grid.Column="0">Training Data Path</Label>
+                    <Label Margin="4" Grid.Row="0" Grid.Column="1">Test Data Path</Label>
+                    <Label Margin="4" Grid.Row="1" Grid.Column="0" Content="{Binding TrainingDataPath}"></Label>
+                    <Label Margin="4" Grid.Row="1" Grid.Column="1" Content="{Binding TestDataPath}"></Label>
+                </Grid>
+
+                <StackPanel Margin="4" Grid.Row="2">
+                    <CheckBox  Margin="4" Content="Headers in first row" IsChecked="{Binding FirstLineIsHeader, Mode=TwoWay}"></CheckBox>
+                    <WrapPanel>
+                        <ComboBox  Margin="4" ItemsSource="{Binding FieldSeparators}" SelectedValue="{Binding SelectedFieldSeparator, Mode=TwoWay}"></ComboBox>
+                        <Label Margin="4">Field separator</Label>
+                    </WrapPanel>
+                    <CheckBox Margin="4" Content="Label field exists in test set" IsChecked="{Binding LabelFieldExistsInTestSet}" ></CheckBox>
+                    <WrapPanel>
+                        <ComboBox Margin="4" ItemsSource="{Binding AllAvailableTransformationTypes}" SelectedValue="{Binding DataTransformationType}"></ComboBox>
+                        <Label Margin="4">Data Transformation</Label>
+                    </WrapPanel>
+                    <WrapPanel>
+                        <ComboBox Margin="4" ItemsSource="{Binding AllNetworkUsageTypes}" SelectedValue="{Binding NetworkUsageType}"></ComboBox>
+                        <Label Margin="4">Network Usage</Label>
+                    </WrapPanel>
+                </StackPanel>
+                <StackPanel Grid.Row="3" >
+                    <CheckBox Margin="4" Content="Randomize Training Data" IsChecked="{Binding RandomizeTrainingData}"></CheckBox>
+                    <CheckBox Margin="4" Content="Randomize Validation Data" IsChecked="{Binding RandomizeValidationData}"></CheckBox>
+                    <CheckBox Margin="4" Content="Randomize Test Data" IsChecked="{Binding RandomizeTestData}"></CheckBox>
+                </StackPanel>
+                <Grid Grid.Row="4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition></ColumnDefinition>
+                        <ColumnDefinition></ColumnDefinition>
+                        <ColumnDefinition></ColumnDefinition>
+                        <ColumnDefinition></ColumnDefinition>
+                        <ColumnDefinition></ColumnDefinition>
+                        <ColumnDefinition></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Label Margin="4" Grid.Row="1" Grid.Column="0">Training</Label>
+                    <Label Margin="4" Grid.Row="2" Grid.Column="0">Test</Label>
+                    <Label Margin="4" Grid.Column="1" Grid.Row="0">Total Records Available</Label>
+                    <Label Margin="4" Grid.Column="2" Grid.Row="0">Skip Records</Label>
+                    <Label Margin="4" Grid.Column="3" Grid.Row="0">Take Records</Label>
+                    <Label Margin="4" Grid.Column="4" Grid.Row="0">Skip Validation Records</Label>
+                    <Label Margin="4" Grid.Column="5" Grid.Row="0">Take Validation Records</Label>
+                    <Label Margin="4" Grid.Column="1" Grid.Row="1" Content="{Binding TotalTrainingRecordsAvailableCount}" ></Label>
+                    <TextBox Margin="4" Grid.Column="2" Grid.Row="1" Text="{Binding SkipTrainingRecordCount}" IsEnabled="{Binding RandomizeTrainingData, Converter={StaticResource BooleanNotConverter}}" ></TextBox>
+                    <TextBox Margin="4" Grid.Column="3" Grid.Row="1" Text="{Binding TrainingRecordCount}"></TextBox>
+                    <TextBox Margin="4" Grid.Column="4" Grid.Row="1" Text="{Binding SkipValidationRecordCount}"  IsEnabled="{Binding RandomizeValidationData, Converter={StaticResource BooleanNotConverter}}" ></TextBox>
+                    <TextBox Margin="4" Grid.Column="5" Grid.Row="1" Text="{Binding ValidationRecordCount}"></TextBox>
+                    <Label Margin="4" Grid.Column="1" Grid.Row="2" Content="{Binding TotalTestRecordsAvailableCount}" ></Label>
+                    <TextBox Margin="4" Grid.Column="2" Grid.Row="2" Text="{Binding SkipTestRecordCount}"  IsEnabled="{Binding RandomizeTestData, Converter={StaticResource BooleanNotConverter}}"></TextBox>
+                    <TextBox Margin="4" Grid.Column="3" Grid.Row="2" Text="{Binding TestRecordCount}"></TextBox>
+                    <Label Margin="4" Grid.Column="0" Grid.Row="3" Content="Data Width"></Label>
+                    <Label Margin="4" Grid.Column="1" Grid.Row="3" Content="{Binding DataWidth}"></Label>
+                    <Label Margin="4" Grid.Column="2" Grid.Row="3" Content="Label Width"></Label>
+                    <Label Margin="4" Grid.Column="3" Grid.Row="3" Content="{Binding LabelWidth}"></Label>
+
+                </Grid>
+                <ScrollViewer Grid.Row="5"  Margin="4">
+                    <ItemsControl ItemsSource="{Binding FieldDefinitions, Mode=TwoWay}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel></VirtualizingStackPanel>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <ContentControl Content="{Binding}" ContentTemplateSelector="{StaticResource DataFieldTemplateSelector}" ></ContentControl>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </DataTemplate>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
+        </Grid.RowDefinitions>
+
+        <WrapPanel Grid.Row="0" >
+            <Label Margin="4" Content="Data Type"></Label>
+            <ComboBox Margin="4" SelectionChanged="Selector_OnSelectionChanged" SelectedValuePath="." SelectedIndex="0"  >
+                <ComboBox.Items>
+                    <ComboBoxItem>Images</ComboBoxItem>
+                    <ComboBoxItem>Text</ComboBoxItem>
+                </ComboBox.Items>
+            </ComboBox>
+        </WrapPanel>
+
+
+        <ContentControl Grid.Row="1" ContentTemplateSelector="{StaticResource DataTypeTemplateSelector}" Content="{Binding}"></ContentControl>
+        <WrapPanel Grid.Row="2" HorizontalAlignment="Right">
+            <Button Padding="4" Margin="4" Content="Cancel" Click="Cancel"></Button>
+            <Button Padding="4" Margin="4" Content="Next" Click="Submit"></Button>
+        </WrapPanel>
+    </Grid>
+</Window>

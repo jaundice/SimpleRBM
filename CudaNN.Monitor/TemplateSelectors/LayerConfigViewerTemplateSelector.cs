@@ -1,7 +1,8 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using CudaNN.DeepBelief.LayerBuilders;
 
-namespace CudaNN.Monitor
+namespace CudaNN.DeepBelief.TemplateSelectors
 {
     public class LayerConfigViewerTemplateSelector : DataTemplateSelector
     {

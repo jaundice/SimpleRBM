@@ -1,17 +1,19 @@
-﻿<Window x:Class="CudaNN.Monitor.DefineNetwork"
+﻿<Window x:Class="CudaNN.DeepBelief.DefineNetwork"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:monitor="clr-namespace:CudaNN.Monitor"
+        xmlns:layerBuilders="clr-namespace:CudaNN.DeepBelief.LayerBuilders"
+        xmlns:templateSelectors="clr-namespace:CudaNN.DeepBelief.TemplateSelectors"
+        xmlns:viewModels="clr-namespace:CudaNN.DeepBelief.ViewModels"
         Title="DefineNetwork" Height="300" Width="600" >
     <Window.DataContext>
-        <monitor:LayerBuilderViewModel/>
+        <viewModels:LayerBuilderViewModel/>
     </Window.DataContext>
     <Window.Resources>
-        <monitor:LayerBuilderTemplateSelector x:Key="LayerBuilderTemplateSelector"></monitor:LayerBuilderTemplateSelector>
-        <DataTemplate x:Key="LoadLayerTemplate"  DataType="monitor:LoadLayerInfo">
+        <templateSelectors:LayerBuilderTemplateSelector x:Key="LayerBuilderTemplateSelector"></templateSelectors:LayerBuilderTemplateSelector>
+        <DataTemplate x:Key="LoadLayerTemplate"  DataType="layerBuilders:LoadLayerInfo">
             <Label  Margin="4" Content="{Binding Path}"></Label>
         </DataTemplate>
-        <DataTemplate x:Key="ConstructBinaryLayerTemplate" DataType="monitor:ConstructBinaryLayer">
+        <DataTemplate x:Key="ConstructBinaryLayerTemplate" DataType="layerBuilders:ConstructBinaryLayer">
             <Grid Margin="4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition></ColumnDefinition>
@@ -49,7 +51,7 @@
             </Grid>
         </DataTemplate>
 
-        <DataTemplate x:Key="ConstructLinearHiddenLayerTemplate" DataType="monitor:ConstructLinearHiddenLayer">
+        <DataTemplate x:Key="ConstructLinearHiddenLayerTemplate" DataType="layerBuilders:ConstructLinearHiddenLayer">
             <Grid Margin="4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition></ColumnDefinition>
@@ -82,22 +84,31 @@
         </DataTemplate>
     </Window.Resources>
     <Grid>
-        <StackPanel>
-            <WrapPanel>
-                <Button Margin="4" Content="Load Layer" Click="LoadLayerFromFile"></Button>
-                <Button Margin="4" Content="Create Binary Layer" Click="CreateBinaryLayer" ></Button>
-                <Button Margin="4" Content="Create Linear Layer" Click="CreateLinearLayer"></Button>
-                <Button Margin="4" Content="Clear Layers" Click="ClearLayers"></Button>
-                <Button Margin="4" Content="Close" Click="CloseWindow"></Button>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"></RowDefinition>
+                <RowDefinition Height="*"></RowDefinition>
+                <RowDefinition Height="Auto"></RowDefinition>
+            </Grid.RowDefinitions>
+            <WrapPanel Grid.Row="0">
+                <Button Padding="4" Margin="4" Content="Load Binary Layer" Click="LoadBinaryLayerFromFile"></Button>
+                <Button Padding="4" Margin="4" Content="Load Linear Layer" Click="LoadLinearLayerFromFile"></Button>
+                <Button Padding="4" Margin="4" Content="Create Binary Layer" Click="CreateBinaryLayer" ></Button>
+                <Button Padding="4" Margin="4" Content="Create Linear Layer" Click="CreateLinearLayer"></Button>
+                <Button Padding="4" Margin="4" Content="Clear Layers" Click="ClearLayers"></Button>
             </WrapPanel>
-            <ItemsControl ItemsSource="{Binding LayerConstructionInfo}" ItemTemplateSelector="{StaticResource LayerBuilderTemplateSelector}">
+            <ItemsControl Grid.Row="1" ItemsSource="{Binding LayerConstructionInfo}" ItemTemplateSelector="{StaticResource LayerBuilderTemplateSelector}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <VirtualizingStackPanel></VirtualizingStackPanel>
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
             </ItemsControl>
-        </StackPanel>
+            <WrapPanel Grid.Row="2" HorizontalAlignment="Right">
+                <Button Padding="4" Margin="4" Content="Cancel" Click="Cancel"></Button>
+                <Button Padding="4" Margin="4" Content="Next" Click="Next"></Button>
+            </WrapPanel>
+        </Grid>
 
     </Grid>
 </Window>

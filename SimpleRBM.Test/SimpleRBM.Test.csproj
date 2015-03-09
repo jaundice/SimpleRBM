@@ -118,6 +118,7 @@
     <Compile Include="UnitTest2.cs" />
     <Compile Include="UnitTest3.cs" />
     <Compile Include="UnitTest4.cs" />
+    <Compile Include="UnitTest5.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RbmHidLinear\CudaNN.csproj">

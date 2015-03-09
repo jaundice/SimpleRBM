@@ -19,11 +19,11 @@ namespace SimpleRBM.Demo.IO
         }
 
         private List<FileInfo> _allTrainingFiles;
-        private string[] _allLabelOptions;
         private List<FileInfo> _allTestFiles;
 
         private ImageUtils.ConvertPixel<float> _floatConverter;
         private ImageUtils.ConvertPixel<double> _doubleConverter;
+        private FieldGrayEncoder<string> _labelGrayEncoder;
 
 
         public FacesData(string trainingDataPath, string testDataPath,
@@ -38,10 +38,12 @@ namespace SimpleRBM.Demo.IO
                     rnd = rnd.Next()
                 }).OrderBy(a => a.rnd).Select(a => a.a).ToList();
 
-            _allLabelOptions =
+            var allLabelOptions =
                 new DirectoryInfo(trainingDataPath).EnumerateDirectories("*", SearchOption.AllDirectories)
                     .Select(a => a.Name)
                     .ToArray();
+
+            _labelGrayEncoder = new FieldGrayEncoder<string>(allLabelOptions);
 
             _allTestFiles = trainingDataPath == testDataPath
                 ? _allTrainingFiles
@@ -54,23 +56,23 @@ namespace SimpleRBM.Demo.IO
             switch (mode)
             {
                 case ConversionMode.RgbToGreyPosReal:
-                {
-                    _floatConverter = ImageUtils.ConvertRGBToGreyF;
-                    _doubleConverter = ImageUtils.ConvertRGBToGreyD;
-                    break;
-                }
+                    {
+                        _floatConverter = ImageUtils.ConvertRGBToGreyF;
+                        _doubleConverter = ImageUtils.ConvertRGBToGreyD;
+                        break;
+                    }
                 case ConversionMode.RgbToGreyInt:
-                {
-                    _floatConverter = ImageUtils.ConvertRGBToGreyIntF;
-                    _doubleConverter = ImageUtils.ConvertRGBToGreyIntD;
-                    break;
-                }
+                    {
+                        _floatConverter = ImageUtils.ConvertRGBToGreyIntF;
+                        _doubleConverter = ImageUtils.ConvertRGBToGreyIntD;
+                        break;
+                    }
                 case ConversionMode.RgbToGreyPosNegReal:
-                {
-                    _floatConverter = ImageUtils.ConvertRGBToGreyPosNegF;
-                    _doubleConverter = ImageUtils.ConvertRGBToGreyPosNegD;
-                    break;
-                }
+                    {
+                        _floatConverter = ImageUtils.ConvertRGBToGreyPosNegF;
+                        _doubleConverter = ImageUtils.ConvertRGBToGreyPosNegD;
+                        break;
+                    }
             }
         }
 
@@ -84,7 +86,7 @@ namespace SimpleRBM.Demo.IO
             labels = files.Select(a => a.Directory.Name).ToArray();
 
 
-            labelsCoded = LabelEncoder.EncodeLabels<string, float>(labels, _allLabelOptions);
+            labelsCoded = _labelGrayEncoder.Encode<float>(labels,1.0f, 0.0f);
             return ImageDataF(files, _floatConverter);
         }
 
@@ -169,7 +171,7 @@ namespace SimpleRBM.Demo.IO
 
             labels = files.Select(a => a.Directory.Name).ToArray();
 
-            labelsCoded = LabelEncoder.EncodeLabels<string, double>(labels, _allLabelOptions);
+            labelsCoded = _labelGrayEncoder.Encode<double>(labels, 1.0, 0.0);
 
             return ImageDataD(files, _doubleConverter);
         }

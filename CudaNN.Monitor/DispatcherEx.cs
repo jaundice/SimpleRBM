@@ -1,9 +1,8 @@
 using System;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 
-namespace CudaNN.Monitor
+namespace CudaNN.DeepBelief
 {
     public static class DispatcherEx
     {

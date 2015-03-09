@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using SimpleRBM.Common;
 using SimpleRBM.Demo.Demo;
 using SimpleRBM.Demo.Util;
@@ -7,10 +8,13 @@ namespace SimpleRBM.Demo.IO
 {
     public class KaggleData : DataIOBase<int>
     {
+        private FieldGrayEncoder<int> _labelGrayEncoder;
+
         public KaggleData(string trainingDataPath, string testDataPath)
             : base(trainingDataPath, testDataPath)
         {
             TestDataPath = testDataPath;
+            _labelGrayEncoder = new FieldGrayEncoder<int>(Enumerable.Range(0, 10));
         }
 
         public string TestDataPath { get; protected set; }
@@ -39,7 +43,7 @@ namespace SimpleRBM.Demo.IO
                     }
                 }
             }
-            labelsCoded = LabelEncoder.EncodeLabels<int, float>(labels, 10);
+            labelsCoded = _labelGrayEncoder.Encode<float>(labels, 1.0f, 0.0f); //FieldGrayEncoder.EncodeLabels<int, float>(labels, 10);
             return ret;
         }
 
@@ -112,7 +116,7 @@ namespace SimpleRBM.Demo.IO
                     }
                 }
             }
-            labelsCoded = LabelEncoder.EncodeLabels<int, double>(labels, 10);
+            labelsCoded = _labelGrayEncoder.Encode<double>(labels, 1.0, 0.0); //FieldGrayEncoder.EncodeLabels<int, double>(labels, 10);
             return ret;
         }
     }

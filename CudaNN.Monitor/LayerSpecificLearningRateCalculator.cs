@@ -1,10 +1,9 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Windows;
 using SimpleRBM.Common;
 
-namespace CudaNN.Monitor
+namespace CudaNN.DeepBelief
 {
     public class LayerSpecificLearningRateCalculatorFactory<T> : DependencyObject, ILearningRateCalculatorFactory<T>
     {

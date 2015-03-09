@@ -5,8 +5,9 @@ using System.Linq;
 using System.Windows;
 using Cudafy.Host;
 using Cudafy.Maths.RAND;
+using CudaNN.DeepBelief.LayerBuilders;
 
-namespace CudaNN.Monitor
+namespace CudaNN.DeepBelief.ViewModels
 {
     public class LayerBuilderViewModel : DependencyObject
     {

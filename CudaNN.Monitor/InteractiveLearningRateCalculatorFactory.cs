@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Windows;
-using Mono.CSharp;
 using SimpleRBM.Common;
 
-namespace CudaNN.Monitor
+namespace CudaNN.DeepBelief
 {
     public class InteractiveLearningRateCalculatorFactory<T> : DependencyObject, ILearningRateCalculatorFactory<T>
     {

@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace CudaNN.Monitor.Properties {
+namespace CudaNN.DeepBelief.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]

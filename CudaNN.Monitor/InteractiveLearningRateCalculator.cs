@@ -1,7 +1,6 @@
-﻿using System.Runtime.InteropServices;
-using SimpleRBM.Common;
+﻿using SimpleRBM.Common;
 
-namespace CudaNN.Monitor
+namespace CudaNN.DeepBelief
 {
     public class InteractiveLearningRateCalculator<T> : ILearningRateCalculator<T>
     {

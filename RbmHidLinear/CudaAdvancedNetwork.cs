@@ -690,7 +690,7 @@ namespace CudaNN
 
         public void GreedyBatchedSupervisedTrainMem(IList<TElement[,]> batches, IList<TElement[,]> labels, IExitConditionEvaluatorFactory<TElement> exitConditionFactory, ILearningRateCalculatorFactory<TElement> weightLearningRateCalculatorFactory, ILearningRateCalculatorFactory<TElement> hidBiasLearningRateCalculatorFactory, ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken)
         {
-            if (batches.Select((a, i) => a.GetLength(0) != labels[i].GetLength(0)).Any())
+            if (batches.Where((a, i) => a.GetLength(0) != labels[i].GetLength(0)).Any())
             {
                 throw new Exception("Mismatch between lengths of batch data and batch labels");
             }

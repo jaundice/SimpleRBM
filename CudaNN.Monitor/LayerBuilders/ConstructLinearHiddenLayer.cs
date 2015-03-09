@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace CudaNN.Monitor
+namespace CudaNN.DeepBelief.LayerBuilders
 {
     public class ConstructLinearHiddenLayer : ConstructNewLayer
     {

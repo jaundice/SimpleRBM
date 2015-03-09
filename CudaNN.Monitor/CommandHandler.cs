@@ -1,7 +1,7 @@
 using System;
 using System.Windows.Input;
 
-namespace CudaNN.Monitor
+namespace CudaNN.DeepBelief
 {
     public class CommandHandler : ICommand
     {

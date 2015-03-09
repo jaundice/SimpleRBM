@@ -7,8 +7,8 @@
     <ProjectGuid>{C20AC76D-71FA-4634-A34D-C5308D7B1937}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CudaNN.Monitor</RootNamespace>
-    <AssemblyName>CudaNN.Monitor</AssemblyName>
+    <RootNamespace>CudaNN.DeepBelief</RootNamespace>
+    <AssemblyName>CudaNN.DeepBelief</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -62,6 +62,7 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
@@ -80,6 +81,38 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ConfigureRun.xaml.cs">
+      <DependentUpon>ConfigureRun.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Converters\NotConverter.cs" />
+    <Compile Include="DataIO\DataReaderBase.cs" />
+    <Compile Include="DataIO\FieldReaderBase.cs" />
+    <Compile Include="DataIO\ImageReaderBase.cs" />
+    <Compile Include="DataIO\LineReader.cs" />
+    <Compile Include="DataIO\OneOfNOptionsFieldReader.cs" />
+    <Compile Include="DataIO\OneOfNOptionsGrayCodedFieldReader.cs" />
+    <Compile Include="DataIO\RandomImageReader.cs" />
+    <Compile Include="DataIO\RandomRecordsTextFileReader.cs" />
+    <Compile Include="DataIO\RealFieldReader.cs" />
+    <Compile Include="DataIO\SequentialImageReader.cs" />
+    <Compile Include="DataIO\SequentialRecordsTextFileReader.cs" />
+    <Compile Include="DataIO\TextFileReaderBase.cs" />
+    <Compile Include="ViewModels\FieldDefinitionViewModel.cs" />
+    <Compile Include="FieldTypes.cs" />
+    <Compile Include="ViewModels\ImageDataConfigViewModel.cs" />
+    <Compile Include="ViewModels\TextDataConfigViewModel.cs" />
+    <Page Include="ConfigureData.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ConfigureLearningRates.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ConfigureRun.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="DefineNetwork.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -93,22 +126,31 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="CommandHandler.cs" />
-    <Compile Include="ConstructBinaryLayer.cs" />
-    <Compile Include="ConstructLayerBase.cs" />
-    <Compile Include="ConstructLinearHiddenLayer.cs" />
-    <Compile Include="ConstructNewLayer.cs" />
+    <Compile Include="ConfigureData.xaml.cs">
+      <DependentUpon>ConfigureData.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ConfigureLearningRates.xaml.cs">
+      <DependentUpon>ConfigureLearningRates.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="LayerBuilders\ConstructBinaryLayer.cs" />
+    <Compile Include="LayerBuilders\ConstructLayerBase.cs" />
+    <Compile Include="LayerBuilders\ConstructLinearHiddenLayer.cs" />
+    <Compile Include="LayerBuilders\ConstructNewLayer.cs" />
+    <Compile Include="ViewModels\DataConfigViewModelBase.cs" />
+    <Compile Include="TemplateSelectors\DataFieldTemplateSelector.cs" />
+    <Compile Include="TemplateSelectors\DataTypeTemplateSelector.cs" />
     <Compile Include="DefineNetwork.xaml.cs">
       <DependentUpon>DefineNetwork.xaml</DependentUpon>
     </Compile>
     <Compile Include="DispatcherEx.cs" />
-    <Compile Include="ImagePair.cs" />
+    <Compile Include="ValidationSet.cs" />
     <Compile Include="InteractiveLearningRateCalculator.cs" />
     <Compile Include="InteractiveLearningRateCalculatorFactory.cs" />
-    <Compile Include="LayerBuilderViewModel.cs" />
-    <Compile Include="LayerBuilderTemplateSelector.cs" />
-    <Compile Include="LayerConfigViewerTemplateSelector.cs" />
+    <Compile Include="ViewModels\LayerBuilderViewModel.cs" />
+    <Compile Include="TemplateSelectors\LayerBuilderTemplateSelector.cs" />
+    <Compile Include="TemplateSelectors\LayerConfigViewerTemplateSelector.cs" />
     <Compile Include="LayerSpecificLearningRateCalculator.cs" />
-    <Compile Include="LoadLayerInfo.cs" />
+    <Compile Include="LayerBuilders\LoadLayerInfo.cs" />
     <Compile Include="Believe.xaml.cs">
       <DependentUpon>Believe.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -117,7 +159,7 @@
   <ItemGroup>
     <Compile Include="InteractiveExitEvaluator.cs" />
     <Compile Include="InteractiveExitEvaluatorFactory.cs" />
-    <Compile Include="MonitorViewModel.cs" />
+    <Compile Include="ViewModels\BelieveViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -162,6 +204,7 @@
       <Name>SimpleRBM.Demo</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

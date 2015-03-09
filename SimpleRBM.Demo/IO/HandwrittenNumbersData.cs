@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using SimpleRBM.Common;
@@ -10,11 +11,13 @@ namespace SimpleRBM.Demo.IO
 {
     public class HandwrittenNumbersData : DataIOBase<int>
     {
+        private FieldGrayEncoder<int> _labelGrayEncoder;
         private const int ImgDimension = 32;
 
         public HandwrittenNumbersData(string dataPath)
             : base(dataPath, dataPath)
         {
+            _labelGrayEncoder = new FieldGrayEncoder<int>(Enumerable.Range(0, 10));
         }
 
         protected override float[,] ReadTrainingData(string filePath, int skipRecords, int count, out int[] labels,
@@ -38,7 +41,7 @@ namespace SimpleRBM.Demo.IO
             }));
 
             labels = lbl;
-            labelsCoded = LabelEncoder.EncodeLabels<int, float>(labels, 10);
+            labelsCoded = _labelGrayEncoder.Encode<float>(labels, 1.0f, 0.0f);  //FieldGrayEncoder.EncodeLabels<int, float>(labels, 10);
             return data;
         }
 
@@ -70,7 +73,7 @@ namespace SimpleRBM.Demo.IO
             }));
 
             labels = lbl;
-            labelsCoded = LabelEncoder.EncodeLabels<int, double>(labels, 10);
+            labelsCoded = _labelGrayEncoder.Encode<double>(labels, 1.0, 0.0);  //FieldGrayEncoder.EncodeLabels<int, double>(labels, 10);
             return data;
         }
 

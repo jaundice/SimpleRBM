@@ -1,10 +1,9 @@
 ﻿using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Media;
 
-namespace CudaNN.Monitor
+namespace CudaNN.DeepBelief
 {
     /// <summary>
     ///     Interaction logic for Believe.xaml

@@ -4,7 +4,7 @@ using System.Windows.Input;
 using SimpleRBM.Common;
 using SimpleRBM.Common.ExitCondition;
 
-namespace CudaNN.Monitor
+namespace CudaNN.DeepBelief
 {
     public class InteractiveExitEvaluatorFactory<T> : DependencyObject, IExitConditionEvaluatorFactory<T> where T : struct, IComparable<T>
     {
