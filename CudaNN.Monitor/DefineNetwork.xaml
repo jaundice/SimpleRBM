@@ -11,11 +11,15 @@
     <Window.Resources>
         <templateSelectors:LayerBuilderTemplateSelector x:Key="LayerBuilderTemplateSelector"></templateSelectors:LayerBuilderTemplateSelector>
         <DataTemplate x:Key="LoadLayerTemplate"  DataType="layerBuilders:LoadLayerInfo">
-            <Label  Margin="4" Content="{Binding Path}"></Label>
+            <WrapPanel>
+                <Label  Margin="4" Content="{Binding Path}"></Label>
+                <RadioButton GroupName="Train" Click="ButtonBase_OnClick" Content="Start Training From Here"  CommandParameter="{Binding}"  ></RadioButton>
+            </WrapPanel>
         </DataTemplate>
         <DataTemplate x:Key="ConstructBinaryLayerTemplate" DataType="layerBuilders:ConstructBinaryLayer">
             <Grid Margin="4">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition></ColumnDefinition>
                     <ColumnDefinition></ColumnDefinition>
                     <ColumnDefinition></ColumnDefinition>
                     <ColumnDefinition></ColumnDefinition>
@@ -48,12 +52,15 @@
                 <CheckBox Grid.Column="6" Grid.Row="1" Margin="4" IsChecked="{Binding ConvertActivationsToStates, Mode=TwoWay}"></CheckBox>
                 <TextBox Grid.Column="7" Grid.Row="1" Margin="4" Text="{Binding EncodingNoiseLevel, Mode=TwoWay}"></TextBox>
                 <TextBox Grid.Column="8" Grid.Row="1" Margin="4" Text="{Binding DecodingNoiseLevel, Mode=TwoWay}"></TextBox>
+                <RadioButton Grid.Column="9" Grid.Row="1" GroupName="Train" Click="ButtonBase_OnClick"  CommandParameter="{Binding}" Content="Start Training From Here"  ></RadioButton>
+
             </Grid>
         </DataTemplate>
 
         <DataTemplate x:Key="ConstructLinearHiddenLayerTemplate" DataType="layerBuilders:ConstructLinearHiddenLayer">
             <Grid Margin="4">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition></ColumnDefinition>
                     <ColumnDefinition></ColumnDefinition>
                     <ColumnDefinition></ColumnDefinition>
                     <ColumnDefinition></ColumnDefinition>
@@ -80,6 +87,8 @@
                 <TextBox Grid.Column="4" Grid.Row="1" Margin="4" Text="{Binding FinalMomentum, Mode=TwoWay}"></TextBox>
                 <TextBox Grid.Column="5" Grid.Row="1" Margin="4" Text="{Binding WeightInitializationStDev, Mode=TwoWay}"></TextBox>
                 <TextBox Grid.Column="6" Grid.Row="1" Margin="4" Text="{Binding TrainRandStDev, Mode=TwoWay}"></TextBox>
+                <RadioButton Grid.Column="7" Grid.Row="1" GroupName="Train" Click="ButtonBase_OnClick" CommandParameter="{Binding}" Content="Start Training From Here"  ></RadioButton>
+
             </Grid>
         </DataTemplate>
     </Window.Resources>

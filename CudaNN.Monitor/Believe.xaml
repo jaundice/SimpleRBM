@@ -156,6 +156,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
@@ -179,15 +180,17 @@
                 <Label Grid.Column="7" Grid.Row="0" Content="Backup Frequency"/>
                 <TextBox Grid.Column="7" Grid.Row="1" Margin="4" Text="{Binding BackupFrequency, Mode=TwoWay}" />
                 <Label Grid.Column="8" Grid.Row="0" Content="#Training Examples"/>
-                <TextBox Grid.Column="8" Grid.Row="1" Margin="4" Text="{Binding NumTrainingExamples, Mode=TwoWay}" />
+                <Label Grid.Column="8" Grid.Row="1" Margin="4" Content="{Binding NumTrainingExamples, Mode=TwoWay}" />
                 <Label Grid.Column="9" Grid.Row="0" Content="Max Epochs"/>
                 <TextBox Grid.Column="9" Grid.Row="1" Margin="4" Text="{Binding ExitEvaluatorFactory.MaxEpochs, Mode=TwoWay}" />
+                <Label Grid.Column="10" Grid.Row="0" Content="Min Error"/>
+                <TextBox Grid.Column="10" Grid.Row="1" Margin="4" Text="{Binding ExitEvaluatorFactory.MinError, Mode=TwoWay}" />
 
 
-                <ComboBox Margin="4" Grid.Column="10" Grid.Row="0" ItemsSource="{StaticResource DemoNames}" DisplayMemberPath="." SelectedValuePath="."  SelectedValue="{Binding DemoMode, Mode=TwoWay}" SelectedIndex="0" />
-                <Button Margin="4" Grid.Column="11"  Grid.Row="0" Command="{Binding RunCommand}" Content="Start Training"/>
-                <Button Margin="4" Grid.Column="10"  Grid.Row="1" Command="{Binding ExitEvaluatorFactory.ExitNextCommand, Mode=OneWay}" Content="Exit Next"/>
-                <Button Margin="4" Grid.Column="11"  Grid.Row="1" Command="{Binding ExitEvaluatorFactory.ExitNowCommand, Mode=OneWay}" Content="Exit Now"/>
+                <ComboBox Margin="4" Grid.Column="11" Grid.Row="0" ItemsSource="{StaticResource DemoNames}" DisplayMemberPath="." SelectedValuePath="."  SelectedValue="{Binding DemoMode, Mode=TwoWay}" SelectedIndex="0" />
+                <Button Margin="4" Grid.Column="12"  Grid.Row="0" Command="{Binding RunCommand}" Content="Start Training"/>
+                <Button Margin="4" Grid.Column="11"  Grid.Row="1" Command="{Binding ExitEvaluatorFactory.ExitNextCommand, Mode=OneWay}" Content="Exit Next"/>
+                <Button Margin="4" Grid.Column="12"  Grid.Row="1" Command="{Binding ExitEvaluatorFactory.ExitNowCommand, Mode=OneWay}" Content="Exit Now"/>
             </Grid>
         </Grid>
         <Expander Grid.Row="1" Grid.Column="0">
@@ -260,7 +263,25 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Image Margin="4" Stretch="Uniform" UseLayoutRounding="False"  Source="{Binding Path=.}" Loaded="FrameworkElement_OnLoaded" ImageFailed="Image_OnImageFailed" ></Image>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"></ColumnDefinition>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"></RowDefinition>
+                                        <RowDefinition Height="*"></RowDefinition>
+                                    </Grid.RowDefinitions>
+                                    <Grid Grid.Row="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="3*"></ColumnDefinition>
+                                            <ColumnDefinition Width="*"></ColumnDefinition>
+                                        </Grid.ColumnDefinitions>
+                                        <Label Grid.Column="0" Margin="4" Content="{Binding Label}"></Label>
+                                        <Image Grid.Column="1" Margin="4" Stretch="Uniform" UseLayoutRounding="False" Loaded="FrameworkElement_OnLoaded"  StretchDirection="Both" Source="{Binding CodeImage}"></Image>
+                                    </Grid>
+                                    <Image Grid.Row="1" Margin="4" Stretch="Uniform" UseLayoutRounding="False"  StretchDirection="Both"  Source="{Binding Path=DataImage, Mode=OneWay}" Grid.Column="0" Loaded="FrameworkElement_OnLoaded"/>
+                                </Grid>
+
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

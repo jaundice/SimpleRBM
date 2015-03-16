@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
+using Mono.CSharp;
 
 namespace SimpleRBM.Demo.Util
 {
@@ -8,7 +10,7 @@ namespace SimpleRBM.Demo.Util
         private GrayCodeU8(byte binary)
             : this()
         {
-            Code = (byte) ((binary >> 1) ^ binary);
+            Code = (byte)((binary >> 1) ^ binary);
         }
 
         public byte Code { get; private set; }
@@ -51,6 +53,27 @@ namespace SimpleRBM.Demo.Util
             target[targetRow, targetOffset + 7] = (code.Code & 0x1b) == 0 ? falseValue : trueValue;
         }
 
+        public static GrayCodeU8 ReadBits<T>(T[,] target, int targetRow, int targetOffset, T trueValue,
+           T falseValue)
+        {
+
+            byte res = (byte)0;
+
+            res = (byte)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 0], trueValue) == 0 ? (byte)0x1 << 7 : (byte)0));
+            res = (byte)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 1], trueValue) == 0 ? (byte)0x1 << 6 : (byte)0));
+            res = (byte)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 2], trueValue) == 0 ? (byte)0x1 << 5 : (byte)0));
+            res = (byte)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 3], trueValue) == 0 ? (byte)0x1 << 4 : (byte)0));
+            res = (byte)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 4], trueValue) == 0 ? (byte)0x1 << 3 : (byte)0));
+            res = (byte)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 5], trueValue) == 0 ? (byte)0x1 << 2 : (byte)0));
+            res = (byte)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 6], trueValue) == 0 ? (byte)0x1 << 1 : (byte)0));
+            res = (byte)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 7], trueValue) == 0 ? (byte)0x1 : (byte)0));
+
+            return new GrayCodeU8
+            {
+                Code = res
+            };
+        }
+
         public static GrayCodeU8 Encode(byte binary)
         {
             return new GrayCodeU8(binary);
@@ -60,16 +83,16 @@ namespace SimpleRBM.Demo.Util
         {
             byte mask;
             byte num = code.Code;
-            for (mask = (byte) (num >> 1); mask != 0; mask = (byte) (mask >> 1))
+            for (mask = (byte)(num >> 1); mask != 0; mask = (byte)(mask >> 1))
             {
-                num = (byte) (num ^ mask);
+                num = (byte)(num ^ mask);
             }
             return num;
         }
 
         public static byte Decode(byte code)
         {
-            var c = new GrayCodeU8 {Code = code};
+            var c = new GrayCodeU8 { Code = code };
             return Decode(c);
         }
 
@@ -90,7 +113,7 @@ namespace SimpleRBM.Demo.Util
         private GrayCodeU16(ushort binary)
             : this()
         {
-            Code = (ushort) ((binary >> 1) ^ binary);
+            Code = (ushort)((binary >> 1) ^ binary);
         }
 
         public ushort Code { get; private set; }
@@ -102,43 +125,72 @@ namespace SimpleRBM.Demo.Util
 
         public static void SetBits<T>(GrayCodeU16 code, T[] target, int targetOffset, T trueValue, T falseValue)
         {
-            target[targetOffset + 0] = (code.Code & (ushort) 0x1 << 15) == 0 ? falseValue : trueValue;
-            target[targetOffset + 1] = (code.Code & (ushort) 0x1 << 14) == 0 ? falseValue : trueValue;
-            target[targetOffset + 2] = (code.Code & (ushort) 0x1 << 13) == 0 ? falseValue : trueValue;
-            target[targetOffset + 3] = (code.Code & (ushort) 0x1 << 12) == 0 ? falseValue : trueValue;
-            target[targetOffset + 4] = (code.Code & (ushort) 0x1 << 11) == 0 ? falseValue : trueValue;
-            target[targetOffset + 5] = (code.Code & (ushort) 0x1 << 10) == 0 ? falseValue : trueValue;
-            target[targetOffset + 6] = (code.Code & (ushort) 0x1 << 9) == 0 ? falseValue : trueValue;
-            target[targetOffset + 7] = (code.Code & (ushort) 0x1 << 8) == 0 ? falseValue : trueValue;
-            target[targetOffset + 8] = (code.Code & (ushort) 0x1 << 7) == 0 ? falseValue : trueValue;
-            target[targetOffset + 9] = (code.Code & (ushort) 0x1 << 6) == 0 ? falseValue : trueValue;
-            target[targetOffset + 10] = (code.Code & (ushort) 0x1 << 5) == 0 ? falseValue : trueValue;
-            target[targetOffset + 11] = (code.Code & (ushort) 0x1 << 4) == 0 ? falseValue : trueValue;
-            target[targetOffset + 12] = (code.Code & (ushort) 0x1 << 3) == 0 ? falseValue : trueValue;
-            target[targetOffset + 13] = (code.Code & (ushort) 0x1 << 2) == 0 ? falseValue : trueValue;
-            target[targetOffset + 14] = (code.Code & (ushort) 0x1 << 1) == 0 ? falseValue : trueValue;
-            target[targetOffset + 15] = (code.Code & (ushort) 0x1) == 0 ? falseValue : trueValue;
+            target[targetOffset + 0] = (code.Code & (ushort)0x1 << 15) == 0 ? falseValue : trueValue;
+            target[targetOffset + 1] = (code.Code & (ushort)0x1 << 14) == 0 ? falseValue : trueValue;
+            target[targetOffset + 2] = (code.Code & (ushort)0x1 << 13) == 0 ? falseValue : trueValue;
+            target[targetOffset + 3] = (code.Code & (ushort)0x1 << 12) == 0 ? falseValue : trueValue;
+            target[targetOffset + 4] = (code.Code & (ushort)0x1 << 11) == 0 ? falseValue : trueValue;
+            target[targetOffset + 5] = (code.Code & (ushort)0x1 << 10) == 0 ? falseValue : trueValue;
+            target[targetOffset + 6] = (code.Code & (ushort)0x1 << 9) == 0 ? falseValue : trueValue;
+            target[targetOffset + 7] = (code.Code & (ushort)0x1 << 8) == 0 ? falseValue : trueValue;
+            target[targetOffset + 8] = (code.Code & (ushort)0x1 << 7) == 0 ? falseValue : trueValue;
+            target[targetOffset + 9] = (code.Code & (ushort)0x1 << 6) == 0 ? falseValue : trueValue;
+            target[targetOffset + 10] = (code.Code & (ushort)0x1 << 5) == 0 ? falseValue : trueValue;
+            target[targetOffset + 11] = (code.Code & (ushort)0x1 << 4) == 0 ? falseValue : trueValue;
+            target[targetOffset + 12] = (code.Code & (ushort)0x1 << 3) == 0 ? falseValue : trueValue;
+            target[targetOffset + 13] = (code.Code & (ushort)0x1 << 2) == 0 ? falseValue : trueValue;
+            target[targetOffset + 14] = (code.Code & (ushort)0x1 << 1) == 0 ? falseValue : trueValue;
+            target[targetOffset + 15] = (code.Code & (ushort)0x1) == 0 ? falseValue : trueValue;
         }
 
         public static void SetBits<T>(GrayCodeU16 code, T[,] target, int targetRow, int targetOffset, T trueValue,
             T falseValue)
         {
-            target[targetRow, targetOffset + 0] = (code.Code & (ushort) 0x1 << 15) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 1] = (code.Code & (ushort) 0x1 << 14) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 2] = (code.Code & (ushort) 0x1 << 13) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 3] = (code.Code & (ushort) 0x1 << 12) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 4] = (code.Code & (ushort) 0x1 << 11) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 5] = (code.Code & (ushort) 0x1 << 10) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 6] = (code.Code & (ushort) 0x1 << 9) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 7] = (code.Code & (ushort) 0x1 << 8) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 8] = (code.Code & (ushort) 0x1 << 7) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 9] = (code.Code & (ushort) 0x1 << 6) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 10] = (code.Code & (ushort) 0x1 << 5) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 11] = (code.Code & (ushort) 0x1 << 4) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 12] = (code.Code & (ushort) 0x1 << 3) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 13] = (code.Code & (ushort) 0x1 << 2) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 14] = (code.Code & (ushort) 0x1 << 1) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 15] = (code.Code & (ushort) 0x1) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 0] = (code.Code & (ushort)0x1 << 15) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 1] = (code.Code & (ushort)0x1 << 14) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 2] = (code.Code & (ushort)0x1 << 13) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 3] = (code.Code & (ushort)0x1 << 12) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 4] = (code.Code & (ushort)0x1 << 11) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 5] = (code.Code & (ushort)0x1 << 10) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 6] = (code.Code & (ushort)0x1 << 9) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 7] = (code.Code & (ushort)0x1 << 8) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 8] = (code.Code & (ushort)0x1 << 7) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 9] = (code.Code & (ushort)0x1 << 6) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 10] = (code.Code & (ushort)0x1 << 5) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 11] = (code.Code & (ushort)0x1 << 4) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 12] = (code.Code & (ushort)0x1 << 3) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 13] = (code.Code & (ushort)0x1 << 2) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 14] = (code.Code & (ushort)0x1 << 1) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 15] = (code.Code & (ushort)0x1) == 0 ? falseValue : trueValue;
+        }
+
+        public static GrayCodeU16 ReadBits<T>(T[,] target, int targetRow, int targetOffset, T trueValue,
+           T falseValue)
+        {
+
+            ushort res = (ushort)0;
+
+            res = (ushort)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 0], trueValue) == 0 ? (ushort)0x1 << 15 : (ushort)0));
+            res = (ushort)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 1], trueValue) == 0 ? (ushort)0x1 << 14 : (ushort)0));
+            res = (ushort)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 2], trueValue) == 0 ? (ushort)0x1 << 13 : (ushort)0));
+            res = (ushort)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 3], trueValue) == 0 ? (ushort)0x1 << 12 : (ushort)0));
+            res = (ushort)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 4], trueValue) == 0 ? (ushort)0x1 << 11 : (ushort)0));
+            res = (ushort)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 5], trueValue) == 0 ? (ushort)0x1 << 10 : (ushort)0));
+            res = (ushort)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 6], trueValue) == 0 ? (ushort)0x1 << 9 : (ushort)0));
+            res = (ushort)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 7], trueValue) == 0 ? (ushort)0x1 << 8 : (ushort)0));
+            res = (ushort)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 8], trueValue) == 0 ? (ushort)0x1 << 7 : (ushort)0));
+            res = (ushort)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 9], trueValue) == 0 ? (ushort)0x1 << 6 : (ushort)0));
+            res = (ushort)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 10], trueValue) == 0 ? (ushort)0x1 << 5 : (ushort)0));
+            res = (ushort)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 11], trueValue) == 0 ? (ushort)0x1 << 4 : (ushort)0));
+            res = (ushort)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 12], trueValue) == 0 ? (ushort)0x1 << 3 : (ushort)0));
+            res = (ushort)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 13], trueValue) == 0 ? (ushort)0x1 << 2 : (ushort)0));
+            res = (ushort)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 14], trueValue) == 0 ? (ushort)0x1 << 1 : (ushort)0));
+            res = (ushort)(res | (Comparer<T>.Default.Compare(target[targetRow, targetOffset + 15], trueValue) == 0 ? (ushort)0x1 : (ushort)0));
+
+            return new GrayCodeU16
+            {
+                Code = res
+            };
         }
 
         public static T[] GetSetBits<T>(GrayCodeU16 code, T trueValue, T falseValue)
@@ -152,16 +204,16 @@ namespace SimpleRBM.Demo.Util
         {
             ushort mask;
             ushort num = code.Code;
-            for (mask = (ushort) (num >> 1); mask != 0; mask = (ushort) (mask >> 1))
+            for (mask = (ushort)(num >> 1); mask != 0; mask = (ushort)(mask >> 1))
             {
-                num = (ushort) (num ^ mask);
+                num = (ushort)(num ^ mask);
             }
             return num;
         }
 
         public static ushort Decode(ushort code)
         {
-            var c = new GrayCodeU16 {Code = code};
+            var c = new GrayCodeU16 { Code = code };
             return Decode(c);
         }
 
@@ -289,7 +341,7 @@ namespace SimpleRBM.Demo.Util
 
         public static uint Decode(uint code)
         {
-            var c = new GrayCodeU32 {Code = code};
+            var c = new GrayCodeU32 { Code = code };
             return Decode(c);
         }
 
@@ -351,7 +403,7 @@ namespace SimpleRBM.Demo.Util
 
         public static ulong Decode(ulong code)
         {
-            var c = new GrayCodeU64 {Code = code};
+            var c = new GrayCodeU64 { Code = code };
             return Decode(c);
         }
 

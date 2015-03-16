@@ -5,6 +5,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -123,8 +124,8 @@ namespace CudaNN.DeepBelief.ViewModels
             new PropertyMetadata(default(ObservableCollection<BitmapSource>)));
 
         public static readonly DependencyProperty TrainingSetProperty = DependencyProperty.Register("TrainingSet",
-            typeof(ObservableCollection<BitmapSource>), typeof(BelieveViewModel),
-            new PropertyMetadata(default(ObservableCollection<BitmapSource>)));
+            typeof(ObservableCollection<ImageSet>), typeof(BelieveViewModel),
+            new PropertyMetadata(default(ObservableCollection<ImageSet>)));
 
         public static readonly DependencyProperty ElapsedProperty = DependencyProperty.Register("Elapsed",
             typeof(TimeSpan), typeof(BelieveViewModel), new PropertyMetadata(default(TimeSpan)));
@@ -341,12 +342,12 @@ namespace CudaNN.DeepBelief.ViewModels
             set { Dispatcher.InvokeIfRequired(() => SetValue(DayDreamsProperty, value)).Wait(); }
         }
 
-        public ObservableCollection<BitmapSource> TrainingSet
+        public ObservableCollection<ImageSet> TrainingSet
         {
             get
             {
                 return
-                    Dispatcher.InvokeIfRequired(() => (ObservableCollection<BitmapSource>)GetValue(TrainingSetProperty))
+                    Dispatcher.InvokeIfRequired(() => (ObservableCollection<ImageSet>)GetValue(TrainingSetProperty))
                         .Result;
             }
             set { Dispatcher.InvokeIfRequired(() => SetValue(TrainingSetProperty, value)).Wait(); }
@@ -718,11 +719,13 @@ namespace CudaNN.DeepBelief.ViewModels
                 int validationRecords = 0, trainingRecords = 0, testRecords = 0;
                 var usageType = DataConfigViewModelBase.NetworkUsageTypes.UnsupervisedCodingNetwork;
                 var dtType = DataConfigViewModelBase.DataTransformationTypes.NoTransform;
+                int startTrainingLayer = 0;
                 DataReaderBase<double> testReader = null;
                 DataReaderBase<double> trainingReader = null;
                 DataReaderBase<double> validationReader = null;
                 await Dispatcher.InvokeIfRequired(() =>
                 {
+                    startTrainingLayer = layerBuilderViewModel.StartTrainLayerIndex;
                     dtType = dataConfigViewModel.DataTransformationType;
                     usageType = dataConfigViewModel.NetworkUsageType;
                     validationRecords = dataConfigViewModel.ValidationRecordCount;
@@ -747,14 +750,36 @@ namespace CudaNN.DeepBelief.ViewModels
 
 
                 string[] trainingLabels;
-                Double[,] traingLabelsCoded;
-                double[,] trainingData = trainingReader.ReadWithLabels(trainingRecords, out traingLabelsCoded,
+                Double[,] trainingLabelsCoded;
+                double[,] trainingData = trainingReader.ReadWithLabels(trainingRecords, out trainingLabelsCoded,
                     out trainingLabels);
 
-                Dispatcher.InvokeIfRequired(
-                    async () =>
-                        TrainingSet =
-                            new ObservableCollection<BitmapSource>(await imageFactory(trainingData)));
+
+                if (usageType == DataConfigViewModelBase.NetworkUsageTypes.SupervisedLabellingNetwork)
+                {
+                    Dispatcher.InvokeIfRequired(
+                        async () =>
+                            TrainingSet =
+                                new ObservableCollection<ImageSet>((await imageFactory(trainingData)).Zip(
+                                    await GenerateImageSources(trainingLabelsCoded), (a, b) => new ImageSet
+                                    {
+                                        DataImage = a,
+                                        CodeImage = b
+                                    }).Zip(trainingLabels, (a, b) =>
+                                    {
+                                        a.Label = b;
+                                        return a;
+                                    })));
+                }
+                else
+                {
+                    Dispatcher.InvokeIfRequired(
+                        async () =>
+                            TrainingSet =
+                                new ObservableCollection<ImageSet>(
+                                    (await imageFactory(trainingData)).Select(a => new ImageSet { DataImage = a })));
+                }
+
 
                 if (usageType == DataConfigViewModelBase.NetworkUsageTypes.SupervisedLabellingNetwork)
                 {
@@ -831,20 +856,58 @@ namespace CudaNN.DeepBelief.ViewModels
                             WeightLearningRateFactory,
                             HidBiasLearningRateFactory,
                             VisBiasLearningRateFactory,
-                            _cancelSource.Token
+                            _cancelSource.Token,
+                            startTrainingLayer
                             );
+
+                        var codeBatches = testReader.Read(testRecords, batchSize).Select(a => net.Encode(a));
+                        var codeStringBatches = codeBatches.Select(GenerateCodeStrings);
+                        foreach (var batch in codeStringBatches)
+                        {
+                            File.AppendAllLines(Path.Combine(pathBase, "ComputedCodes.csv"), batch);
+                        }
+
                     }
                     else
                     {
-                        net.GreedyBatchedSupervisedTrain(trainingData, traingLabelsCoded, batchSize,
+                        net.GreedyBatchedSupervisedTrain(trainingData, trainingLabelsCoded, batchSize,
                             ExitEvaluatorFactory,
                             WeightLearningRateFactory,
                             HidBiasLearningRateFactory,
                             VisBiasLearningRateFactory,
-                            _cancelSource.Token);
+                            _cancelSource.Token,
+                            startTrainingLayer);
+
+                        var labelCodeBatches = testReader.Read(testRecords, batchSize).Select(a => net.LabelData(a));
+
+                        var labelBatches = labelCodeBatches.Select(a => testReader.DecodeLabels(a, 1.0, 0.0));
+
+                        foreach (var batch in labelBatches)
+                        {
+                            File.AppendAllLines(Path.Combine(pathBase, "ComputedLabels.csv"), batch);
+
+                        }
+
+
                     }
                 }
             }
+        }
+
+        private string[] GenerateCodeStrings(TElement[,] codes)
+        {
+            var res = new string[codes.GetLength(0)];
+            Parallel.For(0, res.Length, i =>
+            {
+                StringBuilder sb = new StringBuilder();
+                for (var j = 0; j < codes.GetLength(1); j++)
+                {
+                    sb.Append(codes[i, j] < 0.5 ? "0" : "1");
+                }
+                res[i] = sb.ToString();
+            });
+
+            return res;
         }
 
 
@@ -858,7 +921,7 @@ namespace CudaNN.DeepBelief.ViewModels
             {
                 var usageType = DataConfigViewModelBase.NetworkUsageTypes.UnsupervisedCodingNetwork;
                 var dtType = DataConfigViewModelBase.DataTransformationTypes.NoTransform;
-                int validationRecords = 0, trainingRecords = 0, testRecords = 0;
+                int validationRecords = 0, trainingRecords = 0, testRecords = 0, startTrainFrom = 0;
                 DataReaderBase<double> testReader = null;
                 DataReaderBase<double> trainingReader = null;
                 DataReaderBase<double> validationReader = null;
@@ -869,6 +932,7 @@ namespace CudaNN.DeepBelief.ViewModels
                     validationRecords = dataConfigViewModel.ValidationRecordCount;
                     trainingRecords = dataConfigViewModel.TrainingRecordCount;
                     testRecords = dataConfigViewModel.TestRecordCount;
+                    startTrainFrom = layerBuilderViewModel.StartTrainLayerIndex;
                     dataConfigViewModel.GetDataReaders(out trainingReader, out validationReader, out testReader);
                 });
 
@@ -886,9 +950,9 @@ namespace CudaNN.DeepBelief.ViewModels
                 Task<IList<BitmapSource>> validationImages = imageFactory(validationData);
 
                 IList<string[]> trainingLabels;
-                IList<Double[,]> traingLabelsCoded;
+                IList<Double[,]> trainingLabelsCoded;
                 IList<double[,]> trainingData = trainingReader.ReadWithLabels(trainingRecords, batchSize,
-                    out traingLabelsCoded,
+                    out trainingLabelsCoded,
                     out trainingLabels);
 
                 var bmps = new List<BitmapSource>();
@@ -905,11 +969,43 @@ namespace CudaNN.DeepBelief.ViewModels
                     return bmps;
                 });
 
-                Dispatcher.InvokeIfRequired(
-                    async () =>
-                        TrainingSet =
-                            new ObservableCollection<BitmapSource>(await tGetImages));
 
+
+                if (usageType == DataConfigViewModelBase.NetworkUsageTypes.SupervisedLabellingNetwork)
+                {
+                    Task<List<BitmapSource>> tGetCodedLabels = Task.Run(async () =>
+                    {
+                        foreach (var batch in trainingLabelsCoded)
+                        {
+                            bmps.AddRange(await GenerateImageSources(batch));
+                            if (bmps.Count >= maxTrain)
+                                break;
+                        }
+                        return bmps;
+                    });
+
+                    Dispatcher.InvokeIfRequired(
+                        async () =>
+                            TrainingSet =
+                                new ObservableCollection<ImageSet>((await tGetImages).Zip(
+                                   await tGetCodedLabels, (a, b) => new ImageSet
+                                    {
+                                        DataImage = a,
+                                        CodeImage = b
+                                    }).Zip(trainingLabels.SelectMany(c => c), (a, b) =>
+                                    {
+                                        a.Label = b;
+                                        return a;
+                                    })));
+                }
+                else
+                {
+                    Dispatcher.InvokeIfRequired(
+                        async () =>
+                            TrainingSet =
+                                new ObservableCollection<ImageSet>(
+                                    (await tGetImages).Select(a => new ImageSet { DataImage = a })));
+                }
 
                 if (usageType == DataConfigViewModelBase.NetworkUsageTypes.SupervisedLabellingNetwork)
                 {
@@ -981,134 +1077,37 @@ namespace CudaNN.DeepBelief.ViewModels
                             WeightLearningRateFactory,
                             HidBiasLearningRateFactory,
                             VisBiasLearningRateFactory,
-                            _cancelSource.Token
+                            _cancelSource.Token,
+                            startTrainFrom
                             );
+
+                        var codeBatches = testReader.Read(testRecords, batchSize).Select(a => net.Encode(a));
+                        var codeStringBatches = codeBatches.Select(GenerateCodeStrings);
+                        foreach (var batch in codeStringBatches)
+                        {
+                            File.AppendAllLines(Path.Combine(pathBase, "ComputedCodes.csv"), batch);
+                        }
                     }
                     else
                     {
-                        net.GreedyBatchedSupervisedTrainMem(trainingData, traingLabelsCoded, ExitEvaluatorFactory,
+                        net.GreedyBatchedSupervisedTrainMem(trainingData, trainingLabelsCoded, ExitEvaluatorFactory,
                             WeightLearningRateFactory, HidBiasLearningRateFactory, VisBiasLearningRateFactory,
-                            _cancelSource.Token);
+                            _cancelSource.Token, startTrainFrom);
+
+                        var labelCodeBatches = testReader.Read(testRecords, batchSize).Select(a => net.LabelData(a));
+
+                        var labelBatches = labelCodeBatches.Select(a => testReader.DecodeLabels(a, 1.0, 0.0));
+
+                        foreach (var batch in labelBatches)
+                        {
+                            File.AppendAllLines(Path.Combine(pathBase, "ComputedLabels.csv"), batch);
+
+                        }
                     }
                 }
             }
         }
 
-
-        //private async void CsvDemo(LayerBuilderViewModel layerBuilderViewModel, int numTrainingExamples, string pathBase)
-        //{
-        //    GPGPU dev;
-        //    GPGPURAND rand;
-        //    InitCuda(out dev, out rand);
-        //    dev.SetCurrentContext();
-        //    IDataIO<double, string> d = new CsvData(ConfigurationManager.AppSettings["CsvDataTraining"],
-        //        ConfigurationManager.AppSettings["CsvDataTest"], true, true);
-
-
-        //    using (var net = new CudaAdvancedNetwork(layerBuilderViewModel.CreateLayers(dev, rand)))
-        //    {
-        //        net.SetDefaultMachineState(SuspendState.Active);
-        //        string[] lbl;
-        //        Double[,] coded;
-
-        //        double[,] tdata = d.ReadTestData(0, 50);
-        //        List<double[,]> identityMatrices = IdentityMatrices(dev, net);
-
-        //        IList<BitmapSource> originalTestImages = await GenerateImageSources(tdata);
-
-        //        Dispatcher.InvokeIfRequired(
-        //            () =>
-        //                Reconstructions =
-        //                    new ObservableCollection<ValidationSet>(
-        //                        originalTestImages.Select(a => new ValidationSet {DataImage = a})));
-
-        //        dev.SetCurrentContext();
-
-        //        net.EpochComplete += NetEpochUnsupervisedCompleteEventHandler(pathBase, dev, tdata, identityMatrices,
-        //            dd => GenerateImageSources(dd));
-
-        //        net.LayerTrainComplete += NetOnLayerTrainComplete(pathBase);
-
-        //        //batch the data in gpu memory
-        //        using (
-        //            var greedyTracker =
-        //                new EpochErrorFileTracker<double>(Path.Combine(pathBase, "GreedyTrainError.log")))
-        //        {
-        //            ExitEvaluatorFactory =
-        //                await
-        //                    Dispatcher.InvokeIfRequired(
-        //                        () => new InteractiveExitEvaluatorFactory<double>(greedyTracker, 0.5, 5000));
-
-        //            string[] lbla;
-        //            Double[,] codeda;
-        //            double[,] trainingData = d.ReadTrainingData(0, numTrainingExamples, out lbla, out codeda);
-        //            Dispatcher.InvokeIfRequired(
-        //                async () =>
-        //                    TrainingSet =
-        //                        new ObservableCollection<BitmapSource>(await GenerateImageSources(trainingData, 1000)));
-
-        //            Dispatcher.InvokeIfRequired(() => NumTrainingExamples = trainingData.GetLength(0));
-
-        //            await Dispatcher.InvokeIfRequired(() =>
-        //            {
-        //                WeightLearningRateFactory =
-        //                    new LayerSpecificLearningRateCalculatorFactory<double>(
-        //                        layerBuilderViewModel.LayerConstructionInfo.Select(
-        //                            a => new InteractiveLearningRateCalculatorFactory<double>(3E-05)));
-        //                ;
-        //                HidBiasLearningRateFactory =
-        //                    new LayerSpecificLearningRateCalculatorFactory<double>(
-        //                        layerBuilderViewModel.LayerConstructionInfo.Select(
-        //                            a => new InteractiveLearningRateCalculatorFactory<double>(3E-05)));
-        //                VisBiasLearningRateFactory =
-        //                    new LayerSpecificLearningRateCalculatorFactory<double>(
-        //                        layerBuilderViewModel.LayerConstructionInfo.Select(
-        //                            a => new InteractiveLearningRateCalculatorFactory<double>(3E-05)));
-        //            });
-
-        //            await Dispatcher.InvokeIfRequired(() =>
-        //            {
-        //                var lrEditor = new ConfigureLearningRates {DataContext = this, Owner = Window.GetWindow(this)};
-        //                lrEditor.ShowDialog();
-        //            });
-
-        //            //var trainingData = d.ReadTestData(0, numTrainingExamples);
-        //            dev.SetCurrentContext();
-        //            net.GreedyBatchedTrain(trainingData,
-        //                600,
-        //                ExitEvaluatorFactory,
-        //                WeightLearningRateFactory,
-        //                HidBiasLearningRateFactory,
-        //                VisBiasLearningRateFactory,
-        //                _cancelSource.Token
-        //                );
-        //        }
-
-        //        //double[,] testData = d.ReadTrainingData(0, 200, out lbl, out coded);
-
-        //        //double[,] reconstructions = net.Reconstruct(testData);
-
-        //        //DisplayResults(pathBase, d, reconstructions, testData, lbl);
-
-        //        //IDataIO<TElement, string> d2 = new CsvData(ConfigurationManager.AppSettings["CsvDataTest"],
-        //        //    ConfigurationManager.AppSettings["CsvDataTest"], true, true);
-
-        //        //string[] labels;
-        //        //TElement[,] lcoded;
-        //        //double[,] allDataToCode = d2.ReadTrainingData(0, 185945, out labels, out lcoded);
-        //        //double[,] encoded = net.Encode(allDataToCode);
-        //        //string[] kkey = KeyEncoder.CreateBinaryStringKeys(encoded);
-
-        //        //using (FileStream fs = File.OpenWrite(Path.Combine(pathBase, "Encoded.csv")))
-        //        //using (var tw = new StreamWriter(fs))
-        //        //{
-        //        //    for (int i = 0; i < allDataToCode.GetLength(0); i++)
-        //        //    {
-        //        //        tw.WriteLine("{0},\"{1}\"", labels[i], kkey[i]);
-        //        //    }
-        //        //}
-        //    }
-        //}
 
         private EventHandler<EpochEventArgs<double>> NetEpochUnsupervisedCompleteEventHandler(string pathBase, GPGPU dev,
             double[,] tdata,
@@ -1129,13 +1128,18 @@ namespace CudaNN.DeepBelief.ViewModels
 
                 if (b.Epoch % UpdateFrequency == 0)
                 {
+                    string[] computedCodes = null;
                     double[,] activations = GetActivations(dev, nn, tdata, b);
                     double[,] dreams = ((CudaAdvancedNetwork)nn).Daydream(1.0, 100, b.Layer);
                     double[,] recon = nn.Reconstruct(tdata, b.Layer);
                     double[,] feats = nn.Decode(identityMatrices[b.Layer], b.Layer);
-
-
-                    Task.Run(() => UpdateUIProperties(pathBase, b, recon, feats, activations, dreams, imgGenerator));
+                    double[,] codes = null;
+                    if (b.Layer == nn.Machines.Count - 1)
+                    {
+                        codes = nn.Encode(tdata);
+                        computedCodes = GenerateCodeStrings(codes);
+                    }
+                    Task.Run(() => UpdateUIProperties(pathBase, b, recon, feats, activations, dreams, imgGenerator, validationLabels: computedCodes, validationLabelsEncoded: codes));
                 }
                 else
                 {
@@ -1165,220 +1169,6 @@ namespace CudaNN.DeepBelief.ViewModels
             };
         }
 
-
-        //private async void FacesDemo(LayerBuilderViewModel builderViewModel, int numTrainingExamples, string pathBase)
-        //{
-        //    GPGPU dev;
-        //    GPGPURAND rand;
-        //    InitCuda(out dev, out rand);
-
-        //    dev.SetCurrentContext();
-        //    bool useLinear = builderViewModel.LayerConstructionInfo[0] is ConstructLinearHiddenLayer
-        //                     || (builderViewModel.LayerConstructionInfo[0] is LoadLayerInfo
-        //                         &&
-        //                         ((LoadLayerInfo) (builderViewModel.LayerConstructionInfo[0])).LayerType ==
-        //                         LoadLayerType.Linear);
-
-        //    IDataIO<double, string> dataProvider =
-        //        new FacesData(ConfigurationManager.AppSettings["FacesDirectory"],
-        //            ConfigurationManager.AppSettings["FacesTestDirectory"],
-        //            FacesData.ConversionMode.RgbToGreyPosNegReal);
-
-
-        //    Func<double[,], Task<IList<BitmapSource>>> imgGenerationMethod = useLinear
-        //        ? (Func<double[,], Task<IList<BitmapSource>>>) (dd => GenerateImageSourcesPosNeg(dd))
-        //        : (dd => GenerateImageSources(dd));
-
-        //    using (var net = new CudaAdvancedNetwork(builderViewModel.CreateLayers(dev, rand)))
-        //    {
-        //        net.SetDefaultMachineState(SuspendState.Suspended);
-        //        //keep data in main memory as much as possible at the expense of more memory movement between System and GPU
-
-        //        double[,] tdata = dataProvider.ReadTestData(numTrainingExamples, 50);
-        //        DirectoryInfo di = Directory.CreateDirectory(Path.Combine(pathBase, "Original"));
-
-        //        dev.SetCurrentContext();
-        //        List<double[,]> identityMatrices = IdentityMatrices(dev, net);
-
-        //        Task.Run(() => Dispatcher.InvokeIfRequired(async () =>
-        //            Reconstructions =
-        //                new ObservableCollection<ValidationSet>(
-        //                    (await imgGenerationMethod(tdata)).Select(a => new ValidationSet {DataImage = a}))));
-
-        //        dev.SetCurrentContext();
-
-        //        net.EpochComplete += NetEpochUnsupervisedCompleteEventHandler(pathBase, dev, tdata, identityMatrices,
-        //            imgGenerationMethod);
-        //        net.LayerTrainComplete += NetOnLayerTrainComplete(pathBase);
-
-        //        IList<string[]> lbl;
-        //        IList<double[,]> coded;
-
-        //        IList<double[,]> training = dataProvider.ReadTrainingData(0, numTrainingExamples, 50, out lbl,
-        //            out coded);
-
-        //        Dispatcher.InvokeIfRequired(() => NumTrainingExamples = training.Sum(a => a.GetLength(0)));
-
-        //        //await (() => NumTrainingExamples = training.Sum(a => a.GetLength(0))).InvokeIfRequired(Dispatcher);
-
-        //        int maxtrain = 1000;
-
-        //        var bmps = new List<BitmapSource>(maxtrain);
-
-
-        //        Task<List<BitmapSource>> tgen = Task.Run(async () =>
-        //        {
-        //            foreach (var batch in training)
-        //            {
-        //                bmps.AddRange(await GenerateImageSourcesPosNeg(batch, maxtrain - bmps.Count));
-        //                if (bmps.Count >= maxtrain)
-        //                    break;
-        //            }
-        //            return bmps;
-        //        });
-
-        //        Task.Run(
-        //            () =>
-        //                Dispatcher.InvokeIfRequired(
-        //                    async () => TrainingSet = new ObservableCollection<BitmapSource>(await tgen)));
-
-
-        //        dev.SetCurrentContext();
-
-        //        await Dispatcher.InvokeIfRequired(() =>
-        //        {
-        //            WeightLearningRateFactory =
-        //                new LayerSpecificLearningRateCalculatorFactory<double>(
-        //                    builderViewModel.LayerConstructionInfo.Select(
-        //                        a => new InteractiveLearningRateCalculatorFactory<double>(3E-05)));
-        //            ;
-        //            HidBiasLearningRateFactory =
-        //                new LayerSpecificLearningRateCalculatorFactory<double>(
-        //                    builderViewModel.LayerConstructionInfo.Select(
-        //                        a => new InteractiveLearningRateCalculatorFactory<double>(3E-05)));
-        //            VisBiasLearningRateFactory =
-        //                new LayerSpecificLearningRateCalculatorFactory<double>(
-        //                    builderViewModel.LayerConstructionInfo.Select(
-        //                        a => new InteractiveLearningRateCalculatorFactory<double>(3E-05)));
-        //        });
-
-        //        await Dispatcher.InvokeIfRequired(() =>
-        //        {
-        //            var lrEditor = new ConfigureLearningRates {DataContext = this, Owner = Window.GetWindow(this)};
-        //            lrEditor.ShowDialog();
-        //        });
-
-        //        using (
-        //            var greedyTracker =
-        //                new EpochErrorFileTracker<double>(Path.Combine(pathBase, "GreedyTrainError.log")))
-        //        {
-        //            ExitEvaluatorFactory =
-        //                await
-        //                    Dispatcher.InvokeIfRequired(
-        //                        () => new InteractiveExitEvaluatorFactory<double>(greedyTracker, 0.5, 5000));
-
-        //            dev.SetCurrentContext();
-        //            net.GreedyBatchedTrainMem(training,
-        //                ExitEvaluatorFactory,
-        //                WeightLearningRateFactory,
-        //                HidBiasLearningRateFactory,
-        //                VisBiasLearningRateFactory,
-        //                _cancelSource.Token
-        //                );
-        //        }
-        //    }
-        //}
-
-
-        //private async void KaggleDemo(LayerBuilderViewModel builderViewModel, int numTrainingExamples, string pathBase)
-        //{
-        //    GPGPU dev;
-        //    GPGPURAND rand;
-        //    InitCuda(out dev, out rand);
-        //    dev.SetCurrentContext();
-        //    IDataIO<double, int> dataProvider =
-        //        new KaggleData(ConfigurationManager.AppSettings["KaggleTrainingData"],
-        //            ConfigurationManager.AppSettings["KaggleTestData"]);
-
-
-        //    using (var net = new CudaAdvancedNetwork(builderViewModel.CreateLayers(dev, rand)))
-        //    {
-        //        //keep data in gpu memory as much as possible
-        //        net.SetDefaultMachineState(SuspendState.Active);
-
-
-        //        int[] lbl;
-        //        Double[,] coded;
-        //        double[,] tdata = dataProvider.ReadTestData(0, 50);
-        //        DirectoryInfo di = Directory.CreateDirectory(Path.Combine(pathBase, "Original"));
-        //        List<double[,]> identityMatrices = IdentityMatrices(dev, net);
-
-        //        Task.Run(() => Dispatcher.InvokeIfRequired(async () =>
-        //            Reconstructions =
-        //                new ObservableCollection<ValidationSet>(
-        //                    (await GenerateImageSources(tdata)).Select(a => new ValidationSet {DataImage = a}))));
-
-        //        dev.SetCurrentContext();
-
-        //        net.EpochComplete += NetEpochSupervisedCompleteEventHandler(pathBase, tdata, identityMatrices, dev,
-        //            dd => GenerateImageSources(dd));
-        //        net.LayerTrainComplete += NetOnLayerTrainComplete(pathBase);
-
-        //        double[,] trainingData = dataProvider.ReadTrainingData(0, numTrainingExamples, out lbl, out coded);
-        //        Task.Run(() =>
-        //            Dispatcher.InvokeIfRequired(
-        //                async () =>
-        //                    TrainingSet =
-        //                        new ObservableCollection<BitmapSource>(await GenerateImageSources(trainingData, 1000))));
-
-        //        Dispatcher.InvokeIfRequired(() => NumTrainingExamples = trainingData.GetLength(0));
-
-        //        using (
-        //            var greedyTracker =
-        //                new EpochErrorFileTracker<double>(Path.Combine(pathBase, "GreedyTrainError.log")))
-        //        {
-        //            ExitEvaluatorFactory =
-        //                await
-        //                    Dispatcher.InvokeIfRequired(
-        //                        () => new InteractiveExitEvaluatorFactory<double>(greedyTracker, 0.5, 5000));
-
-
-        //            await Dispatcher.InvokeIfRequired(() =>
-        //            {
-        //                WeightLearningRateFactory =
-        //                    new LayerSpecificLearningRateCalculatorFactory<double>(
-        //                        builderViewModel.LayerConstructionInfo.Select(
-        //                            a => new InteractiveLearningRateCalculatorFactory<double>(3E-05)));
-        //                ;
-        //                HidBiasLearningRateFactory =
-        //                    new LayerSpecificLearningRateCalculatorFactory<double>(
-        //                        builderViewModel.LayerConstructionInfo.Select(
-        //                            a => new InteractiveLearningRateCalculatorFactory<double>(3E-05)));
-        //                VisBiasLearningRateFactory =
-        //                    new LayerSpecificLearningRateCalculatorFactory<double>(
-        //                        builderViewModel.LayerConstructionInfo.Select(
-        //                            a => new InteractiveLearningRateCalculatorFactory<double>(3E-05)));
-        //            });
-
-        //            await Dispatcher.InvokeIfRequired(() =>
-        //            {
-        //                var lrEditor = new ConfigureLearningRates {DataContext = this, Owner = Window.GetWindow(this)};
-        //                lrEditor.ShowDialog();
-        //            });
-
-        //            dev.SetCurrentContext();
-        //            net.GreedyBatchedSupervisedTrain(
-        //                trainingData,
-        //                coded, 100,
-        //                ExitEvaluatorFactory,
-        //                WeightLearningRateFactory,
-        //                HidBiasLearningRateFactory,
-        //                VisBiasLearningRateFactory,
-        //                _cancelSource.Token
-        //                );
-        //        }
-        //    }
-        //}
 
         private EventHandler<EpochEventArgs<double>> NetEpochSupervisedCompleteEventHandler(string pathBase,
             double[,] tdata, List<double[,]> identityMatrices, GPGPU dev,
@@ -1423,7 +1213,10 @@ namespace CudaNN.DeepBelief.ViewModels
                     }
 
 
-                    Task.Run(() => UpdateUIProperties(pathBase, b, recon, feats, activations, dreams, imgGenerator, encodedValidationLabels, validationLabels));
+                    Task.Run(
+                        () =>
+                            UpdateUIProperties(pathBase, b, recon, feats, activations, dreams, imgGenerator,
+                                encodedValidationLabels, validationLabels));
                 }
                 else
                 {

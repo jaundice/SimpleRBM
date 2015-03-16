@@ -25,23 +25,22 @@ namespace CudaNN.DeepBelief.DataIO
                     string.Join("|", ValidImageExtensions.Select(a => string.Format((string)"*{0}", (object)a))),
                     SearchOption.AllDirectories);
 
-            labelsEncoded = new T[count, LabelDataWidth];
-            labels = new string[count];
-            var data = new T[count, DataWidth];
             var on = (T)Convert.ChangeType(1, typeof(T));
             var off = (T)Convert.ChangeType(0, typeof(T));
             Random rnd = new Random(DateTime.Now.Millisecond);
             var i = 0;
             var cutoff = (double)count / TotalRecordCount;
-            foreach (var file in files)
+
+            var filteredFiles = files.Where(a => rnd.NextDouble() < cutoff).Take(count).ToList();
+
+            labelsEncoded = new T[filteredFiles.Count, LabelDataWidth];
+            labels = new string[filteredFiles.Count];
+            var data = new T[filteredFiles.Count, DataWidth];
+
+
+            foreach (var file in filteredFiles)
             {
-                if (rnd.NextDouble() > cutoff)
-                    continue;
-
-                if (i == count - 1)
-                    break;
-
-                var lblName = new FileInfo(file).Directory.Name;
+               var lblName = new FileInfo(file).Directory.Name;
                 labels[i] = lblName;
                 if (UseGrayCodesForLabels)
                 {
@@ -66,20 +65,20 @@ namespace CudaNN.DeepBelief.DataIO
                                 string.Join("|", ValidImageExtensions.Select(a => string.Format((string)"*{0}", (object)a))),
                                 SearchOption.AllDirectories);
 
-            var data = new T[count, DataWidth];
             var on = (T)Convert.ChangeType(1, typeof(T));
             var off = (T)Convert.ChangeType(0, typeof(T));
             Random rnd = new Random(DateTime.Now.Millisecond);
             var i = 0;
             var cutoff = (double)count / TotalRecordCount;
-            foreach (var file in files)
+
+
+            var filteredFiles = files.Where(a => rnd.NextDouble() < cutoff).Take(count).ToList();
+
+            var data = new T[filteredFiles.Count, DataWidth];
+
+
+            foreach (var file in filteredFiles)
             {
-                if (rnd.NextDouble() > cutoff)
-                    continue;
-
-                if (i == count - 1)
-                    break;
-
                 CopyImageDataToTarget(data, i, 0, file);
                 i++;
             }

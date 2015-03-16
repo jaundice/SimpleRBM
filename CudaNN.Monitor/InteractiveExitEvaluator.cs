@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using SimpleRBM.Common;
 using SimpleRBM.Common.ExitCondition;
 
@@ -8,23 +9,30 @@ namespace CudaNN.DeepBelief
 
     public class InteractiveExitEvaluator<T> : IExitConditionEvaluator<T> where T : struct, IComparable<T>
     {
-        internal int _layerIndex;
-        internal int _maxEpochs;
-        private readonly T _minError;
-        internal bool _exit;
-        internal bool _exitOnNextLowest;
         private T _lowestErrorSeen;
-        private int _epochsSinceLastErrorImprovement = 0;
         private readonly IEpochErrorTracker<T> _epochErrorTracker;
 
         public InteractiveExitEvaluator(IEpochErrorTracker<T> epochErrorTracker, int layerIndex, int maxEpochs,
             T minError)
         {
-            _maxEpochs = maxEpochs;
-            _minError = minError;
-            _layerIndex = layerIndex;
+            EpochsSinceLastErrorImprovement = 0;
+            MaxEpochs = maxEpochs;
+            MinError = minError;
+            LayerIndex = layerIndex;
             _epochErrorTracker = epochErrorTracker;
         }
+
+        public int LayerIndex { get; protected internal set; }
+
+        public int MaxEpochs { get; protected internal set; }
+
+        public T MinError { get; protected internal set; }
+
+        public bool ExitNextEpoch { get; protected internal set; }
+
+        public bool ExitOnNextLowestError { get; protected internal set; }
+
+        public int EpochsSinceLastErrorImprovement { get; protected set; }
 
         public bool Exit(int epochNumber, T lastError, TimeSpan elapsedTime, out T delta)
         {
@@ -36,48 +44,48 @@ namespace CudaNN.DeepBelief
             delta = (T)Convert.ChangeType((double)Convert.ChangeType(tempLowest, typeof(double)) -
                                            (double)Convert.ChangeType(lastError, typeof(double)), typeof(T));
 
-            _epochErrorTracker.LogEpochError(_layerIndex, epochNumber, lastError, delta, elapsedTime);
+            _epochErrorTracker.LogEpochError(LayerIndex, epochNumber, lastError, delta, elapsedTime);
 
-            if (Comparer<T>.Default.Compare(lastError, _minError) < 0)
+            if (Comparer<T>.Default.Compare(lastError, MinError) < 0)
             {
-                _exit = true;
+                ExitNextEpoch = true;
             }
             if (epochNumber == 0)
             {
                 _lowestErrorSeen = lastError;
             }
-            else if (epochNumber > _maxEpochs)
+            else if (epochNumber > MaxEpochs)
             {
-                _exitOnNextLowest = true;
-                if (epochNumber > _maxEpochs + 1000)
+                ExitOnNextLowestError = true;
+                if (epochNumber > MaxEpochs + 1000)
                 {
-                    _exit = true;
-                    Console.WriteLine("Max epochs passed and no improvement in error within 1000 extra epochs. Aborting");
+                    ExitNextEpoch = true;
+                    Trace.WriteLine("Max epochs passed and no improvement in error within 1000 extra epochs. Aborting");
                 }
             }
 
             if (Comparer<T>.Default.Compare(lastError, _lowestErrorSeen) < 0)
             {
                 _lowestErrorSeen = lastError;
-                _epochsSinceLastErrorImprovement = 0;
-                if (_exitOnNextLowest)
+                EpochsSinceLastErrorImprovement = 0;
+                if (ExitOnNextLowestError)
                 {
-                    _exit = true;
+                    ExitNextEpoch = true;
                 }
             }
             else
             {
-                _epochsSinceLastErrorImprovement++;
+                EpochsSinceLastErrorImprovement++;
             }
 
 
-            return _exit;
+            return ExitNextEpoch;
         }
 
         public void Start()
         {
-            _exit = false;
-            _exitOnNextLowest = false;
+            ExitNextEpoch = false;
+            ExitOnNextLowestError = false;
         }
 
 

@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.Windows.Controls;
 using CudaNN.DeepBelief.LayerBuilders;
 using CudaNN.DeepBelief.ViewModels;
 using Microsoft.Win32;
@@ -78,6 +79,13 @@ namespace CudaNN.DeepBelief
                 DialogResult = true;
                 Close();
             }
+        }
+
+        private void ButtonBase_OnClick(object sender, RoutedEventArgs e)
+        {
+            var rb = (sender as RadioButton);
+
+            ((LayerBuilderViewModel)this.DataContext).StartTrainLayer = (ConstructLayerBase)rb.CommandParameter;
         }
     }
 }

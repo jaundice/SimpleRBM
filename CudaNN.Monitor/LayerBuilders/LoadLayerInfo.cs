@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Input;
 
 namespace CudaNN.DeepBelief.LayerBuilders
 {
@@ -19,6 +20,7 @@ namespace CudaNN.DeepBelief.LayerBuilders
                 typeof (ConstructNewLayer), new PropertyMetadata(LoadLayerType.Binary));
 
 
+
         public string Path
         {
             get { return Dispatcher.InvokeIfRequired(() => (string) GetValue(PathProperty)).Result; }
@@ -30,5 +32,6 @@ namespace CudaNN.DeepBelief.LayerBuilders
             get { return Dispatcher.InvokeIfRequired(() => (LoadLayerType) GetValue(LoadLayerTypeProperty)).Result; }
             set { Dispatcher.InvokeIfRequired(() => SetValue(LoadLayerTypeProperty, value)).Wait(); }
         }
+
     }
 }

@@ -12,9 +12,18 @@ namespace CudaNN.DeepBelief.ViewModels
     public class LayerBuilderViewModel : DependencyObject
     {
         public static readonly DependencyProperty LayerConstructionInfoProperty =
-          DependencyProperty.Register("LayerConstructionInfo", typeof(ObservableCollection<ConstructLayerBase>),
-              typeof(LayerBuilderViewModel), new PropertyMetadata(default(ObservableCollection<ConstructLayerBase>)));
+            DependencyProperty.Register("LayerConstructionInfo", typeof (ObservableCollection<ConstructLayerBase>),
+                typeof (LayerBuilderViewModel), new PropertyMetadata(default(ObservableCollection<ConstructLayerBase>)));
 
+
+        public static readonly DependencyProperty StartTrainLayerProperty =
+            DependencyProperty.Register(" StartTrainLayer", typeof (ConstructLayerBase),
+                typeof (LayerBuilderViewModel), new PropertyMetadata(default(ConstructLayerBase)));
+
+
+        public static readonly DependencyProperty StartTrainLayerIndexProperty =
+            DependencyProperty.Register(" StartTrainLayerIndex", typeof (int),
+                typeof (LayerBuilderViewModel), new PropertyMetadata(default(int)));
 
         public LayerBuilderViewModel()
         {
@@ -23,16 +32,32 @@ namespace CudaNN.DeepBelief.ViewModels
 
         public ObservableCollection<ConstructLayerBase> LayerConstructionInfo
         {
-            get { return Dispatcher.InvokeIfRequired(() => (ObservableCollection<ConstructLayerBase>)GetValue(LayerConstructionInfoProperty)).Result; }
+            get
+            {
+                return
+                    Dispatcher.InvokeIfRequired(
+                        () => (ObservableCollection<ConstructLayerBase>) GetValue(LayerConstructionInfoProperty)).Result;
+            }
             set { Dispatcher.InvokeIfRequired(() => SetValue(LayerConstructionInfoProperty, value)).Wait(); }
+        }
 
+        public ConstructLayerBase StartTrainLayer
+        {
+            get { return (ConstructLayerBase) GetValue(StartTrainLayerProperty); }
+            set { SetValue(StartTrainLayerProperty, value); }
+        }
+
+        public int StartTrainLayerIndex
+        {
+            get { return (int) GetValue(StartTrainLayerIndexProperty); }
+            set { SetValue(StartTrainLayerIndexProperty, value); }
         }
 
         public IEnumerable<IAdvancedRbmCuda<double>> CreateLayers(GPGPU gpu, GPGPURAND rand)
         {
             return LayerConstructionInfo.Select((createLayerBase, i) =>
             {
-                ConstructNewLayer newLayer = createLayerBase as ConstructNewLayer;
+                var newLayer = createLayerBase as ConstructNewLayer;
                 if (newLayer != null)
                 {
                     newLayer.LayerIndex = i;
@@ -84,6 +109,15 @@ namespace CudaNN.DeepBelief.ViewModels
         private IAdvancedRbmCuda<double> Load(LoadLayerInfo info, GPGPU gpu, GPGPURAND rand)
         {
             return CudaAdvancedRbmBase.Deserialize(info.Path, gpu, rand);
+        }
+
+        protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+        {
+            base.OnPropertyChanged(e);
+            if (e.Property == StartTrainLayerProperty)
+            {
+                StartTrainLayerIndex = LayerConstructionInfo.IndexOf((ConstructLayerBase) e.NewValue);
+            }
         }
     }
 }

@@ -118,6 +118,7 @@
     <Compile Include="CudaAdvancedRbmBase.cs" />
     <Compile Include="CudaAdvancedRbmBinary.cs" />
     <Compile Include="CudaAdvancedRbmLinearHidden.cs" />
+    <Compile Include="UpDownTrainer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\CudafyV1.28CustomBuild\cudafycl.AnyCPU.exe.config">
