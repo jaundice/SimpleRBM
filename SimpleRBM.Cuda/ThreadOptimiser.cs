@@ -86,8 +86,10 @@ namespace SimpleRBM.Cuda
 
             if (big == small)
             {
-                block = new dim3(16, 16);
-                var g = Math.Max(1, (int)Math.Round(big / 16.0));
+                var d = big < 32 ? 16 : 32;
+
+                block = new dim3(d, d);
+                var g = Math.Max(1, (int)Math.Round((double)big / d));
                 grid = new dim3(g, g);
 
             }
@@ -98,9 +100,10 @@ namespace SimpleRBM.Cuda
 
                 if (rat >= 0.5)
                 {
-                    b = new dim3(16, 16);
-                    g = new dim3((int)Math.Round(big / 16.0), (int)Math.Round(small / 16.0));
 
+                    var d = big < 32 ? 16 : 32;
+                    b = new dim3(d, d);
+                    g = new dim3((int)Math.Round(big / (double)d), (int)Math.Round(small / (double)d));
                 }
                 else
                 {

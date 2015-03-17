@@ -47,6 +47,7 @@ namespace SimpleRBM.Test
                 typeof(Matrix2DCuda)
                 );
 
+            
 
             ThreadOptimiser.Instance = new ThreadOptimiser(props.Capability, props.MultiProcessorCount,
                 props.MaxThreadsPerBlock,

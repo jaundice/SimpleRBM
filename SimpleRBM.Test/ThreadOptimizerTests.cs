@@ -27,7 +27,10 @@ namespace CudaTests
             new Tuple<int, int>(178, 150),
             new Tuple<int, int>(150, 178),
             new Tuple<int, int>(4010, 500),
-            new Tuple<int, int>(500, 4010),
+            new Tuple<int, int>(1024, 1024),
+            new Tuple<int, int>(32, 32),
+            new Tuple<int, int>(16, 16),
+            new Tuple<int, int>(512, 512),
         };
 
         [ClassInitialize]
