@@ -5,7 +5,13 @@ using System.Windows.Forms;
 using System.Windows.Input;
 using CudaNN.DeepBelief.DataIO;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
-
+#if USEFLOAT
+using TElement = System.Single;
+using xxx = SimpleRBM.Cuda.CudaRbmF;
+#else
+using TElement = System.Double;
+using xxx = SimpleRBM.Cuda.CudaRbmD;
+#endif
 namespace CudaNN.DeepBelief.ViewModels
 {
     public abstract class DataConfigViewModelBase : DependencyObject
@@ -127,8 +133,8 @@ namespace CudaNN.DeepBelief.ViewModels
             typeof(int),
             typeof(DataConfigViewModelBase), new PropertyMetadata(default(int)));
 
-        public abstract void GetDataReaders(out DataReaderBase<double> trainingReader,
-            out DataReaderBase<double> validationReader, out DataReaderBase<double> testReader);
+        public abstract void GetDataReaders(out DataReaderBase<TElement> trainingReader,
+            out DataReaderBase<TElement> validationReader, out DataReaderBase<TElement> testReader);
 
 
         public NetworkUsageTypes NetworkUsageType

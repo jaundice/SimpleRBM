@@ -142,9 +142,9 @@ namespace CudaNN
                     net.GreedyBatchedTrain(trainingData,
                         600,
                         new ManualKeyPressExitEvaluatorFactory<TElement>(greedyTracker, 0.005, 5000),
-                        new ConstantLearningRateFactory<double>(0.0001, 20),
-                        new ConstantLearningRateFactory<double>(0.00005),
-                        new ConstantLearningRateFactory<double>(0.000001), CancellationToken.None
+                        new ConstantLearningRateFactory<TElement>(0.0001, 20),
+                        new ConstantLearningRateFactory<TElement>(0.00005),
+                        new ConstantLearningRateFactory<TElement>(0.000001), CancellationToken.None
                         );
                 }
 
@@ -194,9 +194,9 @@ namespace CudaNN
             using (var net = new CudaAdvancedNetwork(useLinear
                 ? new CudaAdvancedRbmBase[]
                 {
-                    new CudaAdvancedRbmLinearHidden(dev, rand, 0, 250*250, 500, weightcost:0.02),
-                    new CudaAdvancedRbmLinearHidden(dev, rand, 0, 500, 4000, weightcost:0.02),
-                    new CudaAdvancedRbmLinearHidden(dev, rand, 0, 4000, 4000, weightcost:0.02)
+                    new CudaAdvancedRbmLinearHidden(dev, rand, 0, 250*250, 500, weightcost:(TElement)0.02),
+                    new CudaAdvancedRbmLinearHidden(dev, rand, 0, 500, 4000, weightcost:(TElement)0.02),
+                    new CudaAdvancedRbmLinearHidden(dev, rand, 0, 4000, 4000, weightcost:(TElement)0.02)
                 }
                 : new CudaAdvancedRbmBase[]
                 {
@@ -212,7 +212,7 @@ namespace CudaNN
                 {
                     if (b.Epoch % 100 == 0)
                     {
-                        var dreams = ((CudaAdvancedNetwork)a).Daydream(1.0, 50, b.Layer);
+                        var dreams = ((CudaAdvancedNetwork)a).Daydream((TElement)1.0, 50, b.Layer);
                         imageSaveMethod(pathBase, string.Format("l{0}_e{1}_{{0}}_Daydream.jpg", b.Layer, b.Epoch),
                             dreams);
                         dreams = null;
@@ -226,7 +226,7 @@ namespace CudaNN
                         string.Format("Layer_{0}_{1}x{2}_{3}.dat", b.Layer, m.NumVisibleNeurons, m.NumHiddenNeurons,
                             typeof(TElement).Name)));
 
-                    var dreams = ((CudaAdvancedNetwork)a).Daydream(1.0, 10, b.Layer);
+                    var dreams = ((CudaAdvancedNetwork)a).Daydream((TElement)1.0, 10, b.Layer);
                     imageSaveMethod(pathBase, string.Format("l{0}_e{1}_{{0}}_TrainEndDaydream.jpg", b.Layer, b.Epoch),
                         dreams);
                     dreams = null;
@@ -246,9 +246,9 @@ namespace CudaNN
                 {
                     net.GreedyBatchedTrainMem(training,
                         new ManualKeyPressExitEvaluatorFactory<TElement>(greedyTracker, 0.0005, 50000, 5),
-                        new ConstantLearningRateFactory<double>(0.000003, 5),
-                        new ConstantLearningRateFactory<double>(0.000003),
-                        new ConstantLearningRateFactory<double>(0.000003), CancellationToken.None
+                        new ConstantLearningRateFactory<TElement>(0.000003, 5),
+                        new ConstantLearningRateFactory<TElement>(0.000003),
+                        new ConstantLearningRateFactory<TElement>(0.000003), CancellationToken.None
                         );
                 }
 
@@ -295,22 +295,22 @@ namespace CudaNN
                         if (b.Layer == net.Machines.Count - 1)
                         {
                             TElement[,] labels;
-                            daydream = ((CudaAdvancedNetwork)a).DaydreamWithLabels(1.0, 10, out labels, true, true);
+                            daydream = ((CudaAdvancedNetwork)a).DaydreamWithLabels((TElement)1.0, 10, out labels, true, true);
 
                             dataProvider.PrintToConsole(daydream,
                                 computedLabels: labels);
                         }
                         else
                         {
-                            daydream = ((CudaAdvancedNetwork)a).Daydream(1.0, 10, b.Layer);
+                            daydream = ((CudaAdvancedNetwork)a).Daydream((TElement)1.0, 10, b.Layer);
                         }
                         SaveImages(pathBase, string.Format("{0}_{1}_DayDream_{{0}}.jpg", b.Layer, b.Epoch), daydream);
                     }
                 };
                 DecayType decayType = DecayType.DoublePower;
-                TElement initialRate = 0.03;
-                TElement decayRate = 0.99;
-                TElement minRate = 1E-05;
+                TElement initialRate = (TElement)0.03;
+                TElement decayRate = (TElement)0.99;
+                TElement minRate = (TElement)1E-05;
                 using (
                     var greedyTracker =
                         new EpochErrorFileTracker<TElement>(Path.Combine(pathBase, "GreedyTrainError.log")))

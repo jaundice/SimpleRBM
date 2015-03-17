@@ -6,7 +6,15 @@ using System.Windows;
 using Cudafy.Host;
 using Cudafy.Maths.RAND;
 using CudaNN.DeepBelief.LayerBuilders;
+#if USEFLOAT
+using TElement = System.Single;
+using xxx = SimpleRBM.Cuda.CudaRbmF;
 
+#else
+using TElement = System.Double;
+using xxx = SimpleRBM.Cuda.CudaRbmD;
+
+#endif
 namespace CudaNN.DeepBelief.ViewModels
 {
     public class LayerBuilderViewModel : DependencyObject
@@ -53,7 +61,7 @@ namespace CudaNN.DeepBelief.ViewModels
             set { SetValue(StartTrainLayerIndexProperty, value); }
         }
 
-        public IEnumerable<IAdvancedRbmCuda<double>> CreateLayers(GPGPU gpu, GPGPURAND rand)
+        public IEnumerable<IAdvancedRbmCuda<TElement>> CreateLayers(GPGPU gpu, GPGPURAND rand)
         {
             return LayerConstructionInfo.Select((createLayerBase, i) =>
             {
@@ -66,7 +74,7 @@ namespace CudaNN.DeepBelief.ViewModels
             });
         }
 
-        private IAdvancedRbmCuda<double> CreateLayers(ConstructLayerBase constructLayerBase, GPGPU gpu, GPGPURAND rand)
+        private IAdvancedRbmCuda<TElement> CreateLayers(ConstructLayerBase constructLayerBase, GPGPU gpu, GPGPURAND rand)
         {
             var loadLayerInfo = constructLayerBase as LoadLayerInfo;
             if (loadLayerInfo != null)
@@ -89,7 +97,7 @@ namespace CudaNN.DeepBelief.ViewModels
             throw new NotImplementedException();
         }
 
-        private IAdvancedRbmCuda<double> ConstructLinearLayer(ConstructLinearHiddenLayer conLin, GPGPU gpu,
+        private IAdvancedRbmCuda<TElement> ConstructLinearLayer(ConstructLinearHiddenLayer conLin, GPGPU gpu,
             GPGPURAND rand)
         {
             return new CudaAdvancedRbmLinearHidden(gpu, rand, conLin.LayerIndex, conLin.NumVisibleNeurons,
@@ -97,7 +105,7 @@ namespace CudaNN.DeepBelief.ViewModels
                 conLin.WeightInitializationStDev, conLin.TrainRandStDev);
         }
 
-        private IAdvancedRbmCuda<double> ConstructBinaryLayer(ConstructBinaryLayer conBin, GPGPU gpu, GPGPURAND rand)
+        private IAdvancedRbmCuda<TElement> ConstructBinaryLayer(ConstructBinaryLayer conBin, GPGPU gpu, GPGPURAND rand)
         {
             return new CudaAdvancedRbmBinary(gpu, rand, conBin.LayerIndex, conBin.NumVisibleNeurons,
                 conBin.NumHiddenNeurons, conBin.ConvertActivationsToStates, conBin.WeightCost, conBin.InitialMomentum,
@@ -106,7 +114,7 @@ namespace CudaNN.DeepBelief.ViewModels
         }
 
 
-        private IAdvancedRbmCuda<double> Load(LoadLayerInfo info, GPGPU gpu, GPGPURAND rand)
+        private IAdvancedRbmCuda<TElement> Load(LoadLayerInfo info, GPGPU gpu, GPGPURAND rand)
         {
             return CudaAdvancedRbmBase.Deserialize(info.Path, gpu, rand);
         }

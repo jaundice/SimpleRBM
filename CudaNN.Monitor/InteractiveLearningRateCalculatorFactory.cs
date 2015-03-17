@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Windows;
 using SimpleRBM.Common;
 
@@ -11,7 +12,7 @@ namespace CudaNN.DeepBelief
 
         public static readonly DependencyProperty InitialLearningRateProperty =
             DependencyProperty.Register("InitialLearningRate",
-                typeof(T), typeof(InteractiveLearningRateCalculatorFactory<T>), new PropertyMetadata(3E-05));
+                typeof(T), typeof(InteractiveLearningRateCalculatorFactory<T>), new PropertyMetadata(Convert.ChangeType(3E-05, typeof(T))));
 
         private InteractiveLearningRateCalculator<T> _active;
 

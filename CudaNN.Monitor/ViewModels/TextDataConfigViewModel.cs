@@ -9,7 +9,13 @@ using System.Windows.Input;
 using CudaNN.DeepBelief.DataIO;
 using Mono.CSharp;
 using SimpleRBM.Demo.Util;
-
+#if USEFLOAT
+using TElement = System.Single;
+using xxx = SimpleRBM.Cuda.CudaRbmF;
+#else
+using TElement = System.Double;
+using xxx = SimpleRBM.Cuda.CudaRbmD;
+#endif
 namespace CudaNN.DeepBelief.ViewModels
 {
     public class TextDataConfigViewModel : DataConfigViewModelBase
@@ -355,13 +361,13 @@ namespace CudaNN.DeepBelief.ViewModels
             }
         }
 
-        public override void GetDataReaders(out DataReaderBase<double> trainingReader,
-            out DataReaderBase<double> validationReader, out DataReaderBase<double> testReader)
+        public override void GetDataReaders(out DataReaderBase<TElement> trainingReader,
+            out DataReaderBase<TElement> validationReader, out DataReaderBase<TElement> testReader)
         {
-            LineReader<double> trainingLabelReader = GetTrainingLabelReader();
-            LineReader<double> trainingDataReader = GetTrainingDataReader();
-            LineReader<double> testLabelReader = GetTestLabelReader();
-            LineReader<double> testDataReader = GetTestDataReader();
+            LineReader<TElement> trainingLabelReader = GetTrainingLabelReader();
+            LineReader<TElement> trainingDataReader = GetTrainingDataReader();
+            LineReader<TElement> testLabelReader = GetTestLabelReader();
+            LineReader<TElement> testDataReader = GetTestDataReader();
 
             if (testDataReader.DataWidth != trainingDataReader.DataWidth)
             {
@@ -370,48 +376,48 @@ namespace CudaNN.DeepBelief.ViewModels
 
             if (RandomizeTrainingData)
             {
-                trainingReader = new RandomRecordsTextFileReader<double>(trainingLabelReader, trainingDataReader,
+                trainingReader = new RandomRecordsTextFileReader<TElement>(trainingLabelReader, trainingDataReader,
                     FirstLineIsHeader, TotalTrainingRecordsAvailableCount, TrainingDataPath,
                     SelectedFieldSeparator.Item2);
             }
             else
             {
-                trainingReader = new SequentialRecordsTextFileReader<double>(trainingLabelReader, trainingDataReader,
+                trainingReader = new SequentialRecordsTextFileReader<TElement>(trainingLabelReader, trainingDataReader,
                     FirstLineIsHeader, TotalTrainingRecordsAvailableCount, TrainingDataPath,
                     SelectedFieldSeparator.Item2, SkipTrainingRecordCount);
             }
 
             if (RandomizeValidationData)
             {
-                validationReader = new RandomRecordsTextFileReader<double>(trainingLabelReader, trainingDataReader,
+                validationReader = new RandomRecordsTextFileReader<TElement>(trainingLabelReader, trainingDataReader,
                     FirstLineIsHeader, TotalTrainingRecordsAvailableCount, TrainingDataPath,
                     SelectedFieldSeparator.Item2);
             }
             else
             {
-                validationReader = new SequentialRecordsTextFileReader<double>(trainingLabelReader, trainingDataReader,
+                validationReader = new SequentialRecordsTextFileReader<TElement>(trainingLabelReader, trainingDataReader,
                     FirstLineIsHeader, TotalTrainingRecordsAvailableCount, TrainingDataPath,
                     SelectedFieldSeparator.Item2, SkipValidationRecordCount);
             }
 
             if (RandomizeTestData)
             {
-                testReader = new RandomRecordsTextFileReader<double>(testLabelReader, testDataReader,
+                testReader = new RandomRecordsTextFileReader<TElement>(testLabelReader, testDataReader,
                     FirstLineIsHeader, TotalTestRecordsAvailableCount, TestDataPath,
                     SelectedFieldSeparator.Item2);
             }
             else
             {
-                testReader = new SequentialRecordsTextFileReader<double>(testLabelReader, testDataReader,
+                testReader = new SequentialRecordsTextFileReader<TElement>(testLabelReader, testDataReader,
                     FirstLineIsHeader, TotalTestRecordsAvailableCount, TestDataPath,
                     SelectedFieldSeparator.Item2, SkipTestRecordCount);
             }
         }
 
-        void GetGlobalDataStats(out double minValue, out double maxValue)
+        void GetGlobalDataStats(out TElement minValue, out TElement maxValue)
         {
-            double min = double.MaxValue;
-            double max = double.MinValue;
+            TElement min = TElement.MaxValue;
+            TElement max = TElement.MinValue;
 
             foreach (var fieldDefinitionViewModel in FieldDefinitions.Where(a => a.IsEnabled && !a.IsLabels))
             {
@@ -423,96 +429,96 @@ namespace CudaNN.DeepBelief.ViewModels
             maxValue = max;
         }
 
-        private LineReader<double> GetTrainingLabelReader()
+        private LineReader<TElement> GetTrainingLabelReader()
         {
             List<FieldDefinitionViewModel> fields = FieldDefinitions.Where(a => a.IsEnabled && a.IsLabels).ToList();
-            var fieldReaders = new List<FieldReaderBase<double>>();
+            var fieldReaders = new List<FieldReaderBase<TElement>>();
             int targetOffset = 0;
             int idx = 0;
-            double min, max;
+            TElement min, max;
             GetGlobalDataStats(out min, out max);
             for (idx = 0; idx < fields.Count; idx++)
             {
-                FieldReaderBase<double> fr = GetFieldReaderForDefinition(fields[idx], fields[idx].SourceIndex,
+                FieldReaderBase<TElement> fr = GetFieldReaderForDefinition(fields[idx], fields[idx].SourceIndex,
                     targetOffset, min, max);
                 fieldReaders.Add(fr);
                 targetOffset += fr.TargetWidth;
             }
 
-            return new LineReader<double>(fieldReaders);
+            return new LineReader<TElement>(fieldReaders);
         }
 
-        private LineReader<double> GetTestLabelReader()
+        private LineReader<TElement> GetTestLabelReader()
         {
             if (LabelFieldExistsInTestSet)
             {
                 List<FieldDefinitionViewModel> fields = FieldDefinitions.Where(a => a.IsEnabled && a.IsLabels).ToList();
-                var fieldReaders = new List<FieldReaderBase<double>>();
+                var fieldReaders = new List<FieldReaderBase<TElement>>();
                 int targetOffset = 0;
                 int idx = 0;
-                double min, max;
+                TElement min, max;
                 GetGlobalDataStats(out min, out max);
 
                 for (idx = 0; idx < fields.Count; idx++)
                 {
-                    FieldReaderBase<double> fr = GetFieldReaderForDefinition(fields[idx], fields[idx].SourceIndex,
+                    FieldReaderBase<TElement> fr = GetFieldReaderForDefinition(fields[idx], fields[idx].SourceIndex,
                         targetOffset, min, max);
                     fieldReaders.Add(fr);
                     targetOffset += fr.TargetWidth;
                 }
 
-                return new LineReader<double>(fieldReaders);
+                return new LineReader<TElement>(fieldReaders);
             }
-            return new LineReader<double>(Enumerable.Empty<FieldReaderBase<double>>());
+            return new LineReader<TElement>(Enumerable.Empty<FieldReaderBase<TElement>>());
         }
 
-        private LineReader<double> GetTrainingDataReader()
+        private LineReader<TElement> GetTrainingDataReader()
         {
             List<FieldDefinitionViewModel> fields = FieldDefinitions.Where(a => a.IsEnabled && !a.IsLabels).ToList();
-            var fieldReaders = new List<FieldReaderBase<double>>();
+            var fieldReaders = new List<FieldReaderBase<TElement>>();
             int targetOffset = 0;
             int idx = 0;
-            double min, max;
+            TElement min, max;
             GetGlobalDataStats(out min, out max);
 
             for (idx = 0; idx < fields.Count; idx++)
             {
-                FieldReaderBase<double> fr = GetFieldReaderForDefinition(fields[idx], fields[idx].SourceIndex,
+                FieldReaderBase<TElement> fr = GetFieldReaderForDefinition(fields[idx], fields[idx].SourceIndex,
                     targetOffset, min, max);
                 fieldReaders.Add(fr);
                 targetOffset += fr.TargetWidth;
             }
 
-            return new LineReader<double>(fieldReaders);
+            return new LineReader<TElement>(fieldReaders);
         }
 
-        private LineReader<double> GetTestDataReader()
+        private LineReader<TElement> GetTestDataReader()
         {
             if (LabelFieldExistsInTestSet || FieldDefinitions.Count(a => a.IsEnabled && a.IsLabels) == 0)
             {
                 List<FieldDefinitionViewModel> fields = FieldDefinitions.Where(a => a.IsEnabled && !a.IsLabels).ToList();
-                var fieldReaders = new List<FieldReaderBase<double>>();
+                var fieldReaders = new List<FieldReaderBase<TElement>>();
                 int targetOffset = 0;
                 int idx = 0;
-                double min, max;
+                TElement min, max;
                 GetGlobalDataStats(out min, out max);
 
                 for (idx = 0; idx < fields.Count; idx++)
                 {
-                    FieldReaderBase<double> fr = GetFieldReaderForDefinition(fields[idx], fields[idx].SourceIndex,
+                    FieldReaderBase<TElement> fr = GetFieldReaderForDefinition(fields[idx], fields[idx].SourceIndex,
                         targetOffset, min, max);
                     fieldReaders.Add(fr);
                     targetOffset += fr.TargetWidth;
                 }
 
-                return new LineReader<double>(fieldReaders);
+                return new LineReader<TElement>(fieldReaders);
             }
             else
             {
                 int sourceIndexModifier = 0;
                 int targetOffset = 0;
-                var fieldReaders = new List<FieldReaderBase<double>>();
-                double min, max;
+                var fieldReaders = new List<FieldReaderBase<TElement>>();
+                TElement min, max;
                 GetGlobalDataStats(out min, out max);
 
                 List<FieldDefinitionViewModel> fields = FieldDefinitions.Where(a => a.IsEnabled).ToList();
@@ -526,26 +532,26 @@ namespace CudaNN.DeepBelief.ViewModels
                     }
                     if (f.IsEnabled)
                     {
-                        FieldReaderBase<double> fr = GetFieldReaderForDefinition(fields[i],
+                        FieldReaderBase<TElement> fr = GetFieldReaderForDefinition(fields[i],
                             fields[i].SourceIndex + sourceIndexModifier,
                             targetOffset, min, max);
                         fieldReaders.Add(fr);
                         targetOffset += fr.TargetWidth;
                     }
                 }
-                return new LineReader<double>(fieldReaders);
+                return new LineReader<TElement>(fieldReaders);
             }
         }
 
-        private FieldReaderBase<double> GetFieldReaderForDefinition(FieldDefinitionViewModel fieldDefinitionViewModel,
-            int sourceIndex, int targetOffset, double globalMinimumValue, double globalMaximumValue)
+        private FieldReaderBase<TElement> GetFieldReaderForDefinition(FieldDefinitionViewModel fieldDefinitionViewModel,
+            int sourceIndex, int targetOffset, TElement globalMinimumValue, TElement globalMaximumValue)
         {
             if (fieldDefinitionViewModel.FieldType == FieldTypes.RealValue)
             {
                 //todo:handle any more advance transforms 
 
-                Func<double, double> convertFromSource = null;
-                Func<double, double> convertToSource = null;
+                Func<TElement, TElement> convertFromSource = null;
+                Func<TElement, TElement> convertToSource = null;
 
                 switch (DataTransformationType)
                 {
@@ -557,14 +563,14 @@ namespace CudaNN.DeepBelief.ViewModels
                         }
                     case DataTransformationTypes.DivideBy255:
                         {
-                            convertFromSource = a => a / 255.0;
-                            convertToSource = a => a * 255.0;
+                            convertFromSource = a => a / (TElement)255.0;
+                            convertToSource = a => a * (TElement)255.0;
                             break;
                         }
                     case DataTransformationTypes.Subtract128Divide127:
                         {
-                            convertFromSource = a => (a - 128.0) / 127.0;
-                            convertToSource = a => (a * 127.0) + 128.0;
+                            convertFromSource = a => (a - (TElement)128.0) / (TElement)127.0;
+                            convertToSource = a => (a * (TElement)127.0) + (TElement)128.0;
                             break;
                         }
                     case DataTransformationTypes.DivideByLargestFieldValue:
@@ -593,15 +599,15 @@ namespace CudaNN.DeepBelief.ViewModels
                             break;
                         }
                 }
-                return new RealFieldReader<double>(sourceIndex, targetOffset, double.Parse, convertFromSource, convertToSource);
+                return new RealFieldReader<TElement>(sourceIndex, targetOffset, TElement.Parse, convertFromSource, convertToSource);
             }
             if (fieldDefinitionViewModel.UseGrayCodeForOneOfNOptions)
             {
-                return new OneOfNOptionsGrayCodedFieldReader<double>(sourceIndex, targetOffset,
-                    fieldDefinitionViewModel.OneOfNOptions, 1.0, 0.0, a => a, a => a);
+                return new OneOfNOptionsGrayCodedFieldReader<TElement>(sourceIndex, targetOffset,
+                    fieldDefinitionViewModel.OneOfNOptions, (TElement)1.0, (TElement)0.0, a => a, a => a);
             }
-            return new OneOfNOptionsFieldReader<double>(sourceIndex, targetOffset,
-                fieldDefinitionViewModel.OneOfNOptions, 1.0, 0.0, a => a, a => a);
+            return new OneOfNOptionsFieldReader<TElement>(sourceIndex, targetOffset,
+                fieldDefinitionViewModel.OneOfNOptions, (TElement)1.0, (TElement)0.0, a => a, a => a);
         }
 
 
@@ -652,16 +658,16 @@ namespace CudaNN.DeepBelief.ViewModels
 
         private class RealScanner : IScanner
         {
-            private double _max = double.MinValue;
-            private double _min = double.MaxValue;
+            private TElement _max = TElement.MinValue;
+            private TElement _min = TElement.MaxValue;
 
-            public double Min
+            public TElement Min
             {
                 get { return _min; }
                 private set { _min = value; }
             }
 
-            public double Max
+            public TElement Max
             {
                 get { return _max; }
                 private set { _max = value; }
@@ -673,8 +679,8 @@ namespace CudaNN.DeepBelief.ViewModels
             {
                 if (string.IsNullOrWhiteSpace(value))
                     return;
-                double d;
-                if (double.TryParse(value.Trim(), out d))
+                TElement d;
+                if (TElement.TryParse(value.Trim(), out d))
                 {
                     Min = Math.Min(Min, d);
                     Max = Math.Max(Max, d);

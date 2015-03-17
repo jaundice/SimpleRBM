@@ -9,7 +9,13 @@ using CudaNN.DeepBelief.DataIO;
 using SimpleRBM.Demo;
 using SimpleRBM.Demo.Util;
 using Size = System.Windows.Size;
-
+#if USEFLOAT
+using TElement = System.Single;
+using xxx = SimpleRBM.Cuda.CudaRbmF;
+#else
+using TElement = System.Double;
+using xxx = SimpleRBM.Cuda.CudaRbmD;
+#endif
 namespace CudaNN.DeepBelief.ViewModels
 {
     public class ImageDataConfigViewModel : DataConfigViewModelBase
@@ -96,23 +102,31 @@ namespace CudaNN.DeepBelief.ViewModels
         }
 
 
-        public override void GetDataReaders(out DataReaderBase<double> trainingReader,
-            out DataReaderBase<double> validationReader, out DataReaderBase<double> testReader)
+        public override void GetDataReaders(out DataReaderBase<TElement> trainingReader,
+            out DataReaderBase<TElement> validationReader, out DataReaderBase<TElement> testReader)
         {
-            ImageUtils.ConvertPixel<double> imgConverter;
-            Func<double, byte> dataConverter = null;
+            ImageUtils.ConvertPixel<TElement> imgConverter;
+            Func<TElement, byte> dataConverter = null;
             switch (DataTransformationType)
             {
                 case DataTransformationTypes.NoTransform:
                 case DataTransformationTypes.DivideBy255:
                     {
+#if USEFLOAT
+                        imgConverter = ImageUtils.ConvertRGBToGreyF;
+#else
                         imgConverter = ImageUtils.ConvertRGBToGreyD;
+#endif
                         dataConverter = a => (byte)(a * 255.0);
                         break;
                     }
                 case DataTransformationTypes.Subtract128Divide127:
                     {
+#if USEFLOAT 
+                        imgConverter = ImageUtils.ConvertRGBToGreyPosNegF;
+#else
                         imgConverter = ImageUtils.ConvertRGBToGreyPosNegD;
+#endif
                         dataConverter = a => (byte)(a * 127.0 + 128.0);
                         break;
                     }
@@ -122,36 +136,36 @@ namespace CudaNN.DeepBelief.ViewModels
 
             if (RandomizeTrainingData)
             {
-                trainingReader = new RandomImageReader<double>(TrainingDataPath, UseGrayCodeForLabels, DataWidth, Labels,
+                trainingReader = new RandomImageReader<TElement>(TrainingDataPath, UseGrayCodeForLabels, DataWidth, Labels,
                     extensions, TotalTrainingRecordsAvailableCount, imgConverter, dataConverter);
             }
             else
             {
-                trainingReader = new SequentialImageReader<double>(TrainingDataPath, UseGrayCodeForLabels, DataWidth,
+                trainingReader = new SequentialImageReader<TElement>(TrainingDataPath, UseGrayCodeForLabels, DataWidth,
                     Labels,
                     extensions, SkipTrainingRecordCount, TotalTrainingRecordsAvailableCount, imgConverter,
                     dataConverter);
             }
             if (RandomizeValidationData)
             {
-                validationReader = new RandomImageReader<double>(TrainingDataPath, UseGrayCodeForLabels, DataWidth,
+                validationReader = new RandomImageReader<TElement>(TrainingDataPath, UseGrayCodeForLabels, DataWidth,
                     Labels,
                     extensions, TotalTrainingRecordsAvailableCount, imgConverter, dataConverter);
             }
             else
             {
-                validationReader = new SequentialImageReader<double>(TrainingDataPath, UseGrayCodeForLabels, DataWidth,
+                validationReader = new SequentialImageReader<TElement>(TrainingDataPath, UseGrayCodeForLabels, DataWidth,
                     Labels, extensions, SkipValidationRecordCount, TotalTrainingRecordsAvailableCount, imgConverter,
                     dataConverter);
             }
             if (RandomizeTestData)
             {
-                testReader = new RandomImageReader<double>(TestDataPath, UseGrayCodeForLabels, DataWidth, Labels,
+                testReader = new RandomImageReader<TElement>(TestDataPath, UseGrayCodeForLabels, DataWidth, Labels,
                     extensions, TotalTestRecordsAvailableCount, imgConverter, dataConverter);
             }
             else
             {
-                testReader = new SequentialImageReader<double>(TestDataPath, UseGrayCodeForLabels, DataWidth, Labels,
+                testReader = new SequentialImageReader<TElement>(TestDataPath, UseGrayCodeForLabels, DataWidth, Labels,
                     extensions, SkipTestRecordCount, TotalTestRecordsAvailableCount, imgConverter, dataConverter);
             }
 

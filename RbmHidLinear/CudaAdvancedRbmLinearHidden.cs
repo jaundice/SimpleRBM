@@ -122,11 +122,9 @@ using SimpleRBM.Cuda;
 #if USEFLOAT
 using TElement = System.Single;
 using xxx = SimpleRBM.Cuda.CudaRbmF;
-
 #else
 using TElement = System.Double;
 using xxx = SimpleRBM.Cuda.CudaRbmD;
-
 #endif
 
 namespace CudaNN
@@ -150,7 +148,11 @@ namespace CudaNN
         protected override void LoadSpecific(SerializationInfo info)
         {
             base.LoadSpecific(info);
+#if USEFLOAT 
+            _trainingRandStDev = info.GetSingle("trainStDev");
+#else
             _trainingRandStDev = info.GetDouble("trainStDev");
+#endif
         }
 
         protected override void SaveSpecific(SerializationInfo info)

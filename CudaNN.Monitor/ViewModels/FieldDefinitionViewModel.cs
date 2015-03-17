@@ -1,6 +1,12 @@
 using System;
 using System.Windows;
-
+#if USEFLOAT
+using TElement = System.Single;
+using xxx = SimpleRBM.Cuda.CudaRbmF;
+#else
+using TElement = System.Double;
+using xxx = SimpleRBM.Cuda.CudaRbmD;
+#endif
 namespace CudaNN.DeepBelief.ViewModels
 {
     public class FieldDefinitionViewModel : DependencyObject
@@ -38,12 +44,12 @@ namespace CudaNN.DeepBelief.ViewModels
                 typeof(FieldDefinitionViewModel), new PropertyMetadata(default(string)));
 
         public static readonly DependencyProperty MinRealValueProperty =
-            DependencyProperty.Register("MinRealValue", typeof(double),
-                typeof(FieldDefinitionViewModel), new PropertyMetadata(default(double)));
+            DependencyProperty.Register("MinRealValue", typeof(TElement),
+                typeof(FieldDefinitionViewModel), new PropertyMetadata(default(TElement)));
 
         public static readonly DependencyProperty MaxRealValueProperty =
-            DependencyProperty.Register("MaxRealValue", typeof(double),
-                typeof(FieldDefinitionViewModel), new PropertyMetadata(default(double)));
+            DependencyProperty.Register("MaxRealValue", typeof(TElement),
+                typeof(FieldDefinitionViewModel), new PropertyMetadata(default(TElement)));
 
         public static readonly DependencyProperty OneOfNOptionsProperty =
             DependencyProperty.Register("OneOfNOptions", typeof(string[]),
@@ -107,15 +113,15 @@ namespace CudaNN.DeepBelief.ViewModels
             set { SetValue(SourceIndexProperty, value); }
         }
 
-        public double MinRealValue
+        public TElement MinRealValue
         {
-            get { return (double)GetValue(MinRealValueProperty); }
+            get { return (TElement)GetValue(MinRealValueProperty); }
             set { SetValue(MinRealValueProperty, value); }
         }
 
-        public double MaxRealValue
+        public TElement MaxRealValue
         {
-            get { return (double)GetValue(MaxRealValueProperty); }
+            get { return (TElement)GetValue(MaxRealValueProperty); }
             set { SetValue(MaxRealValueProperty, value); }
         }
 

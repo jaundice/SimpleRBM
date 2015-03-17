@@ -1,5 +1,11 @@
 using System.Windows;
-
+#if USEFLOAT
+using TElement = System.Single;
+using xxx = SimpleRBM.Cuda.CudaRbmF;
+#else
+using TElement = System.Double;
+using xxx = SimpleRBM.Cuda.CudaRbmD;
+#endif
 namespace CudaNN.DeepBelief.LayerBuilders
 {
     public class ConstructNewLayer : ConstructLayerBase
@@ -17,21 +23,21 @@ namespace CudaNN.DeepBelief.LayerBuilders
                 typeof(ConstructNewLayer), new PropertyMetadata(500));
 
         public static readonly DependencyProperty WeightCostProperty =
-            DependencyProperty.Register("WeightCost", typeof(double),
-                typeof(ConstructNewLayer), new PropertyMetadata(2E-04));
+            DependencyProperty.Register("WeightCost", typeof(TElement),
+                typeof(ConstructNewLayer), new PropertyMetadata((TElement)2E-04));
 
         public static readonly DependencyProperty InitialMomentumProperty =
-            DependencyProperty.Register("InitialMomentum", typeof(double),
-                typeof(ConstructNewLayer), new PropertyMetadata(0.5));
+            DependencyProperty.Register("InitialMomentum", typeof(TElement),
+                typeof(ConstructNewLayer), new PropertyMetadata((TElement)0.5));
 
 
         public static readonly DependencyProperty FinalMomentumProperty =
-            DependencyProperty.Register("FinalMomentum", typeof(double),
-                typeof(ConstructNewLayer), new PropertyMetadata(0.9));
+            DependencyProperty.Register("FinalMomentum", typeof(TElement),
+                typeof(ConstructNewLayer), new PropertyMetadata((TElement)0.9));
 
         public static readonly DependencyProperty WeightInitializationStDevProperty =
-            DependencyProperty.Register("WeightInitializationStDev", typeof(double),
-                typeof(ConstructNewLayer), new PropertyMetadata(0.01));
+            DependencyProperty.Register("WeightInitializationStDev", typeof(TElement),
+                typeof(ConstructNewLayer), new PropertyMetadata((TElement)0.01));
 
         public int LayerIndex
         {
@@ -51,29 +57,29 @@ namespace CudaNN.DeepBelief.LayerBuilders
             set { Dispatcher.InvokeIfRequired(() => SetValue(NumHiddenNeuronsProperty, value)).Wait(); }
         }
 
-        public double WeightCost
+        public TElement WeightCost
         {
-            get { return Dispatcher.InvokeIfRequired(() => (double)GetValue(WeightCostProperty)).Result; }
+            get { return Dispatcher.InvokeIfRequired(() => (TElement)GetValue(WeightCostProperty)).Result; }
             set { Dispatcher.InvokeIfRequired(() => SetValue(WeightCostProperty, value)).Wait(); }
         }
 
-        public double InitialMomentum
+        public TElement InitialMomentum
         {
-            get { return Dispatcher.InvokeIfRequired(() => (double)GetValue(InitialMomentumProperty)).Result; }
+            get { return Dispatcher.InvokeIfRequired(() => (TElement)GetValue(InitialMomentumProperty)).Result; }
             set { Dispatcher.InvokeIfRequired(() => SetValue(InitialMomentumProperty, value)).Wait(); }
         }
 
-        public double FinalMomentum
+        public TElement FinalMomentum
         {
-            get { return Dispatcher.InvokeIfRequired(() => (double)GetValue(FinalMomentumProperty)).Result; }
+            get { return Dispatcher.InvokeIfRequired(() => (TElement)GetValue(FinalMomentumProperty)).Result; }
             set { Dispatcher.InvokeIfRequired(() => SetValue(FinalMomentumProperty, value)).Wait(); }
         }
 
-        public double WeightInitializationStDev
+        public TElement WeightInitializationStDev
         {
             get
             {
-                return Dispatcher.InvokeIfRequired(() => (double)GetValue(WeightInitializationStDevProperty)).Result;
+                return Dispatcher.InvokeIfRequired(() => (TElement)GetValue(WeightInitializationStDevProperty)).Result;
             }
             set { Dispatcher.InvokeIfRequired(() => SetValue(WeightInitializationStDevProperty, value)).Wait(); }
         }

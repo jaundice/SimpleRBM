@@ -73,7 +73,7 @@ namespace CudaNN.DeepBelief.ViewModels
             typeof(BelieveViewModel), new PropertyMetadata(default(int)));
 
         public static readonly DependencyProperty LearningRateProperty = DependencyProperty.Register("LearningRate",
-            typeof(Double), typeof(BelieveViewModel), new PropertyMetadata(default(Double)));
+            typeof(TElement), typeof(BelieveViewModel), new PropertyMetadata(default(TElement)));
 
         public static readonly DependencyProperty UpdateFrequencyProperty =
             DependencyProperty.Register("UpdateFrequency", typeof(int), typeof(BelieveViewModel),
@@ -109,11 +109,11 @@ namespace CudaNN.DeepBelief.ViewModels
             DependencyProperty.Register("BackupFrequency", typeof(int), typeof(BelieveViewModel),
                 new PropertyMetadata(1000));
 
-        public static readonly DependencyProperty ErrorProperty = DependencyProperty.Register("Error", typeof(Double),
-            typeof(BelieveViewModel), new PropertyMetadata(default(Double)));
+        public static readonly DependencyProperty ErrorProperty = DependencyProperty.Register("Error", typeof(TElement),
+            typeof(BelieveViewModel), new PropertyMetadata(default(TElement)));
 
-        public static readonly DependencyProperty DeltaProperty = DependencyProperty.Register("Delta", typeof(Double),
-            typeof(BelieveViewModel), new PropertyMetadata(default(Double)));
+        public static readonly DependencyProperty DeltaProperty = DependencyProperty.Register("Delta", typeof(TElement),
+            typeof(BelieveViewModel), new PropertyMetadata(default(TElement)));
 
         public static readonly DependencyProperty NumTrainingExamplesProperty =
             DependencyProperty.Register("NumTrainingExamples", typeof(int), typeof(BelieveViewModel),
@@ -131,16 +131,16 @@ namespace CudaNN.DeepBelief.ViewModels
             typeof(TimeSpan), typeof(BelieveViewModel), new PropertyMetadata(default(TimeSpan)));
 
         public static readonly DependencyProperty ExitEvaluatorFactoryProperty =
-            DependencyProperty.Register("ExitEvaluatorFactory", typeof(InteractiveExitEvaluatorFactory<double>),
-                typeof(BelieveViewModel), new PropertyMetadata(default(InteractiveExitEvaluatorFactory<double>)));
+            DependencyProperty.Register("ExitEvaluatorFactory", typeof(InteractiveExitEvaluatorFactory<TElement>),
+                typeof(BelieveViewModel), new PropertyMetadata(default(InteractiveExitEvaluatorFactory<TElement>)));
 
         public static readonly DependencyProperty DisplayedEpochProperty = DependencyProperty.Register(
             "DisplayedEpoch", typeof(int), typeof(BelieveViewModel), new PropertyMetadata(default(int)));
 
         public static readonly DependencyProperty WeightLearningRateFactoryProperty =
             DependencyProperty.Register("WeightLearningRateFactory",
-                typeof(LayerSpecificLearningRateCalculatorFactory<double>), typeof(BelieveViewModel),
-                new PropertyMetadata(default(LayerSpecificLearningRateCalculatorFactory<double>)));
+                typeof(LayerSpecificLearningRateCalculatorFactory<TElement>), typeof(BelieveViewModel),
+                new PropertyMetadata(default(LayerSpecificLearningRateCalculatorFactory<TElement>)));
 
         public static readonly DependencyProperty DisplayFeatureCommandProperty =
             DependencyProperty.Register("DisplayFeatureCommand", typeof(ICommand), typeof(BelieveViewModel),
@@ -152,13 +152,13 @@ namespace CudaNN.DeepBelief.ViewModels
 
         public static readonly DependencyProperty VisBiasLearningRateFactoryProperty =
             DependencyProperty.Register("VisBiasLearningRateFactory",
-                typeof(LayerSpecificLearningRateCalculatorFactory<double>), typeof(BelieveViewModel),
-                new PropertyMetadata(default(LayerSpecificLearningRateCalculatorFactory<double>)));
+                typeof(LayerSpecificLearningRateCalculatorFactory<TElement>), typeof(BelieveViewModel),
+                new PropertyMetadata(default(LayerSpecificLearningRateCalculatorFactory<TElement>)));
 
         public static readonly DependencyProperty HidBiasLearningRateFactoryProperty =
             DependencyProperty.Register("HidBiasLearningRateFactory",
-                typeof(LayerSpecificLearningRateCalculatorFactory<double>), typeof(BelieveViewModel),
-                new PropertyMetadata(default(LayerSpecificLearningRateCalculatorFactory<double>)));
+                typeof(LayerSpecificLearningRateCalculatorFactory<TElement>), typeof(BelieveViewModel),
+                new PropertyMetadata(default(LayerSpecificLearningRateCalculatorFactory<TElement>)));
 
         public static readonly DependencyProperty ErrorLabelBrushProperty =
             DependencyProperty.Register("ErrorLabelBrush", typeof(Brush), typeof(BelieveViewModel),
@@ -182,7 +182,11 @@ namespace CudaNN.DeepBelief.ViewModels
             RunCommand = new CommandHandler(a => Run(), a => true);
             ScaleLearningRatesCommand = new CommandHandler(a =>
             {
+#if USEFLOAT
+                float rate = Convert.ToSingle(a);
+#else
                 double rate = Convert.ToDouble(a);
+#endif
                 WeightLearningRateFactory.InnerCalculators[Layer].LearningRate *= rate;
                 HidBiasLearningRateFactory.InnerCalculators[Layer].LearningRate *= rate;
                 VisBiasLearningRateFactory.InnerCalculators[Layer].LearningRate *= rate;
@@ -240,9 +244,9 @@ namespace CudaNN.DeepBelief.ViewModels
             set { Dispatcher.InvokeIfRequired(() => SetValue(EpochProperty, value)).Wait(); }
         }
 
-        public Double LearningRate
+        public TElement LearningRate
         {
-            get { return Dispatcher.InvokeIfRequired(() => (Double)GetValue(LearningRateProperty)).Result; }
+            get { return Dispatcher.InvokeIfRequired(() => (TElement)GetValue(LearningRateProperty)).Result; }
             set { Dispatcher.InvokeIfRequired(() => SetValue(LearningRateProperty, value)).Wait(); }
         }
 
@@ -313,15 +317,15 @@ namespace CudaNN.DeepBelief.ViewModels
             set { Dispatcher.InvokeIfRequired(() => SetValue(BackupFrequencyProperty, value)); }
         }
 
-        public Double Error
+        public TElement Error
         {
-            get { return Dispatcher.InvokeIfRequired(() => (Double)GetValue(ErrorProperty)).Result; }
+            get { return Dispatcher.InvokeIfRequired(() => (TElement)GetValue(ErrorProperty)).Result; }
             set { Dispatcher.InvokeIfRequired(() => SetValue(ErrorProperty, value)).Wait(); }
         }
 
-        public Double Delta
+        public TElement Delta
         {
-            get { return Dispatcher.InvokeIfRequired(() => (Double)GetValue(DeltaProperty)).Result; }
+            get { return Dispatcher.InvokeIfRequired(() => (TElement)GetValue(DeltaProperty)).Result; }
             set { Dispatcher.InvokeIfRequired(() => SetValue(DeltaProperty, value)).Wait(); }
         }
 
@@ -364,13 +368,13 @@ namespace CudaNN.DeepBelief.ViewModels
             set { Dispatcher.InvokeIfRequired(() => SetValue(ElapsedProperty, value)).Wait(); }
         }
 
-        public InteractiveExitEvaluatorFactory<double> ExitEvaluatorFactory
+        public InteractiveExitEvaluatorFactory<TElement> ExitEvaluatorFactory
         {
             get
             {
                 return
                     Dispatcher.InvokeIfRequired(
-                        () => (InteractiveExitEvaluatorFactory<double>)GetValue(ExitEvaluatorFactoryProperty))
+                        () => (InteractiveExitEvaluatorFactory<TElement>)GetValue(ExitEvaluatorFactoryProperty))
                         .Result;
             }
             set { Dispatcher.InvokeIfRequired(() => SetValue(ExitEvaluatorFactoryProperty, value)).Wait(); }
@@ -382,14 +386,14 @@ namespace CudaNN.DeepBelief.ViewModels
             set { Dispatcher.InvokeIfRequired(() => SetValue(DisplayedEpochProperty, value)).Wait(); }
         }
 
-        public LayerSpecificLearningRateCalculatorFactory<double> WeightLearningRateFactory
+        public LayerSpecificLearningRateCalculatorFactory<TElement> WeightLearningRateFactory
         {
             get
             {
                 return
                     Dispatcher.InvokeIfRequired(
                         () =>
-                            (LayerSpecificLearningRateCalculatorFactory<double>)
+                            (LayerSpecificLearningRateCalculatorFactory<TElement>)
                                 GetValue(WeightLearningRateFactoryProperty))
                         .Result;
             }
@@ -408,28 +412,28 @@ namespace CudaNN.DeepBelief.ViewModels
             set { Dispatcher.InvokeIfRequired(() => SetValue(SelectedFeatureProperty, value)).Wait(); }
         }
 
-        public LayerSpecificLearningRateCalculatorFactory<double> VisBiasLearningRateFactory
+        public LayerSpecificLearningRateCalculatorFactory<TElement> VisBiasLearningRateFactory
         {
             get
             {
                 return
                     Dispatcher.InvokeIfRequired(
                         () =>
-                            (LayerSpecificLearningRateCalculatorFactory<double>)
+                            (LayerSpecificLearningRateCalculatorFactory<TElement>)
                                 GetValue(VisBiasLearningRateFactoryProperty))
                         .Result;
             }
             set { Dispatcher.InvokeIfRequired(() => SetValue(VisBiasLearningRateFactoryProperty, value)).Wait(); }
         }
 
-        public LayerSpecificLearningRateCalculatorFactory<double> HidBiasLearningRateFactory
+        public LayerSpecificLearningRateCalculatorFactory<TElement> HidBiasLearningRateFactory
         {
             get
             {
                 return
                     Dispatcher.InvokeIfRequired(
                         () =>
-                            (LayerSpecificLearningRateCalculatorFactory<double>)
+                            (LayerSpecificLearningRateCalculatorFactory<TElement>)
                                 GetValue(HidBiasLearningRateFactoryProperty))
                         .Result;
             }
@@ -563,17 +567,17 @@ namespace CudaNN.DeepBelief.ViewModels
         private void ConfigureLearningRates(LayerBuilderViewModel builder)
         {
             WeightLearningRateFactory =
-                new LayerSpecificLearningRateCalculatorFactory<double>(
+                new LayerSpecificLearningRateCalculatorFactory<TElement>(
                     builder.LayerConstructionInfo.Select(
-                        a => new InteractiveLearningRateCalculatorFactory<double>(3E-05)));
+                        a => new InteractiveLearningRateCalculatorFactory<TElement>((TElement)3E-05)));
             HidBiasLearningRateFactory =
-                new LayerSpecificLearningRateCalculatorFactory<double>(
+                new LayerSpecificLearningRateCalculatorFactory<TElement>(
                     builder.LayerConstructionInfo.Select(
-                        a => new InteractiveLearningRateCalculatorFactory<double>(3E-05)));
+                        a => new InteractiveLearningRateCalculatorFactory<TElement>((TElement)3E-05)));
             VisBiasLearningRateFactory =
-                new LayerSpecificLearningRateCalculatorFactory<double>(
+                new LayerSpecificLearningRateCalculatorFactory<TElement>(
                     builder.LayerConstructionInfo.Select(
-                        a => new InteractiveLearningRateCalculatorFactory<double>(3E-05)));
+                        a => new InteractiveLearningRateCalculatorFactory<TElement>((TElement)3E-05)));
             var lrEditor = new ConfigureLearningRates
             {
                 Owner = Window.GetWindow(this),
@@ -642,21 +646,21 @@ namespace CudaNN.DeepBelief.ViewModels
                 NumVisibleNeurons = dataWidth,
                 NumHiddenNeurons = 500,
                 ConvertActivationsToStates = false,
-                WeightInitializationStDev = 0.01
+                WeightInitializationStDev = (TElement)0.01
             });
             builderViewModel.LayerConstructionInfo.Add(new ConstructBinaryLayer
             {
                 NumVisibleNeurons = 500,
                 NumHiddenNeurons = 500,
                 ConvertActivationsToStates = true,
-                WeightInitializationStDev = 0.01
+                WeightInitializationStDev = (TElement)0.01
             });
             builderViewModel.LayerConstructionInfo.Add(new ConstructBinaryLayer
             {
                 NumVisibleNeurons = 500 + labelWidth,
                 NumHiddenNeurons = 2000,
                 ConvertActivationsToStates = true,
-                WeightInitializationStDev = 0.01
+                WeightInitializationStDev = (TElement)0.01
             });
         }
 
@@ -667,21 +671,21 @@ namespace CudaNN.DeepBelief.ViewModels
                 NumVisibleNeurons = dataWidth,
                 NumHiddenNeurons = 500,
                 ConvertActivationsToStates = false,
-                WeightInitializationStDev = 0.01
+                WeightInitializationStDev = (TElement)0.01
             });
             builderViewModel.LayerConstructionInfo.Add(new ConstructBinaryLayer
             {
                 NumVisibleNeurons = 500,
                 NumHiddenNeurons = 500,
                 ConvertActivationsToStates = true,
-                WeightInitializationStDev = 0.01
+                WeightInitializationStDev = (TElement)0.01
             });
             builderViewModel.LayerConstructionInfo.Add(new ConstructBinaryLayer
             {
                 NumVisibleNeurons = 500 + labelWidth,
                 NumHiddenNeurons = 50,
                 ConvertActivationsToStates = true,
-                WeightInitializationStDev = 0.01
+                WeightInitializationStDev = (TElement)0.01
             });
         }
 
@@ -691,19 +695,19 @@ namespace CudaNN.DeepBelief.ViewModels
             {
                 NumVisibleNeurons = dataWidth,
                 NumHiddenNeurons = 2000,
-                WeightInitializationStDev = 0.01
+                WeightInitializationStDev = (TElement)0.01
             });
             builderViewModel.LayerConstructionInfo.Add(new ConstructLinearHiddenLayer
             {
                 NumVisibleNeurons = 2000,
                 NumHiddenNeurons = 4000,
-                WeightInitializationStDev = 0.01
+                WeightInitializationStDev = (TElement)0.01
             });
             builderViewModel.LayerConstructionInfo.Add(new ConstructLinearHiddenLayer
             {
                 NumVisibleNeurons = 4000 + labelWidth,
                 NumHiddenNeurons = 4000,
-                WeightInitializationStDev = 0.01
+                WeightInitializationStDev = (TElement)0.01
             });
         }
 
@@ -714,15 +718,15 @@ namespace CudaNN.DeepBelief.ViewModels
         {
             using (
                 var greedyTracker =
-                    new EpochErrorFileTracker<double>(Path.Combine(pathBase, "GreedyTrainError.log")))
+                    new EpochErrorFileTracker<TElement>(Path.Combine(pathBase, "GreedyTrainError.log")))
             {
                 int validationRecords = 0, trainingRecords = 0, testRecords = 0;
                 var usageType = DataConfigViewModelBase.NetworkUsageTypes.UnsupervisedCodingNetwork;
                 var dtType = DataConfigViewModelBase.DataTransformationTypes.NoTransform;
                 int startTrainingLayer = 0;
-                DataReaderBase<double> testReader = null;
-                DataReaderBase<double> trainingReader = null;
-                DataReaderBase<double> validationReader = null;
+                DataReaderBase<TElement> testReader = null;
+                DataReaderBase<TElement> trainingReader = null;
+                DataReaderBase<TElement> validationReader = null;
                 await Dispatcher.InvokeIfRequired(() =>
                 {
                     startTrainingLayer = layerBuilderViewModel.StartTrainLayerIndex;
@@ -734,24 +738,24 @@ namespace CudaNN.DeepBelief.ViewModels
                     dataConfigViewModel.GetDataReaders(out trainingReader, out validationReader, out testReader);
                 });
 
-                Func<double[,], Task<IList<BitmapSource>>> imageFactory = dtType ==
+                Func<TElement[,], Task<IList<BitmapSource>>> imageFactory = dtType ==
                                                                           DataConfigViewModelBase
                                                                               .DataTransformationTypes
                                                                               .Subtract128Divide127
-                    ? (Func<double[,], Task<IList<BitmapSource>>>)(dd => GenerateImageSourcesPosNeg(dd))
+                    ? (Func<TElement[,], Task<IList<BitmapSource>>>)(dd => GenerateImageSourcesPosNeg(dd))
                     : dd => GenerateImageSources(dd);
 
 
                 string[] validationLabels;
-                Double[,] validationLabelsCoded;
-                double[,] validationData = validationReader.ReadWithLabels(validationRecords, out validationLabelsCoded,
+                TElement[,] validationLabelsCoded;
+                TElement[,] validationData = validationReader.ReadWithLabels(validationRecords, out validationLabelsCoded,
                     out validationLabels);
                 Task<IList<BitmapSource>> validationImages = imageFactory(validationData);
 
 
                 string[] trainingLabels;
-                Double[,] trainingLabelsCoded;
-                double[,] trainingData = trainingReader.ReadWithLabels(trainingRecords, out trainingLabelsCoded,
+                TElement[,] trainingLabelsCoded;
+                TElement[,] trainingData = trainingReader.ReadWithLabels(trainingRecords, out trainingLabelsCoded,
                     out trainingLabels);
 
 
@@ -825,7 +829,7 @@ namespace CudaNN.DeepBelief.ViewModels
 
                 await Dispatcher.InvokeIfRequired(() =>
                 {
-                    ExitEvaluatorFactory = new InteractiveExitEvaluatorFactory<double>(greedyTracker, 0.5, 5000);
+                    ExitEvaluatorFactory = new InteractiveExitEvaluatorFactory<TElement>(greedyTracker, (TElement)0.5, 5000);
                     NumTrainingExamples = trainingData.GetLength(0);
                 });
 
@@ -835,7 +839,7 @@ namespace CudaNN.DeepBelief.ViewModels
                 dev.SetCurrentContext();
                 using (var net = new CudaAdvancedNetwork(layerBuilderViewModel.CreateLayers(dev, rand)))
                 {
-                    List<double[,]> identityMatrices = IdentityMatrices(dev, net);
+                    List<TElement[,]> identityMatrices = IdentityMatrices(dev, net);
                     net.SetDefaultMachineState(defaultSuspendState);
                     dev.SetCurrentContext();
 
@@ -880,7 +884,7 @@ namespace CudaNN.DeepBelief.ViewModels
 
                         var labelCodeBatches = testReader.Read(testRecords, batchSize).Select(a => net.LabelData(a));
 
-                        var labelBatches = labelCodeBatches.Select(a => testReader.DecodeLabels(a, 1.0, 0.0));
+                        var labelBatches = labelCodeBatches.Select(a => testReader.DecodeLabels(a, (TElement)1.0, (TElement)0.0));
 
                         foreach (var batch in labelBatches)
                         {
@@ -917,14 +921,14 @@ namespace CudaNN.DeepBelief.ViewModels
         {
             using (
                 var greedyTracker =
-                    new EpochErrorFileTracker<double>(Path.Combine(pathBase, "GreedyTrainError.log")))
+                    new EpochErrorFileTracker<TElement>(Path.Combine(pathBase, "GreedyTrainError.log")))
             {
                 var usageType = DataConfigViewModelBase.NetworkUsageTypes.UnsupervisedCodingNetwork;
                 var dtType = DataConfigViewModelBase.DataTransformationTypes.NoTransform;
                 int validationRecords = 0, trainingRecords = 0, testRecords = 0, startTrainFrom = 0;
-                DataReaderBase<double> testReader = null;
-                DataReaderBase<double> trainingReader = null;
-                DataReaderBase<double> validationReader = null;
+                DataReaderBase<TElement> testReader = null;
+                DataReaderBase<TElement> trainingReader = null;
+                DataReaderBase<TElement> validationReader = null;
                 await Dispatcher.InvokeIfRequired(() =>
                 {
                     dtType = dataConfigViewModel.DataTransformationType;
@@ -936,22 +940,22 @@ namespace CudaNN.DeepBelief.ViewModels
                     dataConfigViewModel.GetDataReaders(out trainingReader, out validationReader, out testReader);
                 });
 
-                Func<double[,], Task<IList<BitmapSource>>> imageFactory = dtType ==
+                Func<TElement[,], Task<IList<BitmapSource>>> imageFactory = dtType ==
                                                                           DataConfigViewModelBase
                                                                               .DataTransformationTypes
                                                                               .Subtract128Divide127
-                    ? (Func<double[,], Task<IList<BitmapSource>>>)(dd => GenerateImageSourcesPosNeg(dd))
+                    ? (Func<TElement[,], Task<IList<BitmapSource>>>)(dd => GenerateImageSourcesPosNeg(dd))
                     : dd => GenerateImageSources(dd);
 
                 string[] validationLabels;
-                Double[,] validationLabelsCoded;
-                double[,] validationData = validationReader.ReadWithLabels(validationRecords, out validationLabelsCoded,
+                TElement[,] validationLabelsCoded;
+                TElement[,] validationData = validationReader.ReadWithLabels(validationRecords, out validationLabelsCoded,
                     out validationLabels);
                 Task<IList<BitmapSource>> validationImages = imageFactory(validationData);
 
                 IList<string[]> trainingLabels;
-                IList<Double[,]> trainingLabelsCoded;
-                IList<double[,]> trainingData = trainingReader.ReadWithLabels(trainingRecords, batchSize,
+                IList<TElement[,]> trainingLabelsCoded;
+                IList<TElement[,]> trainingData = trainingReader.ReadWithLabels(trainingRecords, batchSize,
                     out trainingLabelsCoded,
                     out trainingLabels);
 
@@ -1046,7 +1050,7 @@ namespace CudaNN.DeepBelief.ViewModels
 
                 await Dispatcher.InvokeIfRequired(() =>
                 {
-                    ExitEvaluatorFactory = new InteractiveExitEvaluatorFactory<double>(greedyTracker, 0.5, 5000);
+                    ExitEvaluatorFactory = new InteractiveExitEvaluatorFactory<TElement>(greedyTracker, (TElement)0.5, 5000);
                     NumTrainingExamples = trainingData.Sum(a => a.GetLength(0));
                 });
 
@@ -1056,7 +1060,7 @@ namespace CudaNN.DeepBelief.ViewModels
                 dev.SetCurrentContext();
                 using (var net = new CudaAdvancedNetwork(layerBuilderViewModel.CreateLayers(dev, rand)))
                 {
-                    List<double[,]> identityMatrices = IdentityMatrices(dev, net);
+                    List<TElement[,]> identityMatrices = IdentityMatrices(dev, net);
                     net.SetDefaultMachineState(defaultSuspendState);
                     dev.SetCurrentContext();
 
@@ -1096,7 +1100,7 @@ namespace CudaNN.DeepBelief.ViewModels
 
                         var labelCodeBatches = testReader.Read(testRecords, batchSize).Select(a => net.LabelData(a));
 
-                        var labelBatches = labelCodeBatches.Select(a => testReader.DecodeLabels(a, 1.0, 0.0));
+                        var labelBatches = labelCodeBatches.Select(a => testReader.DecodeLabels(a, (TElement)1.0, (TElement)0.0));
 
                         foreach (var batch in labelBatches)
                         {
@@ -1109,31 +1113,31 @@ namespace CudaNN.DeepBelief.ViewModels
         }
 
 
-        private EventHandler<EpochEventArgs<double>> NetEpochUnsupervisedCompleteEventHandler(string pathBase, GPGPU dev,
-            double[,] tdata,
-            List<double[,]> identityMatrices, Func<double[,], Task<IList<BitmapSource>>> imgGenerator)
+        private EventHandler<EpochEventArgs<TElement>> NetEpochUnsupervisedCompleteEventHandler(string pathBase, GPGPU dev,
+            TElement[,] tdata,
+            List<TElement[,]> identityMatrices, Func<TElement[,], Task<IList<BitmapSource>>> imgGenerator)
         {
             return async (a, b) =>
             {
-                var nn = ((ICudaNetwork<double>)a);
-                IAdvancedRbmCuda<double> m = nn.Machines[b.Layer];
+                var nn = ((ICudaNetwork<TElement>)a);
+                IAdvancedRbmCuda<TElement> m = nn.Machines[b.Layer];
                 if (b.Epoch > 0 && b.Epoch % BackupFrequency == 0)
                 {
                     m.Save(Path.Combine(pathBase,
                         string.Format("Layer_{0}_{1}x{2}_{3}_Temp_{4}.dat", b.Layer, m.NumVisibleNeurons,
                             m.NumHiddenNeurons,
-                            typeof(Double).Name, b.Epoch)));
+                            typeof(TElement).Name, b.Epoch)));
                 }
 
 
                 if (b.Epoch % UpdateFrequency == 0)
                 {
                     string[] computedCodes = null;
-                    double[,] activations = GetActivations(dev, nn, tdata, b);
-                    double[,] dreams = ((CudaAdvancedNetwork)nn).Daydream(1.0, 100, b.Layer);
-                    double[,] recon = nn.Reconstruct(tdata, b.Layer);
-                    double[,] feats = nn.Decode(identityMatrices[b.Layer], b.Layer);
-                    double[,] codes = null;
+                    TElement[,] activations = GetActivations(dev, nn, tdata, b);
+                    TElement[,] dreams = ((CudaAdvancedNetwork)nn).Daydream((TElement)1.0, 100, b.Layer);
+                    TElement[,] recon = nn.Reconstruct(tdata, b.Layer);
+                    TElement[,] feats = nn.Decode(identityMatrices[b.Layer], b.Layer);
+                    TElement[,] codes = null;
                     if (b.Layer == nn.Machines.Count - 1)
                     {
                         codes = nn.Encode(tdata);
@@ -1143,7 +1147,7 @@ namespace CudaNN.DeepBelief.ViewModels
                 }
                 else
                 {
-                    double[,] activations;
+                    TElement[,] activations;
                     if (UpdateActivationsEveryEpoch)
                     {
                         activations = GetActivations(dev, nn, tdata, b);
@@ -1157,56 +1161,56 @@ namespace CudaNN.DeepBelief.ViewModels
             };
         }
 
-        private static EventHandler<EpochEventArgs<double>> NetOnLayerTrainComplete(string pathBase)
+        private static EventHandler<EpochEventArgs<TElement>> NetOnLayerTrainComplete(string pathBase)
         {
             return (a, b) =>
             {
-                IAdvancedRbmCuda<double> m = ((ICudaNetwork<double>)a).Machines[b.Layer];
+                IAdvancedRbmCuda<TElement> m = ((ICudaNetwork<TElement>)a).Machines[b.Layer];
                 m.Save(Path.Combine(pathBase,
                     string.Format("Layer_{0}_{1}x{2}_{3}_Final.dat", b.Layer, m.NumVisibleNeurons,
                         m.NumHiddenNeurons,
-                        typeof(Double).Name)));
+                        typeof(TElement).Name)));
             };
         }
 
 
-        private EventHandler<EpochEventArgs<double>> NetEpochSupervisedCompleteEventHandler(string pathBase,
-            double[,] tdata, List<double[,]> identityMatrices, GPGPU dev,
-            Func<double[,], Task<IList<BitmapSource>>> imgGenerator, DataReaderBase<double> trainingReader)
+        private EventHandler<EpochEventArgs<TElement>> NetEpochSupervisedCompleteEventHandler(string pathBase,
+            TElement[,] tdata, List<TElement[,]> identityMatrices, GPGPU dev,
+            Func<TElement[,], Task<IList<BitmapSource>>> imgGenerator, DataReaderBase<TElement> trainingReader)
         {
             return async (a, b) =>
             {
-                var nn = ((ICudaNetwork<double>)a);
-                IAdvancedRbmCuda<double> m = nn.Machines[b.Layer];
+                var nn = ((ICudaNetwork<TElement>)a);
+                IAdvancedRbmCuda<TElement> m = nn.Machines[b.Layer];
                 if (b.Epoch > 0 && b.Epoch % BackupFrequency == 0)
                 {
                     m.Save(Path.Combine(pathBase,
                         string.Format("Layer_{0}_{1}x{2}_{3}_Temp_{4}.dat", b.Layer, m.NumVisibleNeurons,
                             m.NumHiddenNeurons,
-                            typeof(Double).Name, b.Epoch)));
+                            typeof(TElement).Name, b.Epoch)));
                 }
 
                 if (b.Epoch % UpdateFrequency == 0)
                 {
-                    double[,] dreams;
-                    double[,] recon;
-                    double[,] feats;
-                    double[,] activations;
-                    double[,] daydreamLabelsEncoded = null;
-                    double[,] encodedValidationLabels = null;
-                    double[,] encodedFeatureLabels = null;
+                    TElement[,] dreams;
+                    TElement[,] recon;
+                    TElement[,] feats;
+                    TElement[,] activations;
+                    TElement[,] daydreamLabelsEncoded = null;
+                    TElement[,] encodedValidationLabels = null;
+                    TElement[,] encodedFeatureLabels = null;
                     string[] validationLabels = null;
                     if (b.Layer == nn.Machines.Count - 1)
                     {
-                        dreams = ((CudaAdvancedNetwork)nn).DaydreamWithLabels(1.0, 100, out daydreamLabelsEncoded);
+                        dreams = ((CudaAdvancedNetwork)nn).DaydreamWithLabels((TElement)1.0, 100, out daydreamLabelsEncoded);
                         recon = nn.ReconstructWithLabels(tdata, out encodedValidationLabels);
-                        validationLabels = trainingReader.DecodeLabels(encodedValidationLabels, 1.0, 0.0);
+                        validationLabels = trainingReader.DecodeLabels(encodedValidationLabels, (TElement)1.0, (TElement)0.0);
                         feats = nn.DecodeWithLabels(identityMatrices[b.Layer], out encodedFeatureLabels);
                         activations = GetActivationsWithLabelExpansion(dev, nn, tdata);
                     }
                     else
                     {
-                        dreams = ((CudaAdvancedNetwork)nn).Daydream(1.0, 100, b.Layer);
+                        dreams = ((CudaAdvancedNetwork)nn).Daydream((TElement)1.0, 100, b.Layer);
                         recon = nn.Reconstruct(tdata, b.Layer);
                         feats = nn.Decode(identityMatrices[b.Layer], b.Layer);
                         activations = GetActivations(dev, nn, tdata, b);
@@ -1220,7 +1224,7 @@ namespace CudaNN.DeepBelief.ViewModels
                 }
                 else
                 {
-                    double[,] activations;
+                    TElement[,] activations;
                     if (UpdateActivationsEveryEpoch)
                     {
                         if (b.Layer == nn.Machines.Count - 1)
@@ -1242,41 +1246,41 @@ namespace CudaNN.DeepBelief.ViewModels
         }
 
 
-        private static double[,] GetActivations(GPGPU dev, ICudaNetwork<double> nn, double[,] tdata,
-            EpochEventArgs<double> b)
+        private static TElement[,] GetActivations(GPGPU dev, ICudaNetwork<TElement> nn, TElement[,] tdata,
+            EpochEventArgs<TElement> b)
         {
-            Double[,] activations;
-            using (Matrix2D<double> enc = dev.Upload(nn.Encode(tdata, b.Layer)))
-            using (Matrix2D<double> act = enc.SumColumns())
-            using (Matrix2D<double> sm = act.Multiply(1.0 / tdata.GetLength(0)))
+            TElement[,] activations;
+            using (Matrix2D<TElement> enc = dev.Upload(nn.Encode(tdata, b.Layer)))
+            using (Matrix2D<TElement> act = enc.SumColumns())
+            using (Matrix2D<TElement> sm = act.Multiply((TElement)1.0 / tdata.GetLength(0)))
             {
                 activations = sm.CopyLocal();
             }
             return activations;
         }
 
-        private static double[,] GetActivationsWithLabelExpansion(GPGPU dev, ICudaNetwork<double> nn, double[,] tdata)
+        private static TElement[,] GetActivationsWithLabelExpansion(GPGPU dev, ICudaNetwork<TElement> nn, TElement[,] tdata)
         {
-            Double[,] activations;
-            using (Matrix2D<double> d = dev.Upload(tdata))
-            using (Matrix2D<double> enc = nn.EncodeWithLabelExpansion(d))
-            using (Matrix2D<double> act = enc.SumColumns())
-            using (Matrix2D<double> sm = act.Multiply(1.0 / tdata.GetLength(0)))
+            TElement[,] activations;
+            using (Matrix2D<TElement> d = dev.Upload(tdata))
+            using (Matrix2D<TElement> enc = nn.EncodeWithLabelExpansion(d))
+            using (Matrix2D<TElement> act = enc.SumColumns())
+            using (Matrix2D<TElement> sm = act.Multiply((TElement)1.0 / tdata.GetLength(0)))
             {
                 activations = sm.CopyLocal();
             }
             return activations;
         }
 
-        private static List<double[,]> IdentityMatrices(GPGPU dev, CudaAdvancedNetwork net)
+        private static List<TElement[,]> IdentityMatrices(GPGPU dev, CudaAdvancedNetwork net)
         {
-            var identityMatrices = new List<double[,]>();
+            var identityMatrices = new List<TElement[,]>();
 
             dev.SetCurrentContext();
             foreach (var advancedRbmCuda in net.Machines)
             {
                 using (
-                    Matrix2D<double> m = dev.AllocateNoSet<Double>(advancedRbmCuda.NumHiddenNeurons,
+                    Matrix2D<TElement> m = dev.AllocateNoSet<TElement>(advancedRbmCuda.NumHiddenNeurons,
                         advancedRbmCuda.NumHiddenNeurons))
                 {
                     m.Identity();
@@ -1286,8 +1290,8 @@ namespace CudaNN.DeepBelief.ViewModels
             return identityMatrices;
         }
 
-        private async Task UpdateUIProperties(string pathBase, EpochEventArgs<double> epochEventArgs,
-            Double[,] activations)
+        private async Task UpdateUIProperties(string pathBase, EpochEventArgs<TElement> epochEventArgs,
+            TElement[,] activations)
         {
             Epoch = epochEventArgs.Epoch;
             Error = epochEventArgs.Error;
@@ -1304,10 +1308,10 @@ namespace CudaNN.DeepBelief.ViewModels
             }
         }
 
-        private async void UpdateUIProperties(string pathBase, EpochEventArgs<double> b, double[,] recon,
-            double[,] feats,
-            double[,] activations, double[,] dreams, Func<double[,], Task<IList<BitmapSource>>> imgGenerator,
-            double[,] validationLabelsEncoded = null, string[] validationLabels = null)
+        private async void UpdateUIProperties(string pathBase, EpochEventArgs<TElement> b, TElement[,] recon,
+            TElement[,] feats,
+            TElement[,] activations, TElement[,] dreams, Func<TElement[,], Task<IList<BitmapSource>>> imgGenerator,
+            TElement[,] validationLabelsEncoded = null, string[] validationLabels = null)
         {
             DisplayedEpoch = b.Epoch;
             Task t = UpdateUIProperties(pathBase, b, activations);
@@ -1352,9 +1356,9 @@ namespace CudaNN.DeepBelief.ViewModels
         }
 
 
-        private async void DisplayResults<TLabel>(string pathBase, IDataIO<double, TLabel> dataProvider,
-            Double[,] reconstructions, Double[,] referenceData, TLabel[] labels,
-            Double[,] referenceCode = null, Double[,] computedCode = null)
+        private async void DisplayResults<TLabel>(string pathBase, IDataIO<TElement, TLabel> dataProvider,
+            TElement[,] reconstructions, TElement[,] referenceData, TLabel[] labels,
+            TElement[,] referenceCode = null, TElement[,] computedCode = null)
         {
             dataProvider.PrintToConsole(reconstructions, referenceData, labels, referenceCode,
                 computedLabels: computedCode);
@@ -1370,13 +1374,13 @@ namespace CudaNN.DeepBelief.ViewModels
                         }));
         }
 
-        private async Task<IList<BitmapSource>> GenerateImageSources(Double[,] data, int maxResults = int.MaxValue)
+        private async Task<IList<BitmapSource>> GenerateImageSources(TElement[,] data, int maxResults = int.MaxValue)
         {
             return await GenerateImageSources(data, b => (byte)(b * 255f), maxResults);
         }
 
-        private async Task<IList<BitmapSource>> GenerateImageSources(Double[,] data,
-            Func<double, byte> converter, int maxResults)
+        private async Task<IList<BitmapSource>> GenerateImageSources(TElement[,] data,
+            Func<TElement, byte> converter, int maxResults)
         {
             int num = Math.Min(data.GetLength(0), maxResults);
             var bmps = new Bitmap[num];
@@ -1422,13 +1426,13 @@ namespace CudaNN.DeepBelief.ViewModels
         private static extern int DeleteObject(IntPtr o);
 
 
-        private async Task<IList<BitmapSource>> GenerateImageSourcesInt(Double[,] data, int maxResults = int.MaxValue)
+        private async Task<IList<BitmapSource>> GenerateImageSourcesInt(TElement[,] data, int maxResults = int.MaxValue)
         {
             return await GenerateImageSources(data, b => (byte)(b), maxResults);
         }
 
         private async Task<IList<BitmapSource>> GenerateImageSourcesPosNeg(
-            Double[,] data, int maxResults = int.MaxValue)
+            TElement[,] data, int maxResults = int.MaxValue)
         {
             return await GenerateImageSources(data, b => (byte)((b * 127.0) + 128.0), maxResults);
         }
@@ -1494,22 +1498,22 @@ namespace CudaNN.DeepBelief.ViewModels
 
             if (e.Property == ErrorProperty)
             {
-                ErrorLabelBrush = (double)e.OldValue > (double)e.NewValue
+                ErrorLabelBrush = (TElement)e.OldValue > (TElement)e.NewValue
                     ? new SolidColorBrush(Colors.Blue)
                     : new SolidColorBrush(Colors.Red);
             }
 
             if (e.Property == DeltaProperty)
             {
-                if ((double)e.NewValue > 0)
+                if ((TElement)e.NewValue > 0)
                 {
-                    DeltaLabelBrush = (double)e.OldValue > (double)e.NewValue
+                    DeltaLabelBrush = (TElement)e.OldValue > (TElement)e.NewValue
                         ? new SolidColorBrush(Colors.Orange)
                         : new SolidColorBrush(Colors.Blue);
                 }
                 else
                 {
-                    DeltaLabelBrush = (double)e.OldValue < (double)e.NewValue
+                    DeltaLabelBrush = (TElement)e.OldValue < (TElement)e.NewValue
                         ? new SolidColorBrush(Colors.Orange)
                         : new SolidColorBrush(Colors.Red);
                 }
