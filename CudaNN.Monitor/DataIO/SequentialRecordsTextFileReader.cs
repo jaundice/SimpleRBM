@@ -106,7 +106,7 @@ namespace CudaNN.DeepBelief.DataIO
                 {
                     string[] lineParts = line.Split(FieldSeparator);
                     LabelReader.CopyToTarget(cod, lineParts, j);
-                    lb[lineNo] = string.Join(",", LabelReader.ReadTargetLineContents(cod, j));
+                    lb[j] = string.Join(",", LabelReader.ReadTargetLineContents(cod, j));
                     DataReader.CopyToTarget(dat, lineParts, j);
 
                     if (j == dat.GetLength(0) - 1)

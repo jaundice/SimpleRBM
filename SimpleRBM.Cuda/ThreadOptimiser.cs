@@ -103,7 +103,7 @@ namespace SimpleRBM.Cuda
 
                     var d = big < 32 ? 16 : 32;
                     b = new dim3(d, d);
-                    g = new dim3((int)Math.Round(big / (double)d), (int)Math.Round(small / (double)d));
+                    g = new dim3(Math.Max((int)Math.Round(big / (double)d), 1), Math.Max((int)Math.Round(small / (double)d), 1));
                 }
                 else
                 {

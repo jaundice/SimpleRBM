@@ -28,12 +28,8 @@ using Image = System.Windows.Controls.Image;
 using Point = System.Windows.Point;
 #if USEFLOAT
 using TElement = System.Single;
-using xxx = SimpleRBM.Cuda.CudaRbmF;
-
 #else
 using TElement = System.Double;
-using xxx = SimpleRBM.Cuda.CudaRbmD;
-
 #endif
 
 namespace CudaNN.DeepBelief.ViewModels
@@ -1316,22 +1312,28 @@ namespace CudaNN.DeepBelief.ViewModels
             DisplayedEpoch = b.Epoch;
             Task t = UpdateUIProperties(pathBase, b, activations);
 
+            var tRecon = Task.Run(async () => await imgGenerator(recon));
+            var tValid = Task.Run(async () => validationLabels == null ? null : await GenerateImageSources(validationLabelsEncoded));
+            var tDreams = Task.Run(async () => await imgGenerator(dreams));
+            var tFeats = Task.Run(async () => await imgGenerator(feats));
+            Task.WaitAll(tRecon, tValid, tDreams, tFeats);
+
             Task t1 =
                 Task.Run(
                     async () =>
-                        UpdateImageResult(Reconstructions, await imgGenerator(recon),
-                            validationLabels == null ? null : await GenerateImageSources(validationLabelsEncoded),
+                        UpdateImageResult(Reconstructions, await tRecon,
+                            await tValid,
                             validationLabels));
             Task<Task> t2 = Task.Run(
                 () =>
                     Dispatcher.InvokeIfRequired(
-                        async () => { DayDreams = new ObservableCollection<BitmapSource>(await imgGenerator(dreams)); }));
+                        async () => { DayDreams = new ObservableCollection<BitmapSource>(await tDreams); }));
             Task<Task> t3 = Task.Run(
                 () =>
                     Dispatcher.InvokeIfRequired(
                         async () =>
                         {
-                            Features = new ObservableCollection<BitmapSource>(await imgGenerator(feats));
+                            Features = new ObservableCollection<BitmapSource>(await tFeats);
                             SelectFeature(SelectedFeatureIndex);
                         }));
 

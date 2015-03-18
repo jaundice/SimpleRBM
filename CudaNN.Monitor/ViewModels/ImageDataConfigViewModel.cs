@@ -11,10 +11,8 @@ using SimpleRBM.Demo.Util;
 using Size = System.Windows.Size;
 #if USEFLOAT
 using TElement = System.Single;
-using xxx = SimpleRBM.Cuda.CudaRbmF;
 #else
 using TElement = System.Double;
-using xxx = SimpleRBM.Cuda.CudaRbmD;
 #endif
 namespace CudaNN.DeepBelief.ViewModels
 {

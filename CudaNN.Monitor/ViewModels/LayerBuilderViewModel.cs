@@ -8,12 +8,8 @@ using Cudafy.Maths.RAND;
 using CudaNN.DeepBelief.LayerBuilders;
 #if USEFLOAT
 using TElement = System.Single;
-using xxx = SimpleRBM.Cuda.CudaRbmF;
-
 #else
 using TElement = System.Double;
-using xxx = SimpleRBM.Cuda.CudaRbmD;
-
 #endif
 namespace CudaNN.DeepBelief.ViewModels
 {
