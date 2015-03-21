@@ -70,25 +70,25 @@ namespace SimpleRBM.Cuda
         }
 
 
-        public static Matrix1D<TElement> ToSingleRank(this Matrix2D<TElement> self, out int stride)
-        {
-            Matrix1D<TElement> result = self.GPU.AllocateNoSet<TElement>(self.GetLength(0) * self.GetLength(1));
-            dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCuda.ToSingleRankD, self.Matrix, result.Matrix);
-            stride = self.GetLength(1);
-            return result;
-        }
+        //public static Matrix1D<TElement> ToSingleRank(this Matrix2D<TElement> self, out int stride)
+        //{
+        //    Matrix1D<TElement> result = self.GPU.AllocateNoSet<TElement>(self.GetLength(0) * self.GetLength(1));
+        //    dim3 grid, block;
+        //    ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
+        //    self.GPU.Launch(grid, block, Matrix2DCuda.ToSingleRankD, self.Matrix, result.Matrix);
+        //    stride = self.GetLength(1);
+        //    return result;
+        //}
 
-        public static Matrix2D<TElement> ToDoubleRank(this Matrix1D<TElement> self, int stride)
-        {
+        //public static Matrix2D<TElement> ToDoubleRank(this Matrix1D<TElement> self, int stride)
+        //{
 
-            Matrix2D<TElement> result = self.GPU.AllocateNoSet<TElement>(self.GetLength(0) / stride, stride);
-            dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(result, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCuda.ToDoubleRankD, self.Matrix, result.Matrix);
-            return result;
-        }
+        //    Matrix2D<TElement> result = self.GPU.AllocateNoSet<TElement>(self.GetLength(0) / stride, stride);
+        //    dim3 grid, block;
+        //    ThreadOptimiser.Instance.GetStrategy(result, out grid, out block);
+        //    self.GPU.Launch(grid, block, Matrix2DCuda.ToDoubleRankD, self.Matrix, result.Matrix);
+        //    return result;
+        //}
 
 
         public static void Increment(this Matrix2D<TElement> self)
@@ -274,7 +274,7 @@ namespace SimpleRBM.Cuda
 
         public static Matrix2D<TElement> Transpose(this Matrix2D<TElement> self)
         {
-            Matrix2D<TElement> res = self.GPU.AllocateNoSet<TElement>(self.GetLength(1), self.GetLength(0));
+            Matrix2D<TElement> res = self.GPU.AllocateAndSet<TElement>(self.GetLength(1), self.GetLength(0));
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(res, out grid, out block);
 

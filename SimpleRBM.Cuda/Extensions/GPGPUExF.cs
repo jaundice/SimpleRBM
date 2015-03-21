@@ -10,15 +10,27 @@ namespace SimpleRBM.Cuda
             TElement stDev = 0.5f, TElement scale = 1.0f)
         {
 
+            var ret = gpu.AllocateNoSet<TElement>(x, y);
             var len = x * y;
             if (len % 2 != 0)
-                len++;
-            var ret = gpu.AllocateNoSet<TElement>(x, y);
-            using (var tempGaussian = ret.Cast1D())
             {
-                rand.GenerateNormal(tempGaussian.Matrix, (float)mean, (float)stDev/*, len*/);
+                len++;
+
+                using (var tempGaussian = gpu.AllocateNoSet<TElement>(len))
+                using (var ret1D = ret.Cast1D())
+                {
+                    rand.GenerateNormal(tempGaussian.Matrix, (float)mean, (float)stDev, len);
+                    gpu.CopyOnDevice(tempGaussian.Matrix, 0, ret1D.Matrix, 0, len - 1);
+                }
             }
-            if (scale != 1.0f)
+            else
+            {
+                using (var tempGaussian = ret.Cast1D())
+                {
+                    rand.GenerateNormal(tempGaussian.Matrix, (float)mean, (float)stDev, len);
+                }
+            }
+            if (scale != 1.0)
                 ret.Multiply(scale);
             return ret;
         }

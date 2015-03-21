@@ -149,9 +149,9 @@ namespace SimpleRBM.Test
             Matrix2D<double> cudaMatrix1 = null;
             try
             {
-                double[,] netMatrix1 = Matrix2D.IdentityD(256);
+                double[,] netMatrix1 = Matrix2D.IdentityD(259);
 
-                cudaMatrix1 = _dev.AllocateAndSet<double>(256, 256);
+                cudaMatrix1 = _dev.AllocateAndSet<double>(259, 259);
                 cudaMatrix1.Identity();
                 double[,] cudaLocal = cudaMatrix1.CopyLocal();
 
@@ -231,8 +231,8 @@ namespace SimpleRBM.Test
             {
                 double[,] netMatrix1;
                 double[,] netMatrix2;
-                TestHelper.CreateRandomMatricesIntD(_dev, 10, 100, out netMatrix1, out cudaMatrix1);
-                TestHelper.CreateRandomMatricesIntD(_dev, 100, 10, out netMatrix2, out cudaMatrix2);
+                TestHelper.CreateRandomMatricesIntD(_dev, 1000, 10000, out netMatrix1, out cudaMatrix1);
+                TestHelper.CreateRandomMatricesIntD(_dev, 10000, 1000, out netMatrix2, out cudaMatrix2);
 
                 //Matrix2D.Fill(netMatrix1, 0.000000000000000005);
                 var s = 3.250;

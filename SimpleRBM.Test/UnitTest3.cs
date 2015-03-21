@@ -193,19 +193,28 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void TestTranspose()
         {
-            using (var identity = _dev.GuassianDistribution(_rand, 32, 32, 0.0))
+            using (var bin = _dev.GuassianDistribution(_rand, 3, 4, 0.0))
             {
-                identity.ToBinary();
+                bin.ToBinary();
 
                 using (
-                    var trans = identity.Transpose())
+                    var trans = bin.Transpose())
                 {
-                    PrintArray(identity.CopyLocal());
+                    PrintArray(bin.CopyLocal());
                     Console.WriteLine();
                     PrintArray(trans.CopyLocal());
                 }
             }
+        }
 
+        [TestMethod]
+        public void Fill()
+        {
+            using (var m = _dev.AllocateAndSet<double>(256, 256))
+            {
+                m.Fill(3);
+                PrintArray(m.CopyLocal());
+            }
 
         }
 

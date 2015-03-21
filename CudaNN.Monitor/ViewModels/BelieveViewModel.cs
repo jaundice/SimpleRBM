@@ -1389,11 +1389,12 @@ namespace CudaNN.DeepBelief.ViewModels
 
             await Task.Run(() =>
             {
-                for (int a = 0; a < num; a++)
+                //for (int a = 0; a < num; a++)
+                Parallel.For(0, num, a =>
                 {
                     int stride;
                     bmps[a] = ImageUtils.GenerateBitmap(data, a, converter, out stride);
-                }
+                });
             });
 
             var images = new BitmapSource[data.GetLength(0)];

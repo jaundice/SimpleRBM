@@ -216,10 +216,10 @@ namespace SimpleRBM.Demo
             try
             {
                 byte* row = (byte*)imgData.Scan0;
-                Parallel.For(0, w, ww =>
-                Parallel.For(0, h, hh =>
-
-                    //for (var hh = 0; hh < h; hh++)
+                //Parallel.For(0, w, ww =>
+                //Parallel.For(0, h, hh =>
+                for (var ww = 0; ww < w; ww++)
+                    for (var hh = 0; hh < h; hh++)
                     {
                         var idx = hh * dimension + ww;
                         var intensity = idx < rowLength ? pixelConverter(data[sourceRow, idx]) : 0;
@@ -227,7 +227,9 @@ namespace SimpleRBM.Demo
                         row[hh * imgData.Stride + ww * pixelSize + 1] = (byte)intensity;
                         row[hh * imgData.Stride + ww * pixelSize + 2] = (byte)intensity;
                         //}
-                    }));
+                    }
+                //))
+                ;
             }
             finally
             {

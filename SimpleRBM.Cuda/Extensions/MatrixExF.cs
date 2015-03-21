@@ -68,26 +68,6 @@ namespace SimpleRBM.Cuda
             return working;
         }
 
-        public static Matrix1D<TElement> ToSingleRank(this Matrix2D<TElement> self, out int stride)
-        {
-            Matrix1D<TElement> result = self.GPU.AllocateNoSet<TElement>(self.GetLength(0) * self.GetLength(1));
-            dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCuda.ToSingleRankF, self.Matrix, result.Matrix);
-            stride = self.GetLength(1);
-            return result;
-        }
-
-        public static Matrix2D<TElement> ToDoubleRank(this Matrix1D<TElement> self, int stride)
-        {
-
-            Matrix2D<TElement> result = self.GPU.AllocateNoSet<TElement>(self.GetLength(0) / stride, stride);
-            dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(result, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCuda.ToDoubleRankF, self.Matrix, result.Matrix);
-            return result;
-        }
-
         public static void Increment(this Matrix2D<TElement> self)
         {
             dim3 grid, block;
