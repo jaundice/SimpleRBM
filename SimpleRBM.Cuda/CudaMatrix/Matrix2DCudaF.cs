@@ -9,6 +9,51 @@ namespace SimpleRBM.Cuda
 {
     public static partial class Matrix2DCuda
     {
+   
+        [Cudafy]
+        public static void ToSingleRankF(GThread thread, TElement[,] from, TElement[] to)
+        {
+            int i = thread.threadIdx.x + thread.blockDim.x * thread.blockIdx.x;
+            int jj = thread.threadIdx.y + thread.blockDim.y * thread.blockIdx.y;
+            int fromStride = from.GetLength(1);
+            int rows = from.GetLength(0);
+
+            while (i < rows)
+            {
+                var j = jj;
+                while (j < fromStride)
+                {
+                    to[i * fromStride + j] = from[i, j];
+                    j += thread.gridDim.y * thread.blockDim.y;
+                }
+                thread.SyncThreads();
+                i += thread.gridDim.x * thread.blockDim.x;
+            }
+            thread.SyncThreads();
+        }
+
+        [Cudafy]
+        public static void ToDoubleRankF(GThread thread, TElement[] from, TElement[,] to)
+        {
+            int i = thread.threadIdx.x + thread.blockDim.x * thread.blockIdx.x;
+            int jj = thread.threadIdx.y + thread.blockDim.y * thread.blockIdx.y;
+            int toStride = to.GetLength(1);
+
+            while (i < to.GetLength(0))
+            {
+                var j = jj;
+                while (j < toStride)
+                {
+                    to[i, j] = from[i * toStride + j];
+                    j += thread.gridDim.y * thread.blockDim.y;
+                }
+                thread.SyncThreads();
+                i += thread.gridDim.x * thread.blockDim.x;
+            }
+            thread.SyncThreads();
+        }
+
+
         [Cudafy]
         public static void MaximumElementValueRowWiseF(GThread thread, TElement[,] input, TElement[,] output)
         {
@@ -22,7 +67,7 @@ namespace SimpleRBM.Cuda
                 {
                     max = math.Max(max, input[i, j]);
                 }
-                output[i,0] = max;
+                output[i, 0] = max;
                 i += thread.gridDim.x * thread.blockDim.x;
             }
             thread.SyncThreads();

@@ -1,6 +1,7 @@
 using Cudafy;
 using Cudafy.Host;
 using Cudafy.Maths.RAND;
+using SimpleRBM.Cuda.CudaMatrix;
 using TElement = System.Double;
 namespace SimpleRBM.Cuda
 {
@@ -9,20 +10,18 @@ namespace SimpleRBM.Cuda
         public static Matrix2D<TElement> GuassianDistribution(this GPGPU gpu, GPGPURAND rand, int x, int y, TElement mean = 0,
             TElement stDev = 0.5, TElement scale = 1.0)
         {
-            Matrix2D<TElement> array = gpu.AllocateNoSet<TElement>(x, y);
-            dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(array, out grid, out block);
 
-            using (Matrix1D<TElement> tempGaussian = gpu.AllocateNoSet<TElement>(x * y))
+            var len = x * y;
+            if (len % 2 != 0)
+                len++;
+            var ret = gpu.AllocateNoSet<TElement>(x, y);
+            using (var tempGaussian = ret.Cast1D())
             {
-                int len = x * y;
-                if (len % 2 != 0)
-                    len++;
-
-                rand.GenerateNormal(tempGaussian.Matrix, (float)mean, (float)stDev, len);
-                gpu.Launch(grid, block, Matrix2DCuda.CopyToArrayAtND2, array.Matrix, tempGaussian.Matrix, scale);
+                rand.GenerateNormal(tempGaussian.Matrix, (float)mean, (float)stDev/*, len*/);
             }
-            return array;
+            if (scale != 1.0)
+                ret.Multiply(scale);
+            return ret;
         }
 
 
@@ -30,15 +29,13 @@ namespace SimpleRBM.Cuda
             TElement scale = 1.0)
         {
             Matrix2D<TElement> array = gpu.AllocateNoSet<TElement>(x, y);
-            dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(array, out grid, out block);
-
-            using (Matrix1D<TElement> tempUniform = gpu.AllocateNoSet<TElement>(x * y))
+            using (Matrix1D<TElement> tempUniform = array.Cast1D())
             {
                 rand.GenerateUniform(tempUniform.Matrix, x * y);
-
-                gpu.Launch(grid, block, Matrix2DCuda.CopyToArrayAtND2, array.Matrix, tempUniform.Matrix, scale);
             }
+            if (scale != 1.0)
+                array.MultiplyInPlace(scale);
+
             return array;
         }
 

@@ -267,13 +267,13 @@ namespace SimpleRBM.Test
             try
             {
                 double[,] netMatrix1 = new double[36, 36];
-                Matrix2D.Fill(netMatrix1, 15f);
+                Matrix2D.Fill(netMatrix1, 15.0);
                 double[,] netMatrix2 = Matrix2D.IdentityD(36);
 
-                cudaMatrix1 = _dev.AllocateAndSet<double>(36, 36);
-                cudaMatrix1.Fill(15f);
+                cudaMatrix1 = _dev.AllocateNoSet<double>(36,36);
+                cudaMatrix1.Fill(15.0);
 
-                cudaMatrix2 = _dev.AllocateAndSet<double>(36, 36);
+                cudaMatrix2 = _dev.AllocateAndSet<double>(36,36);
                 cudaMatrix2.Identity();
 
                 double[,] localM = Matrix2D.Multiply(netMatrix1, netMatrix2);
@@ -597,9 +597,7 @@ namespace SimpleRBM.Test
                 });
             }
             netMatrix = m;
-            cudaMatrix = dev.AllocateAndSet<double>(rows, cols);
-
-            dev.CopyToDevice(netMatrix, cudaMatrix.Matrix);
+            cudaMatrix = dev.Upload(netMatrix);
         }
 
         public static void CreateRandomMatricesIntF(GPGPU dev, int rows, int cols, out float[,] netMatrix,
@@ -617,9 +615,7 @@ namespace SimpleRBM.Test
                 });
             }
             netMatrix = m;
-            cudaMatrix = dev.AllocateAndSet<float>(rows, cols);
-
-            dev.CopyToDevice(netMatrix, cudaMatrix.Matrix);
+            cudaMatrix = dev.Upload(netMatrix);
         }
     }
 }

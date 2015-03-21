@@ -108,11 +108,15 @@ namespace SimpleRBM.Demo.Util
 
         private TLabel DecodeU8<T>(T[,] target, int targetRow, int rowOffset, T onValue, T offValue)
         {
-            return _indexToLabelMap[GrayCodeU8.ReadBits(target, targetRow, rowOffset, onValue, offValue).Code];
+            TLabel lbl;
+
+            return _indexToLabelMap.TryGetValue(GrayCodeU8.ReadBits(target, targetRow, rowOffset, onValue, offValue).Code, out lbl) ? lbl : default (TLabel);
         }
         private TLabel DecodeU16<T>(T[,] target, int targetRow, int rowOffset, T onValue, T offValue)
         {
-            return _indexToLabelMap[GrayCodeU16.ReadBits(target, targetRow, rowOffset, onValue, offValue).Code];
+            TLabel lbl;
+
+            return _indexToLabelMap.TryGetValue(GrayCodeU16.ReadBits(target, targetRow, rowOffset, onValue, offValue).Code, out lbl) ? lbl : default(TLabel);
         }
         private TLabel DecodeU32<T>(T[,] target, int targetRow, int rowOffset, T onValue, T offValue)
         {

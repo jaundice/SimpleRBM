@@ -236,8 +236,8 @@ namespace SimpleRBM.Test
             {
                 float[,] netMatrix1;
                 float[,] netMatrix2;
-                TestHelper.CreateRandomMatricesIntF(_dev, 10, 100, out netMatrix1, out cudaMatrix1);
-                TestHelper.CreateRandomMatricesIntF(_dev, 100, 10, out netMatrix2, out cudaMatrix2);
+                TestHelper.CreateRandomMatricesIntF(_dev, 100, 10000, out netMatrix1, out cudaMatrix1);
+                TestHelper.CreateRandomMatricesIntF(_dev, 10000, 100, out netMatrix2, out cudaMatrix2);
 
                 //Matrix2D.Fill(netMatrix1, 0.000000000000000005);
                 var s = 3.250f;

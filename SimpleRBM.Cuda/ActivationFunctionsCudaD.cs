@@ -9,7 +9,7 @@ namespace SimpleRBM.Cuda
         [Cudafy]
         public static TElement LogisticValueD(TElement x)
         {
-            return 1f / (1f + math.Exp(-x));
+            return 1d / (1d + math.Exp(-x));
         }
 
         [Cudafy]
@@ -147,7 +147,7 @@ namespace SimpleRBM.Cuda
 
             while (i < x)
             {
-                TElement max = 0.0f;
+                TElement max = 0.0d;
 
                 for (int jindex = 0; jindex < y; jindex++)
                 {

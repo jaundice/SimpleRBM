@@ -253,11 +253,12 @@ namespace CudaNN
                 using (Matrix2D<TElement> delta = data.Subtract(negdata))
                 {
                     delta.PowInPlace(2);
-                    using (Matrix2D<TElement> errcols = delta.SumColumns())
-                    using (Matrix2D<TElement> errrows = errcols.SumRows())
-                    {
-                        error = errrows.CopyLocal()[0, 0];
-                    }
+                    //using (Matrix2D<TElement> errcols = delta.SumColumns())
+                    //using (Matrix2D<TElement> errrows = errcols.SumRows())
+                    //{
+                    //    error = errrows.CopyLocal()[0, 0];
+                    //}
+                    error = delta.Sum();
                 }
 
                 TElement momentum = epoch < 5 ? InitialMomentum : FinalMomentum;

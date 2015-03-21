@@ -1,7 +1,9 @@
 ﻿using System;
 using Cudafy;
 using Cudafy.Host;
+using Cudafy.Maths.BLAS.Types;
 using Mono.CSharp;
+using SimpleRBM.Cuda.CudaMatrix;
 using TElement = System.Single;
 
 namespace SimpleRBM.Cuda
@@ -11,38 +13,78 @@ namespace SimpleRBM.Cuda
 
         public static TElement Sum(this Matrix2D<TElement> self)
         {
-            using(var cols = self.SumColumns())
-            using (var rows = cols.SumRows())
+            using (var as1double = self.Cast1D())
             {
-                return rows.CopyLocal()[0, 0];
+                var blas = CudaToolsRegistry.GetBlas(self.GPU);
+                var v = blas.ASUM(as1double.Matrix);
+                self.GPU.SetCurrentContext();
+                self.GPU.Synchronize();
+
+                return v;
             }
         }
 
-
         public static Matrix2D<TElement> Multiply(this Matrix2D<TElement> self, TElement scalar)
         {
-            Matrix2D<TElement> output = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
-            dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCuda.MultiplyScalarF, self.Matrix, scalar, output.Matrix);
-            return output;
+            var n = self.CloneOnDevice();
+            n.MultiplyInPlace(scalar);
+            self.GPU.SetCurrentContext();
+            self.GPU.Synchronize();
+
+            return n;
         }
 
         public static Matrix2D<TElement> MultiplyInPlace(this Matrix2D<TElement> self, TElement scalar)
         {
-            dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-            self.GPU.Launch(grid, block, Matrix2DCuda.MultiplyScalarInPlaceF, self.Matrix, scalar);
+            using (var as1D = self.Cast1D())
+            {
+                var blas = CudaToolsRegistry.GetBlas(self.GPU);
+                blas.SCAL(scalar, as1D.Matrix);
+            }
+            self.GPU.SetCurrentContext();
+            self.GPU.Synchronize();
+
             return self;
         }
 
+
         public static Matrix2D<TElement> Multiply(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
-            Matrix2D<TElement> result = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), other.GetLength(1));
-            dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(self.GetLength(0), other.GetLength(1), out grid, out block);
+            var blas = CudaToolsRegistry.GetBlas(self.GPU);
+            int m = self.GetLength(0);
+            int k = self.GetLength(1);
+            int n = other.GetLength(1);
+            var working = self.GPU.AllocateNoSet<TElement>(m, n);
 
-            self.GPU.Launch(grid, block, Matrix2DCuda.MultiplyF, self.Matrix, other.Matrix, result.Matrix);
+            using (var otherAsSingle = other.Cast1D())
+            using (var selfAsSingle = self.Cast1D())
+            using (var workingAsSingle = working.Cast1D())
+            {
+                blas.GEMM(n, k, m, 1, otherAsSingle.Matrix, selfAsSingle.Matrix, 1, workingAsSingle.Matrix, cublasOperation.N, cublasOperation.N);
+            }
+            self.GPU.SetCurrentContext();
+            self.GPU.Synchronize();
+
+            return working;
+        }
+
+        public static Matrix1D<TElement> ToSingleRank(this Matrix2D<TElement> self, out int stride)
+        {
+            Matrix1D<TElement> result = self.GPU.AllocateNoSet<TElement>(self.GetLength(0) * self.GetLength(1));
+            dim3 grid, block;
+            ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
+            self.GPU.Launch(grid, block, Matrix2DCuda.ToSingleRankF, self.Matrix, result.Matrix);
+            stride = self.GetLength(1);
+            return result;
+        }
+
+        public static Matrix2D<TElement> ToDoubleRank(this Matrix1D<TElement> self, int stride)
+        {
+
+            Matrix2D<TElement> result = self.GPU.AllocateNoSet<TElement>(self.GetLength(0) / stride, stride);
+            dim3 grid, block;
+            ThreadOptimiser.Instance.GetStrategy(result, out grid, out block);
+            self.GPU.Launch(grid, block, Matrix2DCuda.ToDoubleRankF, self.Matrix, result.Matrix);
             return result;
         }
 
@@ -120,7 +162,7 @@ namespace SimpleRBM.Cuda
 
         public static Matrix2D<TElement> Exponents(this Matrix2D<TElement> self)
         {
-           var res =  self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
+            var res = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
 
@@ -149,18 +191,17 @@ namespace SimpleRBM.Cuda
             return res;
 
         }
-        
+
         public static Matrix2D<TElement> SoftMax(this Matrix2D<TElement> self)
         {
             using (var max = self.MaxRowValues())
             using (var neg = max.RepMatCols(self.GetLength(1)))
             using (var delta = self.Subtract(neg))
             using (var exp = delta.Exponents())
-            using(var summedExp = exp.SumRows())
+            using (var summedExp = exp.SumRows())
             using (var tiledSummed = summedExp.RepMatCols(self.GetLength(1)))
-
             {
-                var res= exp.DivideElements(tiledSummed);
+                var res = exp.DivideElements(tiledSummed);
                 return res;
             }
 
@@ -241,39 +282,42 @@ namespace SimpleRBM.Cuda
 
         public static Matrix2D<TElement> Subtract(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
-            Matrix2D<TElement> res = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
-            dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
+            Matrix2D<TElement> res = self.CloneOnDevice();
 
-            self.GPU.Launch(grid, block, Matrix2DCuda.SubtractF, self.Matrix, other.Matrix, res.Matrix);
+            res.SubtractInPlace(other);
             return res;
         }
 
         public static Matrix2D<TElement> SubtractInPlace(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
-            dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCuda.SubtractInPlaceF, self.Matrix, other.Matrix);
+            using (var self1d = self.Cast1D())
+            using (var other1d = other.Cast1D())
+            {
+
+                var blas = CudaToolsRegistry.GetBlas(self.GPU);
+                blas.AXPY(-1, other1d.Matrix, self1d.Matrix);
+            }
             return self;
         }
 
         public static Matrix2D<TElement> Add(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
-            Matrix2D<TElement> res = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
-            dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
-
-            self.GPU.Launch(grid, block, Matrix2DCuda.AddF, self.Matrix, other.Matrix, res.Matrix);
+            Matrix2D<TElement> res = self.CloneOnDevice();
+            res.AddInPlace(other);
             return res;
         }
 
+
         public static Matrix2D<TElement> AddInPlace(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
-            dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
+            using (var self1d = self.Cast1D())
+            using (var other1d = other.Cast1D())
+            {
 
-            self.GPU.Launch(grid, block, Matrix2DCuda.AddInPlaceF, self.Matrix, other.Matrix);
+                var blas = CudaToolsRegistry.GetBlas(self.GPU);
+                blas.AXPY(1, other1d.Matrix, self1d.Matrix);
+            }
             return self;
         }
 
@@ -317,11 +361,18 @@ namespace SimpleRBM.Cuda
             return self;
         }
 
-        
+
 
         public static TElement[,] CopyLocal(this Matrix2D<TElement> self)
         {
             var res = new TElement[self.GetLength(0), self.GetLength(1)];
+            self.GPU.CopyFromDevice(self.Matrix, res);
+            return res;
+        }
+
+        public static TElement[] CopyLocal(this Matrix1D<TElement> self)
+        {
+            var res = new TElement[self.GetLength(0)];
             self.GPU.CopyFromDevice(self.Matrix, res);
             return res;
         }
@@ -367,56 +418,134 @@ namespace SimpleRBM.Cuda
                 axis == Axis.Column ? Matrix2DCuda.TRUE : Matrix2DCuda.FALSE, mPos, nPos);
         }
 
+        //public static Matrix2D<TElement> RepMatRows(this Matrix2D<TElement> self, int clones)
+        //{
+        //    if (self.GetLength(0) != 1)
+        //        throw new Exception();
+
+        //    var ret = self.GPU.AllocateNoSet<TElement>(clones, self.GetLength(1));
+        //    dim3 grid, block;
+        //    ThreadOptimiser.Instance.GetStrategy(ret, out grid, out block);
+
+        //    self.GPU.Launch(grid, block, Matrix2DCuda.RepMatRowsF, self.Matrix, ret.Matrix);
+
+
+
+        //    return ret;
+        //}
+
+
+        //public static Matrix2D<TElement> RepMatCols(this Matrix2D<TElement> self, int clones)
+        //{
+        //    if (self.GetLength(1) != 1)
+        //        throw new Exception();
+
+        //    var ret = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), clones);
+        //    dim3 grid, block;
+        //    ThreadOptimiser.Instance.GetStrategy(ret, out grid, out block);
+
+        //    self.GPU.Launch(grid, block, Matrix2DCuda.RepMatColsF, self.Matrix, ret.Matrix);
+
+
+
+        //    return ret;
+        //}
+
         public static Matrix2D<TElement> RepMatRows(this Matrix2D<TElement> self, int clones)
         {
             if (self.GetLength(0) != 1)
                 throw new Exception();
 
-            var ret = self.GPU.AllocateNoSet<TElement>(clones, self.GetLength(1));
-            dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(ret, out grid, out block);
+            var ret = self.GPU.AllocateAndSet<TElement>(clones, self.GetLength(1));
 
-            self.GPU.Launch(grid, block, Matrix2DCuda.RepMatRowsF, self.Matrix, ret.Matrix);
-
+            using (var ones = self.GPU.AllocateNoSet<TElement>(clones, self.GetLength(1)))
+            using (var ones1d = ones.Cast1D())
+            using (var self1d = self.Cast1D())
+            using (var ret1D = ret.Cast1D())
+            {
+                ones.Fill(1.0f);
+                var blas = CudaToolsRegistry.GetBlas(self.GPU);
+                blas.GER(ret.GetLength(1), ret.GetLength(0), 1, self1d.Matrix, ones1d.Matrix, ret1D.Matrix);
+            }
 
 
             return ret;
         }
-
 
         public static Matrix2D<TElement> RepMatCols(this Matrix2D<TElement> self, int clones)
         {
             if (self.GetLength(1) != 1)
                 throw new Exception();
 
-            var ret = self.GPU.AllocateNoSet<TElement>( self.GetLength(0), clones);
-            dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(ret, out grid, out block);
+            var ret = self.GPU.AllocateAndSet<TElement>(self.GetLength(0), clones);
 
-            self.GPU.Launch(grid, block, Matrix2DCuda.RepMatColsF, self.Matrix, ret.Matrix);
-
+            using (var ones = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), clones))
+            using (var ones1d = ones.Cast1D())
+            using (var self1d = self.Cast1D())
+            using (var ret1D = ret.Cast1D())
+            {
+                ones.Fill(1.0f);
+                var blas = CudaToolsRegistry.GetBlas(self.GPU);
+                blas.GER(ret.GetLength(1), ret.GetLength(0), 1, ones1d.Matrix, self1d.Matrix, ret1D.Matrix);
+            }
 
 
             return ret;
         }
 
+        //public static Matrix2D<TElement> SumRows(this Matrix2D<TElement> self)
+        //{
+        //    var ret = self.GPU.AllocateAndSet<TElement>(self.GetLength(0), 1);
+        //    dim3 grid, block;
+        //    ThreadOptimiser.Instance.GetStrategy(self.GetLength(0), 1, out grid, out block);
+
+        //    self.GPU.Launch(grid, block, Matrix2DCuda.SumMatrixRowsF, self.Matrix, ret.Matrix);
+        //    return ret;
+        //}
+
+        //public static Matrix2D<TElement> SumColumns(this Matrix2D<TElement> self)
+        //{
+        //    var ret = self.GPU.AllocateAndSet<TElement>(1, self.GetLength(1));
+        //    dim3 grid, block;
+        //    ThreadOptimiser.Instance.GetStrategy(self.GetLength(1), 1, out grid, out block);
+
+        //    self.GPU.Launch(grid, block, Matrix2DCuda.SumMatrixColumnsF, self.Matrix, ret.Matrix);
+        //    return ret;
+        //}
+
         public static Matrix2D<TElement> SumRows(this Matrix2D<TElement> self)
         {
             var ret = self.GPU.AllocateAndSet<TElement>(self.GetLength(0), 1);
-            dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(self.GetLength(0), 1, out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCuda.SumMatrixRowsF, self.Matrix, ret.Matrix);
+            using (var ones = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), 1))
+            using (var ones1d = ones.Cast1D())
+            using (var self1d = self.Cast1D())
+            using (var ret1D = ret.Cast1D())
+            {
+                ones.Fill(1.0f);
+                var blas = CudaToolsRegistry.GetBlas(self.GPU);
+                blas.GEMV(self.GetLength(1), self.GetLength(0), 1, self1d.Matrix, ones1d.Matrix, 1, ret1D.Matrix, cublasOperation.T);
+            }
+
+
             return ret;
         }
 
         public static Matrix2D<TElement> SumColumns(this Matrix2D<TElement> self)
         {
             var ret = self.GPU.AllocateAndSet<TElement>(1, self.GetLength(1));
-            dim3 grid, block;
-            ThreadOptimiser.Instance.GetStrategy(self.GetLength(1), 1, out grid, out block);
 
-            self.GPU.Launch(grid, block, Matrix2DCuda.SumMatrixColumnsF, self.Matrix, ret.Matrix);
+            using (var ones = self.GPU.AllocateNoSet<TElement>(1, self.GetLength(1)))
+            using (var ones1d = ones.Cast1D())
+            using (var self1d = self.Cast1D())
+            using (var ret1D = ret.Cast1D())
+            {
+                ones.Fill(1.0f);
+                var blas = CudaToolsRegistry.GetBlas(self.GPU);
+                blas.GEMV(self.GetLength(1), self.GetLength(0), 1, self1d.Matrix, ones1d.Matrix, 1, ret1D.Matrix, cublasOperation.N);
+            }
+
+
             return ret;
         }
     }

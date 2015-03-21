@@ -360,9 +360,7 @@ namespace CudaNN
                 using (Matrix2D<TElement> delta = data.Subtract(negdata))
                 {
                     delta.PowInPlace((TElement) 2);
-                    using (var errCols = delta.SumColumns())
-                    using (var errrows = errCols.SumRows())
-                        error = errrows.CopyLocal()[0, 0];
+                    error = delta.Sum();
                 }
 
                 TElement momentum = epoch > 5 ? FinalMomentum : InitialMomentum;

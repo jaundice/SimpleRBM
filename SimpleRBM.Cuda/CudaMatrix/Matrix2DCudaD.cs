@@ -7,6 +7,49 @@ namespace SimpleRBM.Cuda
     public static partial class Matrix2DCuda
     {
         [Cudafy]
+        public static void ToSingleRankD(GThread thread, TElement[,] from, TElement[] to)
+        {
+            int i = thread.threadIdx.x + thread.blockDim.x * thread.blockIdx.x;
+            int jj = thread.threadIdx.y + thread.blockDim.y * thread.blockIdx.y;
+            int fromStride = from.GetLength(1);
+            int rows = from.GetLength(0);
+
+            while (i < rows)
+            {
+                var j = jj;
+                while (j < fromStride)
+                {
+                    to[i * fromStride + j] = from[i, j];
+                    j += thread.gridDim.y * thread.blockDim.y;
+                }
+                thread.SyncThreads();
+                i += thread.gridDim.x * thread.blockDim.x;
+            }
+            thread.SyncThreads();
+        }
+
+        [Cudafy]
+        public static void ToDoubleRankD(GThread thread, TElement[] from, TElement[,] to)
+        {
+            int i = thread.threadIdx.x + thread.blockDim.x * thread.blockIdx.x;
+            int jj = thread.threadIdx.y + thread.blockDim.y * thread.blockIdx.y;
+            int toStride = to.GetLength(1);
+
+            while (i < to.GetLength(0))
+            {
+                var j = jj;
+                while (j < toStride)
+                {
+                    to[i, j] = from[i * toStride + j];
+                    j += thread.gridDim.y * thread.blockDim.y;
+                }
+                thread.SyncThreads();
+                i += thread.gridDim.x * thread.blockDim.x;
+            }
+            thread.SyncThreads();
+        }
+
+        [Cudafy]
         public static void MaximumElementValueRowWiseD(GThread thread, TElement[,] input, TElement[,] output)
         {
             int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
@@ -31,18 +74,20 @@ namespace SimpleRBM.Cuda
             int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
             int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
 
-            while (i < input.GetLength(0))
-            {
-                int n = j;
-                while (n < input.GetLength(1))
-                {
-                    output[n, i] = input[i, n];
+            output[j, i] = input[i, j];
 
-                    n += thread.gridDim.y * thread.blockDim.y;
-                }
-                i += thread.gridDim.x * thread.blockDim.x;
-            }
-            thread.SyncThreads();
+            //while (i < input.GetLength(0))
+            //{
+            //    int n = j;
+            //    while (n < input.GetLength(1))
+            //    {
+            //        output[n, i] = input[i, n];
+
+            //        n += thread.gridDim.y * thread.blockDim.y;
+            //    }
+            //    i += thread.gridDim.x * thread.blockDim.x;
+            //}
+            //thread.SyncThreads();
         }
 
         [Cudafy]
@@ -94,7 +139,7 @@ namespace SimpleRBM.Cuda
         {
             int i = thread.threadIdx.x + thread.blockIdx.x * thread.blockDim.x;
             int j = thread.threadIdx.y + thread.blockIdx.y * thread.blockDim.y;
-            TElement factor = 1.0f / denominator;
+            TElement factor = 1.0d / denominator;
 
             while (i < input.GetLength(0))
             {
@@ -169,7 +214,7 @@ namespace SimpleRBM.Cuda
                 int col = colIdx;
                 while (col < input.GetLength(1))
                 {
-                    input[row, col] = input[row, col] + 1.0f;
+                    input[row, col] = input[row, col] + 1.0d;
                     col += thread.gridDim.y * thread.blockDim.y;
                 }
                 row += thread.gridDim.x * thread.blockDim.x;
@@ -222,7 +267,7 @@ namespace SimpleRBM.Cuda
                 int n = j;
                 while (n < matrix.GetLength(1))
                 {
-                    matrix[i, n] = 1.0f;
+                    matrix[i, n] = 1.0d;
 
                     n += thread.gridDim.y * thread.blockDim.y;
                 }
@@ -242,7 +287,7 @@ namespace SimpleRBM.Cuda
                 int n = j;
                 while (n < matrix.GetLength(1))
                 {
-                    matrix[i, n] = 0.0f;
+                    matrix[i, n] = 0.0d;
                     n += thread.gridDim.y * thread.blockDim.y;
                 }
                 i += thread.gridDim.x * thread.blockDim.x;
@@ -285,7 +330,7 @@ namespace SimpleRBM.Cuda
                 int n = j;
                 while (n < matrix1.GetLength(1))
                 {
-                    output[i, n] = matrix1[i, n] > matrix2[i, n] ? 1.0f : 0.0f;
+                    output[i, n] = matrix1[i, n] > matrix2[i, n] ? 1.0d : 0.0d;
 
                     n += thread.gridDim.y * thread.blockDim.y;
                 }
@@ -306,7 +351,7 @@ namespace SimpleRBM.Cuda
                 int n = j;
                 while (n < matrix1.GetLength(1))
                 {
-                    output[i, n] = matrix1[i, n] > matrix2[i, n] ? matrix1[i, n] : 0.0f;
+                    output[i, n] = matrix1[i, n] > matrix2[i, n] ? matrix1[i, n] : 0.0d;
 
                     n += thread.gridDim.y * thread.blockDim.y;
                 }
@@ -327,7 +372,7 @@ namespace SimpleRBM.Cuda
                 int n = j;
                 while (n < matrix1.GetLength(1))
                 {
-                    output[i, n] = matrix1[i, n] < matrix2[i, n] ? 1.0f : 0.0f;
+                    output[i, n] = matrix1[i, n] < matrix2[i, n] ? 1.0d : 0.0d;
                     n += thread.gridDim.y * thread.blockDim.y;
                 }
                 i += thread.gridDim.x * thread.blockDim.x;
@@ -678,7 +723,7 @@ namespace SimpleRBM.Cuda
             {
                 for (int col = colidx; col < matrix1.GetLength(1); col += thread.gridDim.y * thread.blockDim.y)
                 {
-                    TElement d = (row == col) ? 1.0f : 0.0f;
+                    TElement d = (row == col) ? 1.0d : 0.0d;
                     matrix1[row, col] = d;
                 }
             }
@@ -696,7 +741,7 @@ namespace SimpleRBM.Cuda
                 int n = j;
                 while (n < matrix.GetLength(1))
                 {
-                    matrix[i, n] = matrix[i, n] < 0.5f ? 0f : 1f;
+                    matrix[i, n] = matrix[i, n] < 0.5d ? 0d : 1d;
 
                     n += thread.gridDim.y * thread.blockDim.y;
                 }
@@ -718,7 +763,7 @@ namespace SimpleRBM.Cuda
 
             while (i < matrix.GetLength(0))
             {
-                TElement sum = 0f;
+                TElement sum = 0d;
                 for (int j = 0; j < matrix.GetLength(1); j++)
                 {
                     sum += matrix[i, j];
@@ -743,7 +788,7 @@ namespace SimpleRBM.Cuda
 
             while (i < matrix.GetLength(1))
             {
-                TElement sum = 0f;
+                TElement sum = 0d;
                 for (int j = 0; j < matrix.GetLength(0); j++)
                 {
                     sum += matrix[j, i];

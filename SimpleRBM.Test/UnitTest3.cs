@@ -9,17 +9,38 @@ namespace SimpleRBM.Test
     public class UnitTest3 : CudaTestBase
     {
         [TestMethod]
-        public void RepMat()
+        public void RepMatRows()
         {
-            float[,] source = RandomMatrix(1, 4);
+            double[,] source = new double[1, 7] { { 1, 2, 3, 4, 5, 6, 7 } };
 
-            float[,] res;
+            double[,] res;
 
             using (var data = _dev.Upload(source))
             using (var repl = data.RepMatRows(4))
             {
                 res = repl.CopyLocal();
             }
+            PrintArray(source);
+            Console.WriteLine();
+
+            PrintArray(res);
+        }
+
+        [TestMethod]
+        public void RepMatCols()
+        {
+            double[,] source = RandomMatrix(8, 1);
+
+            double[,] res;
+
+            using (var data = _dev.Upload(source))
+            using (var repl = data.RepMatCols(5))
+            {
+                res = repl.CopyLocal();
+            }
+            PrintArray(source);
+            Console.WriteLine();
+
 
             PrintArray(res);
         }
@@ -28,18 +49,21 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void TestSumCols()
         {
-            float[,] src = new float[2, 2];
+            float[,] src = new float[2, 3];
             src[0, 0] = 1f;
-            src[0, 1] = 1f;
+            src[0, 1] = 2f;
+            src[0, 2] = 3f;
             src[1, 0] = 1f;
-            src[1, 1] = 1f;
+            src[1, 1] = 2f;
+            src[1, 2] = 3f;
             float[,] ret;
             using (var data = _dev.Upload(src))
             using (var res = data.SumColumns())
             {
                 ret = res.CopyLocal();
             }
-
+            PrintArray(src);
+            Console.WriteLine();
             PrintArray(ret);
         }
 
@@ -47,18 +71,21 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void TestSumRows()
         {
-            float[,] src = new float[2, 2];
+            float[,] src = new float[3, 2];
             src[0, 0] = 1f;
             src[0, 1] = 1f;
-            src[1, 0] = 1f;
-            src[1, 1] = 1f;
+            src[1, 0] = 2f;
+            src[1, 1] = 2f;
+            src[2, 0] = 2f;
+            src[2, 1] = 2f;
             float[,] ret;
             using (var data = _dev.Upload(src))
             using (var res = data.SumRows())
             {
                 ret = res.CopyLocal();
             }
-
+            PrintArray(src);
+            Console.WriteLine();
             PrintArray(ret);
         }
 
@@ -86,8 +113,8 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void TestSumColsBig()
         {
-            float[,] src = RandomMatrix(500, 1000);
-            float[,] ret;
+            double[,] src = RandomMatrix(500, 1000);
+            double[,] ret;
             using (var data = _dev.Upload(src))
             using (var res = data.SumColumns())
             {
@@ -100,8 +127,8 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void TestSumColsBig2()
         {
-            float[,] src = RandomMatrix(1000, 500);
-            float[,] ret;
+            double[,] src = RandomMatrix(1000, 500);
+            double[,] ret;
             using (var data = _dev.Upload(src))
             using (var res = data.SumColumns())
             {
@@ -115,8 +142,8 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void TestSumRowsBig()
         {
-            float[,] src = RandomMatrix(500, 1000);
-            float[,] ret;
+            double[,] src = RandomMatrix(500, 1000);
+            double[,] ret;
             using (var data = _dev.Upload(src))
             using (var res = data.SumRows())
             {
@@ -129,8 +156,8 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void TestSumRowsBig2()
         {
-            float[,] src = RandomMatrix(1000, 500);
-            float[,] ret;
+            double[,] src = RandomMatrix(1000, 500);
+            double[,] ret;
             using (var data = _dev.Upload(src))
             using (var res = data.SumRows())
             {
@@ -144,43 +171,53 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void TestSumMatrixBig()
         {
-            float[,] src = RandomMatrix(1000, 500);
-            float[,] ret;
+            double[,] src = RandomMatrix(1000, 500);
             using (var data = _dev.Upload(src))
-            using (var cols = data.SumColumns())
-            using (var res = cols.SumRows())
             {
-                ret = res.CopyLocal();
+                Console.WriteLine(data.Sum());
             }
-
-            PrintArray(ret);
         }
 
 
         [TestMethod]
         public void TestSumMatrixBig2()
         {
-            float[,] src = RandomMatrix(500, 1000);
-            float[,] ret;
+            double[,] src = RandomMatrix(500, 1000);
             using (var data = _dev.Upload(src))
-            using (var cols = data.SumColumns())
-            using (var res = cols.SumRows())
             {
-                ret = res.CopyLocal();
+                Console.WriteLine(data.Sum());
             }
 
-            PrintArray(ret);
         }
 
-        private float[,] RandomMatrix(int rows, int cols)
+        [TestMethod]
+        public void TestTranspose()
         {
-            var m = new float[rows, cols];
+            using (var identity = _dev.GuassianDistribution(_rand, 32, 32, 0.0))
+            {
+                identity.ToBinary();
+
+                using (
+                    var trans = identity.Transpose())
+                {
+                    PrintArray(identity.CopyLocal());
+                    Console.WriteLine();
+                    PrintArray(trans.CopyLocal());
+                }
+            }
+
+
+        }
+
+        private double[,] RandomMatrix(int rows, int cols)
+        {
+            var m = new double[rows, cols];
             Random rnd = new Random();
 
             Parallel.For(0, rows, a => Parallel.For(0, cols, b =>
             {
                 lock (rnd)
-                    m[a, b] = (float) rnd.NextDouble();
+                    m[a, b] = rnd.NextDouble();
             }));
             return m;
         }
