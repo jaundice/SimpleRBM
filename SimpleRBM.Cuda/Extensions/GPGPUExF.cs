@@ -31,7 +31,7 @@ namespace SimpleRBM.Cuda
                 }
             }
             if (scale != 1.0)
-                ret.Multiply(scale);
+                ret.MultiplyInPlace(scale);
             return ret;
         }
 

@@ -1491,7 +1491,7 @@ namespace CudaNN.DeepBelief.ViewModels
             rand.GenerateSeeds();
 
             Console.WriteLine("Loading Module");
-            dev.LoadModule(mod);
+            dev.LoadModule(mod, true);
         }
 
 
