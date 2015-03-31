@@ -43,14 +43,14 @@ namespace SimpleRBM.Demo.Util
         public static void SetBits<T>(GrayCodeU8 code, T[,] target, int targetRow, int targetOffset, T trueValue,
             T falseValue)
         {
-            target[targetRow, targetOffset + 0] = (code.Code & 0x1b << 7) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 1] = (code.Code & 0x1b << 6) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 2] = (code.Code & 0x1b << 5) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 3] = (code.Code & 0x1b << 4) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 4] = (code.Code & 0x1b << 3) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 5] = (code.Code & 0x1b << 2) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 6] = (code.Code & 0x1b << 1) == 0 ? falseValue : trueValue;
-            target[targetRow, targetOffset + 7] = (code.Code & 0x1b) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 0] = (code.Code & (0x1 << 7)) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 1] = (code.Code & (0x1 << 6)) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 2] = (code.Code & (0x1 << 5)) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 3] = (code.Code & (0x1 << 4)) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 4] = (code.Code & (0x1 << 3)) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 5] = (code.Code & (0x1 << 2)) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 6] = (code.Code & (0x1 << 1)) == 0 ? falseValue : trueValue;
+            target[targetRow, targetOffset + 7] = (code.Code & 0x1) == 0 ? falseValue : trueValue;
         }
 
         public static GrayCodeU8 ReadBits<T>(T[,] target, int targetRow, int targetOffset, T trueValue,
@@ -105,6 +105,15 @@ namespace SimpleRBM.Demo.Util
         public static explicit operator byte(GrayCodeU8 code)
         {
             return Decode(code);
+        }
+
+
+        internal static GrayCodeU8 FromCode(byte idx)
+        {
+            return new GrayCodeU8()
+            {
+                Code = idx
+            };
         }
     }
 
@@ -230,6 +239,11 @@ namespace SimpleRBM.Demo.Util
         public static explicit operator ushort(GrayCodeU16 code)
         {
             return Decode(code);
+        }
+
+        internal static GrayCodeU16 FromCode(ushort code)
+        {
+            return new GrayCodeU16() { Code = code };
         }
     }
 
@@ -359,6 +373,11 @@ namespace SimpleRBM.Demo.Util
         {
             return Decode(code);
         }
+
+        internal static GrayCodeU32 FromCode(uint code)
+        {
+            return new GrayCodeU32() { Code = code };
+        }
     }
 
     public struct GrayCodeU64
@@ -420,6 +439,11 @@ namespace SimpleRBM.Demo.Util
         public static explicit operator ulong(GrayCodeU64 code)
         {
             return Decode(code);
+        }
+
+        internal static GrayCodeU64 FromCode(ulong code)
+        {
+            return new GrayCodeU64() { Code = code };
         }
     }
 }

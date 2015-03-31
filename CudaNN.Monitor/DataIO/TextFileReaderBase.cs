@@ -7,6 +7,7 @@ namespace CudaNN.DeepBelief.DataIO
     {
         protected TextFileReaderBase(LineReader<T> labelReader, LineReader<T> dataReader, bool firstLineIsHeaders,
             int totalRecordCount, string filePath, char fieldSeparator)
+           
         {
             LabelReader = labelReader;
             DataReader = dataReader;
@@ -35,10 +36,8 @@ namespace CudaNN.DeepBelief.DataIO
         public override string[] DecodeLabels(T[,] llbl, T onValue, T offValue)
         {
             var ret = new string[llbl.GetLength(0)];
-            Parallel.For(0, ret.GetLength(0), i =>
-            {
-                ret[i] = string.Join(",", LabelReader.ReadTargetLineContents(llbl, i));
-            });
+            Parallel.For(0, ret.GetLength(0),
+                i => { ret[i] = string.Join(",", LabelReader.ReadTargetLineContents(llbl, i)); });
 
             return ret;
         }

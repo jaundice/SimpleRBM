@@ -70,8 +70,10 @@ namespace SimpleRBM.Demo
             byte G = data[ost + 1];
             byte R = data[ost + 2];
 
-            return (((R * 0.3) + (G * 0.59) + (B * 0.11)) - 127.0) / 255.0;
+            return ((R * 0.3) + (G * 0.59) + (B * 0.11)) / 255.0;
         }
+
+
 
         public static unsafe double ConvertRGBToGreyPosNegD(IntPtr startAddress, int stride, int x, int y,
             int pixelWidth)
@@ -106,7 +108,7 @@ namespace SimpleRBM.Demo
             return files.Select(a => ReadImageFile(a, pixelConverter));
         }
 
-        public static void CopyImageDataTo<T>(string filePath, T[,] target, int targetRow, int rowOffset, ConvertPixel<T> pixelConverter)
+        public static void CopyImageDataTo<T>(string filePath, T[,] target, int targetRow, int rowOffset, ConvertPixel<T> pixelConverter, Func<T, T> sourceToTargetConverter)
         {
             using (var img = (Bitmap)Image.FromFile(filePath))
             {
@@ -138,7 +140,7 @@ namespace SimpleRBM.Demo
                     Parallel.For(0, w,
                         a =>
                             Parallel.For(0, h,
-                                b => { target[targetRow, b * w + a + rowOffset] = pixelConverter(data.Scan0, data.Stride, a, b, pixWidth); }));
+                                b => { target[targetRow, b * w + a + rowOffset] = sourceToTargetConverter(pixelConverter(data.Scan0, data.Stride, a, b, pixWidth)); }));
                 }
                 finally
                 {

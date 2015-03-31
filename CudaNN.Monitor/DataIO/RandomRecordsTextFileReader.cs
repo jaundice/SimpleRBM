@@ -137,7 +137,7 @@ namespace CudaNN.DeepBelief.DataIO
                 data.Add(dat);
                 coded.Add(cod);
                 lbls.Add(lb);
-                int newbatchSize=0;
+                int newbatchSize = 0;
                 int lineNo = 0;
                 string line;
                 int j = 0;
@@ -158,7 +158,7 @@ namespace CudaNN.DeepBelief.DataIO
                         if (j == dat.GetLength(0))
                         {
                             j = 0;
-                             newbatchSize = lineNo + batchSize < count ? batchSize : count - lineNo;
+                            newbatchSize = lineNo + batchSize < count ? batchSize : count - lineNo;
                             if (newbatchSize > 0)
                             {
                                 dat = new T[newbatchSize, DataWidth];
@@ -172,12 +172,20 @@ namespace CudaNN.DeepBelief.DataIO
                     }
                 }
 
-                if (j < newbatchSize+1)
+                if (j < newbatchSize + 1)
                 {
                     var lastIndex = data.Count - 1;
-                    data[lastIndex] = SubMatrix(data[lastIndex], 0, 0, j - 1, DataWidth);
-                    coded[lastIndex] = SubMatrix(coded[lastIndex], 0, 0, j - 1, LabelDataWidth);
-                    lbls[lastIndex] = SubVector(lbls[lastIndex], 0, j - 1);
+                    if (j - 1 < 1)
+                    {
+                        data.RemoveAt(lastIndex);
+                        lbls.RemoveAt(lastIndex);
+                    }
+                    else
+                    {
+                        data[lastIndex] = SubMatrix(data[lastIndex], 0, 0, j - 1, DataWidth);
+                        coded[lastIndex] = SubMatrix(coded[lastIndex], 0, 0, j - 1, LabelDataWidth);
+                        lbls[lastIndex] = SubVector(lbls[lastIndex], 0, j - 1);
+                    }
                 }
 
                 labelsEncoded = coded;
@@ -237,31 +245,38 @@ namespace CudaNN.DeepBelief.DataIO
 
                 if (j < newbatchSize + 1)
                 {
-                    data[data.Count - 1] = SubMatrix(data[data.Count - 1], 0, 0, j - 1, DataWidth);
+                    if (j - 1 < 1)
+                    {
+                        data.RemoveAt(data.Count - 1);
+                    }
+                    else
+                    {
+                        data[data.Count - 1] = SubMatrix(data[data.Count - 1], 0, 0, j - 1, DataWidth);
+                    }
                 }
 
                 return data;
             }
         }
 
-        public override T[,] ReadWithLabels(int count, out T[,] labelsEncoded, out string[] labels, Func<T, T> sourceToTargetConverter)
-        {
-            throw new NotImplementedException();
-        }
+        //public override T[,] ReadWithLabels(int count, out T[,] labelsEncoded, out string[] labels, Func<T, T> sourceToTargetConverter)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
-        public override T[,] Read(int count, Func<T, T> sourceToTargetConverter)
-        {
-            throw new NotImplementedException();
-        }
+        //public override T[,] Read(int count, Func<T, T> sourceToTargetConverter)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
-        public override IList<T[,]> ReadWithLabels(int count, int batchSize, out IList<T[,]> labelsEncoded, out IList<string[]> labels, Func<T, T> sourceToTargetConverter)
-        {
-            throw new NotImplementedException();
-        }
+        //public override IList<T[,]> ReadWithLabels(int count, int batchSize, out IList<T[,]> labelsEncoded, out IList<string[]> labels, Func<T, T> sourceToTargetConverter)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
-        public override IList<T[,]> Read(int count, int batchSize, Func<T, T> sourceToTargetConverter)
-        {
-            throw new NotImplementedException();
-        }
+        //public override IList<T[,]> Read(int count, int batchSize, Func<T, T> sourceToTargetConverter)
+        //{
+        //    throw new NotImplementedException();
+        //}
     }
 }

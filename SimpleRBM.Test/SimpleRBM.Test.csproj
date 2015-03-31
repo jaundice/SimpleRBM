@@ -168,11 +168,11 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DataSourcesTest.cs" />
     <Compile Include="CompareCudaVsMultidimMatrixOpsD.cs" />
-    <Compile Include="UnitTest1.cs" />
-    <Compile Include="UnitTest2.cs" />
-    <Compile Include="UnitTest3.cs" />
-    <Compile Include="UnitTest4.cs" />
-    <Compile Include="UnitTest5.cs" />
+    <Compile Include="CircularBufferTests.cs" />
+    <Compile Include="LPF.cs" />
+    <Compile Include="LinearAlgebra.cs" />
+    <Compile Include="DeserializeTest.cs" />
+    <Compile Include="GrayCodes.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RbmHidLinear\CudaNN.csproj">

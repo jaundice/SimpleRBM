@@ -16,18 +16,18 @@ namespace CudaNN.DeepBelief.ViewModels
     public class LayerBuilderViewModel : DependencyObject
     {
         public static readonly DependencyProperty LayerConstructionInfoProperty =
-            DependencyProperty.Register("LayerConstructionInfo", typeof (ObservableCollection<ConstructLayerBase>),
-                typeof (LayerBuilderViewModel), new PropertyMetadata(default(ObservableCollection<ConstructLayerBase>)));
+            DependencyProperty.Register("LayerConstructionInfo", typeof(ObservableCollection<ConstructLayerBase>),
+                typeof(LayerBuilderViewModel), new PropertyMetadata(default(ObservableCollection<ConstructLayerBase>)));
 
 
         public static readonly DependencyProperty StartTrainLayerProperty =
-            DependencyProperty.Register(" StartTrainLayer", typeof (ConstructLayerBase),
-                typeof (LayerBuilderViewModel), new PropertyMetadata(default(ConstructLayerBase)));
+            DependencyProperty.Register(" StartTrainLayer", typeof(ConstructLayerBase),
+                typeof(LayerBuilderViewModel), new PropertyMetadata(default(ConstructLayerBase)));
 
 
         public static readonly DependencyProperty StartTrainLayerIndexProperty =
-            DependencyProperty.Register(" StartTrainLayerIndex", typeof (int),
-                typeof (LayerBuilderViewModel), new PropertyMetadata(default(int)));
+            DependencyProperty.Register(" StartTrainLayerIndex", typeof(int),
+                typeof(LayerBuilderViewModel), new PropertyMetadata(default(int)));
 
         public LayerBuilderViewModel()
         {
@@ -40,20 +40,20 @@ namespace CudaNN.DeepBelief.ViewModels
             {
                 return
                     Dispatcher.InvokeIfRequired(
-                        () => (ObservableCollection<ConstructLayerBase>) GetValue(LayerConstructionInfoProperty)).Result;
+                        () => (ObservableCollection<ConstructLayerBase>)GetValue(LayerConstructionInfoProperty)).Result;
             }
             set { Dispatcher.InvokeIfRequired(() => SetValue(LayerConstructionInfoProperty, value)).Wait(); }
         }
 
         public ConstructLayerBase StartTrainLayer
         {
-            get { return (ConstructLayerBase) GetValue(StartTrainLayerProperty); }
+            get { return (ConstructLayerBase)GetValue(StartTrainLayerProperty); }
             set { SetValue(StartTrainLayerProperty, value); }
         }
 
         public int StartTrainLayerIndex
         {
-            get { return (int) GetValue(StartTrainLayerIndexProperty); }
+            get { return (int)GetValue(StartTrainLayerIndexProperty); }
             set { SetValue(StartTrainLayerIndexProperty, value); }
         }
 
@@ -98,7 +98,7 @@ namespace CudaNN.DeepBelief.ViewModels
         {
             return new CudaAdvancedRbmLinearHidden(gpu, rand, conLin.LayerIndex, conLin.NumVisibleNeurons,
                 conLin.NumHiddenNeurons, conLin.WeightCost, conLin.InitialMomentum, conLin.FinalMomentum,
-                conLin.WeightInitializationStDev, conLin.TrainRandStDev);
+                conLin.WeightInitializationStDev, conLin.TrainRandStDev, conLin.MomentumIncrementStep);
         }
 
         private IAdvancedRbmCuda<TElement> ConstructBinaryLayer(ConstructBinaryLayer conBin, GPGPU gpu, GPGPURAND rand)
@@ -106,7 +106,7 @@ namespace CudaNN.DeepBelief.ViewModels
             return new CudaAdvancedRbmBinary(gpu, rand, conBin.LayerIndex, conBin.NumVisibleNeurons,
                 conBin.NumHiddenNeurons, conBin.ConvertActivationsToStates, conBin.WeightCost, conBin.InitialMomentum,
                 conBin.FinalMomentum, conBin.EncodingNoiseLevel, conBin.DecodingNoiseLevel,
-                conBin.WeightInitializationStDev);
+                conBin.WeightInitializationStDev, conBin.MomentumIncrementStep);
         }
 
 
@@ -120,7 +120,7 @@ namespace CudaNN.DeepBelief.ViewModels
             base.OnPropertyChanged(e);
             if (e.Property == StartTrainLayerProperty)
             {
-                StartTrainLayerIndex = LayerConstructionInfo.IndexOf((ConstructLayerBase) e.NewValue);
+                StartTrainLayerIndex = LayerConstructionInfo.IndexOf((ConstructLayerBase)e.NewValue);
             }
         }
     }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -6,20 +7,172 @@ using Cudafy.Host;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SimpleRBM.Cuda;
 using SimpleRBM.MultiDim;
-
+using TElement = System.Double;
 namespace SimpleRBM.Test
 {
     [TestClass]
     public class CompareCudaVsMultidimMatrixOpsD : CudaTestBase
     {
 
+        private static List<Tuple<int, int>> _matrixDimensions = new List<Tuple<int, int>>(new[]
+        {
+            // Tuple.Create(64,64),
+            //Tuple.Create(64,32),
+            //Tuple.Create(32,64),
+            //Tuple.Create(64,64),
+            //Tuple.Create(64,64),
+            //Tuple.Create(64,128),
+            //Tuple.Create(128,64),
+            //Tuple.Create(64,256),
+            //Tuple.Create(256,64),
+            //Tuple.Create(64,512),
+            //Tuple.Create(512,64),
+            //Tuple.Create(64,1024),
+            //Tuple.Create(1024,64),
+            //Tuple.Create(64,2048),
+            //Tuple.Create(2048,64),
+            //Tuple.Create(64,4096),
+            //Tuple.Create(4096,64),
+            //Tuple.Create(32,32),
+            //Tuple.Create(32,32),
+            //Tuple.Create(32,32),
+            //Tuple.Create(32,64),
+            //Tuple.Create(64,32),
+            //Tuple.Create(32,128),
+            //Tuple.Create(128,32),
+            //Tuple.Create(32,256),
+            //Tuple.Create(256,32),
+            //Tuple.Create(32,512),
+            //Tuple.Create(512,32),
+            //Tuple.Create(32,1024),
+            //Tuple.Create(1024,32),
+            //Tuple.Create(32,2048),
+            //Tuple.Create(2048,32),
+            //Tuple.Create(32,4096),
+            //Tuple.Create(4096,32),
+            //Tuple.Create(64,64),
+            //Tuple.Create(64,32),
+            //Tuple.Create(32,64),
+            //Tuple.Create(64,64),
+            //Tuple.Create(64,64),
+            //Tuple.Create(64,128),
+            //Tuple.Create(128,64),
+            //Tuple.Create(64,256),
+            //Tuple.Create(256,64),
+            //Tuple.Create(64,512),
+            //Tuple.Create(512,64),
+            //Tuple.Create(64,1024),
+            //Tuple.Create(1024,64),
+            //Tuple.Create(64,2048),
+            //Tuple.Create(2048,64),
+            //Tuple.Create(64,4096),
+            //Tuple.Create(4096,64),
+            //Tuple.Create(128,128),
+            //Tuple.Create(128,32),
+            //Tuple.Create(32,128),
+            //Tuple.Create(128,64),
+            //Tuple.Create(64,128),
+            //Tuple.Create(128,128),
+            //Tuple.Create(128,128),
+            //Tuple.Create(128,256),
+            //Tuple.Create(256,128),
+            //Tuple.Create(128,512),
+            //Tuple.Create(512,128),
+            //Tuple.Create(128,1024),
+            //Tuple.Create(1024,128),
+            //Tuple.Create(128,2048),
+            //Tuple.Create(2048,128),
+            //Tuple.Create(128,4096),
+            //Tuple.Create(4096,128),
+            //Tuple.Create(256,256),
+            //Tuple.Create(256,32),
+            //Tuple.Create(32,256),
+            //Tuple.Create(256,64),
+            //Tuple.Create(64,256),
+            //Tuple.Create(256,128),
+            //Tuple.Create(128,256),
+            //Tuple.Create(256,256),
+            //Tuple.Create(256,256),
+            //Tuple.Create(256,512),
+            //Tuple.Create(512,256),
+            //Tuple.Create(256,1024),
+            //Tuple.Create(1024,256),
+            //Tuple.Create(256,2048),
+            //Tuple.Create(2048,256),
+            //Tuple.Create(256,4096),
+            //Tuple.Create(4096,256),
+            //Tuple.Create(512,512),
+            //Tuple.Create(512,32),
+            //Tuple.Create(32,512),
+            //Tuple.Create(512,64),
+            //Tuple.Create(64,512),
+            //Tuple.Create(512,128),
+            //Tuple.Create(128,512),
+            //Tuple.Create(512,256),
+            //Tuple.Create(256,512),
+            //Tuple.Create(512,512),
+            //Tuple.Create(512,512),
+            //Tuple.Create(512,1024),
+            //Tuple.Create(1024,512),
+            //Tuple.Create(512,2048),
+            //Tuple.Create(2048,512),
+            //Tuple.Create(512,4096),
+            //Tuple.Create(4096,512),
+            //Tuple.Create(1024,1024),
+            //Tuple.Create(1024,32),
+            //Tuple.Create(32,1024),
+            //Tuple.Create(1024,64),
+            //Tuple.Create(64,1024),
+            //Tuple.Create(1024,128),
+            //Tuple.Create(128,1024),
+            //Tuple.Create(1024,256),
+            //Tuple.Create(256,1024),
+            //Tuple.Create(1024,512),
+            //Tuple.Create(512,1024),
+            //Tuple.Create(1024,1024),
+            //Tuple.Create(1024,1024),
+            //Tuple.Create(1024,2048),
+            //Tuple.Create(2048,1024),
+            //Tuple.Create(1024,4096),
+            //Tuple.Create(4096,1024),
+            //Tuple.Create(2048,2048),
+            //Tuple.Create(2048,32),
+            //Tuple.Create(32,2048),
+            //Tuple.Create(2048,64),
+            //Tuple.Create(64,2048),
+            //Tuple.Create(2048,128),
+            //Tuple.Create(128,2048),
+            //Tuple.Create(2048,256),
+            //Tuple.Create(256,2048),
+            //Tuple.Create(2048,512),
+            //Tuple.Create(512,2048),
+            //Tuple.Create(2048,1024),
+            //Tuple.Create(1024,2048),
+            //Tuple.Create(2048,2048),
+            //Tuple.Create(2048,2048),
+            //Tuple.Create(2048,4096),
+            //Tuple.Create(4096,2048),
+            //Tuple.Create(784,500),
+            //Tuple.Create(500,784),
+            Tuple.Create(178, 128),
+            Tuple.Create(512, 128)
+
+        }.Distinct().OrderBy(a => a.Item1).ThenBy(a => a.Item2));
+
         [TestMethod]
         public void CopyToAndFromCudaEqual()
         {
-            double[,] netMatrix;
-            Matrix2D<double> cudaMatrix;
+            foreach (var matrixDimension in _matrixDimensions)
+            {
+                DoTestCopy(matrixDimension.Item1, matrixDimension.Item2);
+            }
+        }
+        private void DoTestCopy(int x, int y)
+        {
+            TElement[,] netMatrix;
+            Matrix2D<TElement> cudaMatrix;
 
-            TestHelper.CreateRandomMatricesD(_dev, 10, 10, out netMatrix, out cudaMatrix);
+            TestHelper.CreateRandomMatricesD(_dev, x, y, out netMatrix, out cudaMatrix);
 
             Assert.IsTrue(MatricesEqual(netMatrix, cudaMatrix.CopyLocal()));
 
@@ -29,50 +182,29 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void MatrixMultiplyIntEqual()
         {
-            Matrix2D<double> cudaMatrix1 = null;
-            Matrix2D<double> cudaMatrix2 = null;
-            Matrix2D<double> cudaM = null;
-            try
+            foreach (var matrixDimension in _matrixDimensions)
             {
-                double[,] netMatrix1;
-                double[,] netMatrix2;
-                TestHelper.CreateRandomMatricesIntD(_dev, 512, 512, out netMatrix1, out cudaMatrix1);
-                TestHelper.CreateRandomMatricesIntD(_dev, 512, 512, out netMatrix2, out cudaMatrix2);
-
-                double[,] localM = Matrix2D.Multiply(netMatrix1, netMatrix2);
-
-                cudaM = cudaMatrix1.Multiply(cudaMatrix2);
-
-                double[,] cudaLocal = cudaM.CopyLocal();
-
-                Assert.IsTrue(MatricesEqual(localM, cudaLocal));
-            }
-            finally
-            {
-                cudaMatrix1.Dispose();
-                cudaMatrix2.Dispose();
-                cudaM.Dispose();
+                DoMatrixMultiplyIntEqual(matrixDimension.Item1, matrixDimension.Item2);
             }
         }
 
-        [TestMethod]
-        public void MatrixMultiplyIntEqual2()
+        private void DoMatrixMultiplyIntEqual(int x, int y)
         {
-            Matrix2D<double> cudaMatrix1 = null;
-            Matrix2D<double> cudaMatrix2 = null;
-            Matrix2D<double> cudaM = null;
+            Matrix2D<TElement> cudaMatrix1 = null;
+            Matrix2D<TElement> cudaMatrix2 = null;
+            Matrix2D<TElement> cudaM = null;
             try
             {
-                double[,] netMatrix1;
-                double[,] netMatrix2;
-                TestHelper.CreateRandomMatricesIntD(_dev, 120, 512, out netMatrix1, out cudaMatrix1);
-                TestHelper.CreateRandomMatricesIntD(_dev, 512, 120, out netMatrix2, out cudaMatrix2);
+                TElement[,] netMatrix1;
+                TElement[,] netMatrix2;
+                TestHelper.CreateRandomMatricesIntD(_dev, x, y, out netMatrix1, out cudaMatrix1);
+                TestHelper.CreateRandomMatricesIntD(_dev, y, x, out netMatrix2, out cudaMatrix2);
 
-                double[,] localM = Matrix2D.Multiply(netMatrix1, netMatrix2);
+                TElement[,] localM = Matrix2D.Multiply(netMatrix1, netMatrix2);
 
                 cudaM = cudaMatrix1.Multiply(cudaMatrix2);
 
-                double[,] cudaLocal = cudaM.CopyLocal();
+                TElement[,] cudaLocal = cudaM.CopyLocal();
 
                 Assert.IsTrue(MatricesEqual(localM, cudaLocal));
             }
@@ -83,54 +215,34 @@ namespace SimpleRBM.Test
                 cudaM.Dispose();
             }
         }
+
 
         [TestMethod]
         public void MatrixMultiplyRealEqual()
         {
-            Matrix2D<double> cudaMatrix1 = null;
-            Matrix2D<double> cudaMatrix2 = null;
-            Matrix2D<double> cudaM = null;
-            try
+            foreach (var matrixDimension in _matrixDimensions)
             {
-                double[,] netMatrix1;
-                double[,] netMatrix2;
-                TestHelper.CreateRandomMatricesD(_dev, 512, 512, out netMatrix1, out cudaMatrix1);
-                TestHelper.CreateRandomMatricesD(_dev, 512, 512, out netMatrix2, out cudaMatrix2);
-
-                double[,] localM = Matrix2D.Multiply(netMatrix1, netMatrix2);
-
-                cudaM = cudaMatrix1.Multiply(cudaMatrix2);
-
-                double[,] cudaLocal = cudaM.CopyLocal();
-
-                Assert.IsTrue(MatricesEqual(localM, cudaLocal));
-            }
-            finally
-            {
-                cudaMatrix1.Dispose();
-                cudaMatrix2.Dispose();
-                cudaM.Dispose();
+                DoMatrixMultiplyRealEqual(matrixDimension.Item1, matrixDimension.Item2);
             }
         }
 
-        [TestMethod]
-        public void MatrixMultiplyRealEqual2()
+        private void DoMatrixMultiplyRealEqual(int x, int y)
         {
-            Matrix2D<double> cudaMatrix1 = null;
-            Matrix2D<double> cudaMatrix2 = null;
-            Matrix2D<double> cudaM = null;
+            Matrix2D<TElement> cudaMatrix1 = null;
+            Matrix2D<TElement> cudaMatrix2 = null;
+            Matrix2D<TElement> cudaM = null;
             try
             {
-                double[,] netMatrix1;
-                double[,] netMatrix2;
-                TestHelper.CreateRandomMatricesD(_dev, 120, 512, out netMatrix1, out cudaMatrix1);
-                TestHelper.CreateRandomMatricesD(_dev, 512, 120, out netMatrix2, out cudaMatrix2);
+                TElement[,] netMatrix1;
+                TElement[,] netMatrix2;
+                TestHelper.CreateRandomMatricesD(_dev, x, y, out netMatrix1, out cudaMatrix1);
+                TestHelper.CreateRandomMatricesD(_dev, y, x, out netMatrix2, out cudaMatrix2);
 
-                double[,] localM = Matrix2D.Multiply(netMatrix1, netMatrix2);
+                TElement[,] localM = Matrix2D.Multiply(netMatrix1, netMatrix2);
 
                 cudaM = cudaMatrix1.Multiply(cudaMatrix2);
 
-                double[,] cudaLocal = cudaM.CopyLocal();
+                TElement[,] cudaLocal = cudaM.CopyLocal();
 
                 Assert.IsTrue(MatricesEqual(localM, cudaLocal));
             }
@@ -141,19 +253,28 @@ namespace SimpleRBM.Test
                 cudaM.Dispose();
             }
         }
+
 
 
         [TestMethod]
         public void IdentityEqual()
         {
-            Matrix2D<double> cudaMatrix1 = null;
+            foreach (var matrixDimension in _matrixDimensions.Where(a => a.Item1 == a.Item2))
+            {
+                DoIdentityEqual(matrixDimension.Item1, matrixDimension.Item2);
+            }
+        }
+
+        private void DoIdentityEqual(int x, int y)
+        {
+            Matrix2D<TElement> cudaMatrix1 = null;
             try
             {
-                double[,] netMatrix1 = Matrix2D.IdentityD(259);
+                TElement[,] netMatrix1 = Matrix2D.IdentityD(x);
 
-                cudaMatrix1 = _dev.AllocateAndSet<double>(259, 259);
+                cudaMatrix1 = _dev.AllocateAndSet<TElement>(x, x);
                 cudaMatrix1.Identity();
-                double[,] cudaLocal = cudaMatrix1.CopyLocal();
+                TElement[,] cudaLocal = cudaMatrix1.CopyLocal();
 
                 Assert.IsTrue(MatricesEqual(netMatrix1, cudaLocal));
             }
@@ -166,16 +287,24 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void TestCoverage()
         {
-            Matrix2D<double> cudaMatrix1 = null;
+            foreach (var matrixDimension in _matrixDimensions)
+            {
+                DoTestCoverage(matrixDimension.Item1, matrixDimension.Item2);
+            }
+        }
+
+        private void DoTestCoverage(int x, int y)
+        {
+            Matrix2D<TElement> cudaMatrix1 = null;
             {
                 try
                 {
-                    cudaMatrix1 = _dev.AllocateAndSet<double>(500, 500);
-                    double[,] netMatrix = Matrix2D.OnesD(500, 500);
+                    cudaMatrix1 = _dev.AllocateAndSet<TElement>(x, y);
+                    TElement[,] netMatrix = Matrix2D.OnesD(x, y);
 
                     cudaMatrix1.Increment();
 
-                    double[,] localCuda = cudaMatrix1.CopyLocal();
+                    TElement[,] localCuda = cudaMatrix1.CopyLocal();
                     Assert.IsTrue(MatricesEqual(netMatrix, localCuda));
                 }
                 finally
@@ -188,27 +317,35 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void MatrixMultiplyOnesEqual()
         {
-            Matrix2D<double> cudaMatrix1 = null;
-            Matrix2D<double> cudaMatrix2 = null;
-            Matrix2D<double> cudaM = null;
+            foreach (var matrixDimension in _matrixDimensions)
+            {
+                DoMatrixMultiplyOnes(matrixDimension.Item1, matrixDimension.Item2);
+            }
+        }
+
+        private void DoMatrixMultiplyOnes(int x, int y)
+        {
+            Matrix2D<TElement> cudaMatrix1 = null;
+            Matrix2D<TElement> cudaMatrix2 = null;
+            Matrix2D<TElement> cudaM = null;
             try
             {
-                double[,] netMatrix1;
-                double[,] netMatrix2;
-                TestHelper.CreateRandomMatricesD(_dev, 128, 128, out netMatrix1, out cudaMatrix1);
-                TestHelper.CreateRandomMatricesD(_dev, 128, 128, out netMatrix2, out cudaMatrix2);
+                TElement[,] netMatrix1;
+                TElement[,] netMatrix2;
+                TestHelper.CreateRandomMatricesD(_dev, x, y, out netMatrix1, out cudaMatrix1);
+                TestHelper.CreateRandomMatricesD(_dev, y, x, out netMatrix2, out cudaMatrix2);
 
-                netMatrix1 = Matrix2D.OnesD(128, 128);
-                netMatrix2 = Matrix2D.OnesD(128, 128);
+                netMatrix1 = Matrix2D.OnesD(x, y);
+                netMatrix2 = Matrix2D.OnesD(y, x);
 
                 cudaMatrix1.Ones();
                 cudaMatrix2.Ones();
 
-                double[,] localM = Matrix2D.Multiply(netMatrix1, netMatrix2);
+                TElement[,] localM = Matrix2D.Multiply(netMatrix1, netMatrix2);
 
                 cudaM = cudaMatrix1.Multiply(cudaMatrix2);
 
-                double[,] cudaLocal = cudaM.CopyLocal();
+                TElement[,] cudaLocal = cudaM.CopyLocal();
 
                 Assert.IsTrue(MatricesEqual(localM, cudaLocal));
             }
@@ -224,15 +361,23 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void MatrixMultiplyFillEqual()
         {
-            Matrix2D<double> cudaMatrix1 = null;
-            Matrix2D<double> cudaMatrix2 = null;
-            Matrix2D<double> cudaM = null;
+            foreach (var matrixDimension in _matrixDimensions)
+            {
+                DoMatrixMultiplyFill(matrixDimension.Item1, matrixDimension.Item2);
+            }
+        }
+
+        private void DoMatrixMultiplyFill(int x, int y)
+        {
+            Matrix2D<TElement> cudaMatrix1 = null;
+            Matrix2D<TElement> cudaMatrix2 = null;
+            Matrix2D<TElement> cudaM = null;
             try
             {
-                double[,] netMatrix1;
-                double[,] netMatrix2;
-                TestHelper.CreateRandomMatricesIntD(_dev, 1000, 10000, out netMatrix1, out cudaMatrix1);
-                TestHelper.CreateRandomMatricesIntD(_dev, 10000, 1000, out netMatrix2, out cudaMatrix2);
+                TElement[,] netMatrix1;
+                TElement[,] netMatrix2;
+                TestHelper.CreateRandomMatricesIntD(_dev, x, y, out netMatrix1, out cudaMatrix1);
+                TestHelper.CreateRandomMatricesIntD(_dev, y, x, out netMatrix2, out cudaMatrix2);
 
                 //Matrix2D.Fill(netMatrix1, 0.000000000000000005);
                 var s = 3.250;
@@ -242,11 +387,11 @@ namespace SimpleRBM.Test
                 //cudaMatrix1.Fill(0.000000000000000005);
                 cudaMatrix2.Fill(s);
 
-                double[,] localM = Matrix2D.Multiply(netMatrix1, netMatrix2);
+                TElement[,] localM = Matrix2D.Multiply(netMatrix1, netMatrix2);
 
                 cudaM = cudaMatrix1.Multiply(cudaMatrix2);
 
-                double[,] cudaLocal = cudaM.CopyLocal();
+                TElement[,] cudaLocal = cudaM.CopyLocal();
 
                 Assert.IsTrue(MatricesEqual(localM, cudaLocal));
             }
@@ -261,26 +406,34 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void MatrixMultiplyIdentityEqual()
         {
-            Matrix2D<double> cudaMatrix1 = null;
-            Matrix2D<double> cudaMatrix2 = null;
-            Matrix2D<double> cudaM = null;
+            foreach (var matrixDimension in _matrixDimensions.Where(a => a.Item1 == a.Item2))
+            {
+                DoMatrixMultiplyIdentity(matrixDimension.Item1, matrixDimension.Item2);
+            }
+        }
+
+        private void DoMatrixMultiplyIdentity(int x, int y)
+        {
+            Matrix2D<TElement> cudaMatrix1 = null;
+            Matrix2D<TElement> cudaMatrix2 = null;
+            Matrix2D<TElement> cudaM = null;
             try
             {
-                double[,] netMatrix1 = new double[36, 36];
+                TElement[,] netMatrix1 = new TElement[x, x];
                 Matrix2D.Fill(netMatrix1, 15.0);
-                double[,] netMatrix2 = Matrix2D.IdentityD(36);
+                TElement[,] netMatrix2 = Matrix2D.IdentityD(x);
 
-                cudaMatrix1 = _dev.AllocateNoSet<double>(36,36);
+                cudaMatrix1 = _dev.AllocateNoSet<TElement>(x, x);
                 cudaMatrix1.Fill(15.0);
 
-                cudaMatrix2 = _dev.AllocateAndSet<double>(36,36);
+                cudaMatrix2 = _dev.AllocateAndSet<TElement>(x, x);
                 cudaMatrix2.Identity();
 
-                double[,] localM = Matrix2D.Multiply(netMatrix1, netMatrix2);
+                TElement[,] localM = Matrix2D.Multiply(netMatrix1, netMatrix2);
 
                 cudaM = cudaMatrix1.Multiply(cudaMatrix2);
 
-                double[,] cudaLocal = cudaM.CopyLocal();
+                TElement[,] cudaLocal = cudaM.CopyLocal();
 
                 Assert.IsTrue(MatricesEqual(localM, cudaLocal));
             }
@@ -291,20 +444,30 @@ namespace SimpleRBM.Test
                 cudaM.Dispose();
             }
         }
+
+
         [TestMethod]
         public void OnesEqual()
         {
-            Matrix2D<double> cudaMatrix1 = null;
+            foreach (var matrixDimension in _matrixDimensions)
+            {
+                DoOnesEqual(matrixDimension.Item1, matrixDimension.Item2);
+            }
+        }
+
+        private void DoOnesEqual(int x, int y)
+        {
+            Matrix2D<TElement> cudaMatrix1 = null;
             try
             {
-                double[,] netMatrix1;
-                TestHelper.CreateRandomMatricesD(_dev, 128, 128, out netMatrix1, out cudaMatrix1);
+                TElement[,] netMatrix1;
+                TestHelper.CreateRandomMatricesD(_dev, x, y, out netMatrix1, out cudaMatrix1);
 
-                double[,] localM = Matrix2D.OnesD(128, 128);
+                TElement[,] localM = Matrix2D.OnesD(x, y);
 
                 cudaMatrix1.Ones();
 
-                double[,] cudaLocal = cudaMatrix1.CopyLocal();
+                TElement[,] cudaLocal = cudaMatrix1.CopyLocal();
 
                 Assert.IsTrue(MatricesEqual(localM, cudaLocal));
             }
@@ -317,17 +480,17 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void ZerosEqual()
         {
-            Matrix2D<double> cudaMatrix1 = null;
+            Matrix2D<TElement> cudaMatrix1 = null;
             try
             {
-                double[,] netMatrix1;
+                TElement[,] netMatrix1;
                 TestHelper.CreateRandomMatricesD(_dev, 128, 128, out netMatrix1, out cudaMatrix1);
 
-                double[,] localM = Matrix2D.ZerosD(128, 128);
+                TElement[,] localM = Matrix2D.ZerosD(128, 128);
 
                 cudaMatrix1.Zeros();
 
-                double[,] cudaLocal = cudaMatrix1.CopyLocal();
+                TElement[,] cudaLocal = cudaMatrix1.CopyLocal();
 
                 Assert.IsTrue(MatricesEqual(localM, cudaLocal));
             }
@@ -340,18 +503,26 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void ScalarMultiplyEqual()
         {
-            Matrix2D<double> cudaMatrix1 = null;
-            Matrix2D<double> cudaM = null;
+            foreach (var matrixDimension in _matrixDimensions)
+            {
+                DoScalarMultiplyEqual(matrixDimension.Item1, matrixDimension.Item2);
+            }
+        }
+
+        private void DoScalarMultiplyEqual(int x, int y)
+        {
+            Matrix2D<TElement> cudaMatrix1 = null;
+            Matrix2D<TElement> cudaM = null;
             try
             {
-                double[,] netMatrix1;
-                TestHelper.CreateRandomMatricesD(_dev, 128, 128, out netMatrix1, out cudaMatrix1);
+                TElement[,] netMatrix1;
+                TestHelper.CreateRandomMatricesD(_dev, x, y, out netMatrix1, out cudaMatrix1);
 
-                double[,] localM = Matrix2D.Multiply(netMatrix1, 3);
+                TElement[,] localM = Matrix2D.Multiply(netMatrix1, 3);
 
                 cudaM = cudaMatrix1.Multiply(3);
 
-                double[,] cudaLocal = cudaM.CopyLocal();
+                TElement[,] cudaLocal = cudaM.CopyLocal();
 
                 Assert.IsTrue(MatricesEqual(localM, cudaLocal));
             }
@@ -365,18 +536,26 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void ScalarDivideEqual()
         {
-            Matrix2D<double> cudaMatrix1 = null;
-            Matrix2D<double> cudaM = null;
+            foreach (var matrixDimension in _matrixDimensions)
+            {
+                DoScalarDivideEqual(matrixDimension.Item1, matrixDimension.Item2);
+            }
+        }
+
+        private void DoScalarDivideEqual(int x, int y)
+        {
+            Matrix2D<TElement> cudaMatrix1 = null;
+            Matrix2D<TElement> cudaM = null;
             try
             {
-                double[,] netMatrix1;
-                TestHelper.CreateRandomMatricesD(_dev, 128, 128, out netMatrix1, out cudaMatrix1);
+                TElement[,] netMatrix1;
+                TestHelper.CreateRandomMatricesD(_dev, 2048, 2048, out netMatrix1, out cudaMatrix1);
 
-                double[,] localM = Matrix2D.Divide(netMatrix1, 3);
+                TElement[,] localM = Matrix2D.Divide(netMatrix1, 3);
 
                 cudaM = cudaMatrix1.Multiply(1.0 / 3);
 
-                double[,] cudaLocal = cudaM.CopyLocal();
+                TElement[,] cudaLocal = cudaM.CopyLocal();
 
                 Assert.IsTrue(MatricesEqual(localM, cudaLocal));
             }
@@ -390,18 +569,18 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void Pow2Equal()
         {
-            Matrix2D<double> cudaMatrix1 = null;
-            Matrix2D<double> cudaM = null;
+            Matrix2D<TElement> cudaMatrix1 = null;
+            Matrix2D<TElement> cudaM = null;
             try
             {
-                double[,] netMatrix1;
+                TElement[,] netMatrix1;
                 TestHelper.CreateRandomMatricesD(_dev, 128, 128, out netMatrix1, out cudaMatrix1);
 
-                double[,] localM = Matrix2D.Pow(netMatrix1, 2);
+                TElement[,] localM = Matrix2D.Pow(netMatrix1, 2);
 
                 cudaM = cudaMatrix1.Pow(2);
 
-                double[,] cudaLocal = cudaM.CopyLocal();
+                TElement[,] cudaLocal = cudaM.CopyLocal();
 
                 Assert.IsTrue(MatricesEqual(localM, cudaLocal));
             }
@@ -416,18 +595,18 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void Pow4Equal()
         {
-            Matrix2D<double> cudaMatrix1 = null;
-            Matrix2D<double> cudaM = null;
+            Matrix2D<TElement> cudaMatrix1 = null;
+            Matrix2D<TElement> cudaM = null;
             try
             {
-                double[,] netMatrix1;
+                TElement[,] netMatrix1;
                 TestHelper.CreateRandomMatricesIntD(_dev, 32, 32, out netMatrix1, out cudaMatrix1);
 
-                double[,] localM = Matrix2D.Pow(netMatrix1, 4);
+                TElement[,] localM = Matrix2D.Pow(netMatrix1, 4);
 
                 cudaM = cudaMatrix1.Pow(4);
 
-                double[,] cudaLocal = cudaM.CopyLocal();
+                TElement[,] cudaLocal = cudaM.CopyLocal();
 
                 Assert.IsTrue(MatricesEqual(localM, cudaLocal));
             }
@@ -441,21 +620,30 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void AddEqual()
         {
-            Matrix2D<double> cudaMatrix1 = null;
-            Matrix2D<double> cudaMatrix2 = null;
-            Matrix2D<double> cudaM = null;
+            foreach (var matrixDimension in _matrixDimensions)
+            {
+                DoAddEqual(matrixDimension.Item1, matrixDimension.Item2);
+            }
+        }
+
+
+        private void DoAddEqual(int x, int y)
+        {
+            Matrix2D<TElement> cudaMatrix1 = null;
+            Matrix2D<TElement> cudaMatrix2 = null;
+            Matrix2D<TElement> cudaM = null;
             try
             {
-                double[,] netMatrix1;
-                double[,] netMatrix2;
-                TestHelper.CreateRandomMatricesD(_dev, 32, 32, out netMatrix1, out cudaMatrix1);
-                TestHelper.CreateRandomMatricesD(_dev, 32, 32, out netMatrix2, out cudaMatrix2);
+                TElement[,] netMatrix1;
+                TElement[,] netMatrix2;
+                TestHelper.CreateRandomMatricesD(_dev, 2048, 2048, out netMatrix1, out cudaMatrix1);
+                TestHelper.CreateRandomMatricesD(_dev, 2048, 2048, out netMatrix2, out cudaMatrix2);
 
-                double[,] localM = Matrix2D.Add(netMatrix1, netMatrix2);
+                TElement[,] localM = Matrix2D.Add(netMatrix1, netMatrix2);
 
                 cudaM = cudaMatrix1.Add(cudaMatrix2);
 
-                double[,] cudaLocal = cudaM.CopyLocal();
+                TElement[,] cudaLocal = cudaM.CopyLocal();
 
                 Assert.IsTrue(MatricesEqual(localM, cudaLocal));
             }
@@ -471,21 +659,30 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void SubtractEqual()
         {
-            Matrix2D<double> cudaMatrix1 = null;
-            Matrix2D<double> cudaMatrix2 = null;
-            Matrix2D<double> cudaM = null;
+            foreach (var matrixDimension in _matrixDimensions)
+            {
+                DoSubtractEqual(matrixDimension.Item1, matrixDimension.Item2);
+            }
+        }
+
+
+        private void DoSubtractEqual(int x, int y)
+        {
+            Matrix2D<TElement> cudaMatrix1 = null;
+            Matrix2D<TElement> cudaMatrix2 = null;
+            Matrix2D<TElement> cudaM = null;
             try
             {
-                double[,] netMatrix1;
-                double[,] netMatrix2;
-                TestHelper.CreateRandomMatricesD(_dev, 32, 32, out netMatrix1, out cudaMatrix1);
-                TestHelper.CreateRandomMatricesD(_dev, 32, 32, out netMatrix2, out cudaMatrix2);
+                TElement[,] netMatrix1;
+                TElement[,] netMatrix2;
+                TestHelper.CreateRandomMatricesD(_dev, x, y, out netMatrix1, out cudaMatrix1);
+                TestHelper.CreateRandomMatricesD(_dev, x, y, out netMatrix2, out cudaMatrix2);
 
-                double[,] localM = Matrix2D.Subtract(netMatrix1, netMatrix2);
+                TElement[,] localM = Matrix2D.Subtract(netMatrix1, netMatrix2);
 
                 cudaM = cudaMatrix1.Subtract(cudaMatrix2);
 
-                double[,] cudaLocal = cudaM.CopyLocal();
+                TElement[,] cudaLocal = cudaM.CopyLocal();
 
                 Assert.IsTrue(MatricesEqual(localM, cudaLocal));
             }
@@ -501,15 +698,23 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void TransposeEqual()
         {
-            Matrix2D<double> cudaMatrix1 = null;
-            Matrix2D<double> cudaMatrix1T = null;
-            double[,] netMatrix1;
+            foreach (var matrixDimension in _matrixDimensions)
+            {
+                DoTransposeEqual(matrixDimension.Item1, matrixDimension.Item2);
+            }
+        }
+
+        private void DoTransposeEqual(int x, int y)
+        {
+            Matrix2D<TElement> cudaMatrix1 = null;
+            Matrix2D<TElement> cudaMatrix1T = null;
+            TElement[,] netMatrix1;
             try
             {
-                TestHelper.CreateRandomMatricesD(_dev, 20, 10, out netMatrix1, out cudaMatrix1);
-                double[,] netT = Matrix2D.Transpose(netMatrix1);
+                TestHelper.CreateRandomMatricesD(_dev, x, y, out netMatrix1, out cudaMatrix1);
+                TElement[,] netT = Matrix2D.Transpose(netMatrix1);
                 cudaMatrix1T = cudaMatrix1.Transpose();
-                double[,] cudaTLocal = cudaMatrix1T.CopyLocal();
+                TElement[,] cudaTLocal = cudaMatrix1T.CopyLocal();
                 MatricesEqual(netT, cudaTLocal);
             }
             finally
@@ -519,11 +724,11 @@ namespace SimpleRBM.Test
             }
         }
 
-        private const double Epsilon = 1E-13;
+        private const TElement Epsilon = 1E-13;
 
-        public bool MatricesEqual(double[,] a, double[,] b)
+        public bool MatricesEqual(TElement[,] a, TElement[,] b)
         {
-            double[,] difference = Matrix2D.Subtract(a, b);
+            TElement[,] difference = Matrix2D.Subtract(a, b);
 
             var maxDiff = Matrix2D.EnumerateElements(difference).Max(v => Math.Abs(v));
 
@@ -537,8 +742,9 @@ namespace SimpleRBM.Test
             return Matrix2D.EnumerateElements(difference).All(c => c < Epsilon);
         }
 
-        private void VisualizeDifferences(double[,] difference)
+        private void VisualizeDifferences(TElement[,] difference)
         {
+            return;
             var sb = new StringBuilder();
             for (int i = 0; i < difference.GetLength(0); i++)
             {
@@ -562,12 +768,12 @@ namespace SimpleRBM.Test
 
     public static class TestHelper
     {
-        public static void CreateRandomMatricesD(GPGPU dev, int rows, int cols, out double[,] netMatrix,
-            out Matrix2D<double> cudaMatrix)
+        public static void CreateRandomMatricesD(GPGPU dev, int rows, int cols, out TElement[,] netMatrix,
+            out Matrix2D<TElement> cudaMatrix)
         {
             netMatrix = Distributions.GaussianMatrixD(rows, cols);
 
-            cudaMatrix = dev.AllocateAndSet<double>(rows, cols);
+            cudaMatrix = dev.AllocateAndSet<TElement>(rows, cols);
 
             dev.CopyToDevice(netMatrix, cudaMatrix.Matrix);
         }
@@ -582,8 +788,8 @@ namespace SimpleRBM.Test
             dev.CopyToDevice(netMatrix, cudaMatrix.Matrix);
         }
 
-        public static void CreateRandomMatricesIntD(GPGPU dev, int rows, int cols, out double[,] netMatrix,
-           out Matrix2D<double> cudaMatrix)
+        public static void CreateRandomMatricesIntD(GPGPU dev, int rows, int cols, out TElement[,] netMatrix,
+           out Matrix2D<TElement> cudaMatrix)
         {
             var m = Distributions.GaussianMatrixD(rows, cols);
             m = Matrix2D.Multiply(m, 100);

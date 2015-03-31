@@ -104,28 +104,29 @@ namespace CudaNN.DeepBelief.ViewModels
             out DataReaderBase<TElement> validationReader, out DataReaderBase<TElement> testReader)
         {
             ImageUtils.ConvertPixel<TElement> imgConverter;
-            Func<TElement, byte> dataConverter = null;
+            Func<TElement, TElement> sourceToTarget;
+            Func<TElement, TElement> targetToSource;
+
+           
+#if USEFLOAT
+                        imgConverter = ImageUtils.ConvertRGBToGreyIntF;
+#else
+            imgConverter = ImageUtils.ConvertRGBToGreyIntD;
+#endif
+
             switch (DataTransformationType)
             {
                 case DataTransformationTypes.NoTransform:
                 case DataTransformationTypes.DivideBy255:
                     {
-#if USEFLOAT
-                        imgConverter = ImageUtils.ConvertRGBToGreyF;
-#else
-                        imgConverter = ImageUtils.ConvertRGBToGreyD;
-#endif
-                        dataConverter = a => (byte)(a * 255.0);
+                        sourceToTarget = a => a / (TElement)255;
+                        targetToSource = a => a * (TElement)255;
                         break;
                     }
                 case DataTransformationTypes.Subtract128Divide127:
                     {
-#if USEFLOAT 
-                        imgConverter = ImageUtils.ConvertRGBToGreyPosNegF;
-#else
-                        imgConverter = ImageUtils.ConvertRGBToGreyPosNegD;
-#endif
-                        dataConverter = a => (byte)(a * 127.0 + 128.0);
+                        sourceToTarget = a => (a - (TElement)128) / (TElement)127;
+                        targetToSource = a => (a * (TElement)128) + (TElement)127;
                         break;
                     }
                 default: throw new NotImplementedException();
@@ -135,36 +136,34 @@ namespace CudaNN.DeepBelief.ViewModels
             if (RandomizeTrainingData)
             {
                 trainingReader = new RandomImageReader<TElement>(TrainingDataPath, UseGrayCodeForLabels, DataWidth, Labels,
-                    extensions, TotalTrainingRecordsAvailableCount, imgConverter, dataConverter);
+                    extensions, TotalTrainingRecordsAvailableCount, sourceToTarget, targetToSource, imgConverter);
             }
             else
             {
                 trainingReader = new SequentialImageReader<TElement>(TrainingDataPath, UseGrayCodeForLabels, DataWidth,
                     Labels,
-                    extensions, SkipTrainingRecordCount, TotalTrainingRecordsAvailableCount, imgConverter,
-                    dataConverter);
+                    extensions, SkipTrainingRecordCount, TotalTrainingRecordsAvailableCount, sourceToTarget, targetToSource, imgConverter);
             }
             if (RandomizeValidationData)
             {
                 validationReader = new RandomImageReader<TElement>(TrainingDataPath, UseGrayCodeForLabels, DataWidth,
                     Labels,
-                    extensions, TotalTrainingRecordsAvailableCount, imgConverter, dataConverter);
+                    extensions, TotalTrainingRecordsAvailableCount, sourceToTarget, targetToSource, imgConverter);
             }
             else
             {
                 validationReader = new SequentialImageReader<TElement>(TrainingDataPath, UseGrayCodeForLabels, DataWidth,
-                    Labels, extensions, SkipValidationRecordCount, TotalTrainingRecordsAvailableCount, imgConverter,
-                    dataConverter);
+                    Labels, extensions, SkipValidationRecordCount, TotalTrainingRecordsAvailableCount, sourceToTarget, targetToSource, imgConverter);
             }
             if (RandomizeTestData)
             {
                 testReader = new RandomImageReader<TElement>(TestDataPath, UseGrayCodeForLabels, DataWidth, Labels,
-                    extensions, TotalTestRecordsAvailableCount, imgConverter, dataConverter);
+                    extensions, TotalTestRecordsAvailableCount, sourceToTarget, targetToSource, imgConverter);
             }
             else
             {
                 testReader = new SequentialImageReader<TElement>(TestDataPath, UseGrayCodeForLabels, DataWidth, Labels,
-                    extensions, SkipTestRecordCount, TotalTestRecordsAvailableCount, imgConverter, dataConverter);
+                    extensions, SkipTestRecordCount, TotalTestRecordsAvailableCount, sourceToTarget, targetToSource, imgConverter);
             }
 
         }

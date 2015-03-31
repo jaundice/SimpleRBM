@@ -12,13 +12,15 @@ namespace CudaNN.DeepBelief.DataIO
         private readonly int _dataWidth;
 
         protected ImageReaderBase(string directoryPath, bool useGrayCodesForLabels, int dataWidth,
-            IEnumerable<string> allLabels, string[] imageExtensions, int totalRecordCount, ImageUtils.ConvertPixel<T> convertFromImage,
-            Func<T, byte> convertToImage)
+            IEnumerable<string> allLabels, string[] imageExtensions, int totalRecordCount,
+            Func<T, T> sourceToTargetConverter, Func<T, T> targetToSourceConverter, ImageUtils.ConvertPixel<T> pixelConverter)
         {
+            SourceToTargetConverter = sourceToTargetConverter;
+            TargetToSourceConverter = targetToSourceConverter;
+            PixelConverter = pixelConverter;
+
             DirectoryPath = directoryPath;
             UseGrayCodesForLabels = useGrayCodesForLabels;
-            ConvertFromImage = convertFromImage;
-            ConvertToImage = convertToImage;
             ValidImageExtensions = imageExtensions;
             TotalRecordCount = totalRecordCount;
             _dataWidth = dataWidth;
@@ -31,40 +33,20 @@ namespace CudaNN.DeepBelief.DataIO
             NonGrayEncoderInverseIndexes = NonGrayEncoderIndexes.ToDictionary(a => a.Value, a => a.Key);
 
             GrayLabelEncoder = new FieldGrayEncoder<string>(hs);
+
         }
+
+        public ImageUtils.ConvertPixel<T> PixelConverter { get; protected set; }
+
+        public Func<T, T> TargetToSourceConverter { get; set; }
+
+        public Func<T, T> SourceToTargetConverter { get; set; }
+
 
         public Dictionary<int, string> NonGrayEncoderInverseIndexes { get; set; }
 
-        public override string[] DecodeLabels(T[,] llbl, T onValue, T offValue)
-        {
-            string[] ret = new string[llbl.GetLength(0)];
-
-            if (UseGrayCodesForLabels)
-            {
-                Parallel.For(0, ret.GetLength(0), a => ret[a] = GrayLabelEncoder.Decode(llbl, a, 0, onValue, offValue));
-            }
-            else
-            {
-                Parallel.For(0, ret.GetLength(0), i =>
-                {
-                    List<string> opts = new List<string>();
-                    for (int j = 0; j < llbl.GetLength(1); j++)
-                    {
-                        if (Comparer<T>.Default.Compare(llbl[i, j], onValue) == 0)
-                        {
-                            opts.Add(NonGrayEncoderInverseIndexes[j]);
-                        }
-                    }
-                    ret[i] = string.Join(",", opts);
-                });
-            }
-            return ret;
-        }
-
         protected string DirectoryPath { get; set; }
         protected bool UseGrayCodesForLabels { get; set; }
-        protected ImageUtils.ConvertPixel<T> ConvertFromImage { get; set; }
-        protected Func<T, byte> ConvertToImage { get; set; }
         protected FieldGrayEncoder<string> GrayLabelEncoder { get; set; }
         protected Dictionary<string, int> NonGrayEncoderIndexes { get; set; }
         protected string[] ValidImageExtensions { get; set; }
@@ -79,15 +61,41 @@ namespace CudaNN.DeepBelief.DataIO
             get { return _dataWidth; }
         }
 
+        public override string[] DecodeLabels(T[,] llbl, T onValue, T offValue)
+        {
+            var ret = new string[llbl.GetLength(0)];
+
+            if (UseGrayCodesForLabels)
+            {
+                Parallel.For(0, ret.GetLength(0), a => ret[a] = GrayLabelEncoder.Decode(llbl, a, 0, onValue, offValue));
+            }
+            else
+            {
+                Parallel.For(0, ret.GetLength(0), i =>
+                {
+                    var opts = new List<string>();
+                    for (int j = 0; j < llbl.GetLength(1); j++)
+                    {
+                        if (Comparer<T>.Default.Compare(llbl[i, j], onValue) == 0)
+                        {
+                            opts.Add(NonGrayEncoderInverseIndexes[j]);
+                        }
+                    }
+                    ret[i] = string.Join(",", opts);
+                });
+            }
+            return ret;
+        }
+
         protected void CopyImageDataToTarget(T[,] target, int targetRow, int rowOffset, string filePath)
         {
-            ImageUtils.CopyImageDataTo(filePath, target, targetRow, rowOffset, ConvertFromImage);
+            ImageUtils.CopyImageDataTo(filePath, target, targetRow, rowOffset, PixelConverter, SourceToTargetConverter);
         }
 
         protected IEnumerable<IList<T>> Partition<T>(List<T> files, int batchSize)
         {
-            List<T> batch = new List<T>(batchSize);
-            var enu = files.GetEnumerator();
+            var batch = new List<T>(batchSize);
+            List<T>.Enumerator enu = files.GetEnumerator();
             while (enu.MoveNext())
             {
                 batch.Add(enu.Current);
@@ -99,7 +107,6 @@ namespace CudaNN.DeepBelief.DataIO
             }
             if (batch.Count > 0)
                 yield return batch;
-
         }
     }
 }

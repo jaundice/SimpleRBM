@@ -29,6 +29,7 @@
                     <ColumnDefinition></ColumnDefinition>
                     <ColumnDefinition></ColumnDefinition>
                     <ColumnDefinition></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition></RowDefinition>
@@ -39,20 +40,22 @@
                 <Label Grid.Column="2" Grid.Row="0" Margin="4">Weight Cost</Label>
                 <Label Grid.Column="3" Grid.Row="0" Margin="4">Initial Momentum</Label>
                 <Label Grid.Column="4" Grid.Row="0" Margin="4">Final Momentum</Label>
-                <Label Grid.Column="5" Grid.Row="0" Margin="4">Weight Initialization StDev</Label>
-                <Label Grid.Column="6" Grid.Row="0" Margin="4">Convert ActivationsTo States</Label>
-                <Label Grid.Column="7" Grid.Row="0" Margin="4">Encoding Noise Level</Label>
-                <Label Grid.Column="8" Grid.Row="0" Margin="4">Decoding Noise Level</Label>
+                <Label Grid.Column="5" Grid.Row="0" Margin="4">Momentum increment step</Label>
+                <Label Grid.Column="6" Grid.Row="0" Margin="4">Weight Initialization StDev</Label>
+                <Label Grid.Column="7" Grid.Row="0" Margin="4">Convert ActivationsTo States</Label>
+                <Label Grid.Column="8" Grid.Row="0" Margin="4">Encoding Noise Level</Label>
+                <Label Grid.Column="9" Grid.Row="0" Margin="4">Decoding Noise Level</Label>
                 <TextBox Grid.Column="0" Grid.Row="1" Margin="4" Text="{Binding NumVisibleNeurons, Mode=TwoWay}"></TextBox>
                 <TextBox Grid.Column="1" Grid.Row="1"  Margin="4" Text="{Binding NumHiddenNeurons, Mode=TwoWay}"></TextBox>
                 <TextBox Grid.Column="2" Grid.Row="1" Margin="4" Text="{Binding WeightCost, Mode=TwoWay}"></TextBox>
                 <TextBox Grid.Column="3" Grid.Row="1" Margin="4" Text="{Binding InitialMomentum, Mode=TwoWay}"></TextBox>
                 <TextBox Grid.Column="4" Grid.Row="1" Margin="4" Text="{Binding FinalMomentum, Mode=TwoWay}"></TextBox>
-                <TextBox Grid.Column="5" Grid.Row="1" Margin="4" Text="{Binding WeightInitializationStDev, Mode=TwoWay}"></TextBox>
-                <CheckBox Grid.Column="6" Grid.Row="1" Margin="4" IsChecked="{Binding ConvertActivationsToStates, Mode=TwoWay}"></CheckBox>
-                <TextBox Grid.Column="7" Grid.Row="1" Margin="4" Text="{Binding EncodingNoiseLevel, Mode=TwoWay}"></TextBox>
-                <TextBox Grid.Column="8" Grid.Row="1" Margin="4" Text="{Binding DecodingNoiseLevel, Mode=TwoWay}"></TextBox>
-                <RadioButton Grid.Column="9" Grid.Row="1" GroupName="Train" Click="ButtonBase_OnClick"  CommandParameter="{Binding}" Content="Start Training From Here"  ></RadioButton>
+                <TextBox Grid.Column="5" Grid.Row="1" Margin="4" Text="{Binding MomentumIncrementStep, Mode=TwoWay}"></TextBox>
+                <TextBox Grid.Column="6" Grid.Row="1" Margin="4" Text="{Binding WeightInitializationStDev, Mode=TwoWay}"></TextBox>
+                <CheckBox Grid.Column="7" Grid.Row="1" Margin="4" IsChecked="{Binding ConvertActivationsToStates, Mode=TwoWay}"></CheckBox>
+                <TextBox Grid.Column="8" Grid.Row="1" Margin="4" Text="{Binding EncodingNoiseLevel, Mode=TwoWay}"></TextBox>
+                <TextBox Grid.Column="9" Grid.Row="1" Margin="4" Text="{Binding DecodingNoiseLevel, Mode=TwoWay}"></TextBox>
+                <RadioButton Grid.Column="10" Grid.Row="1" GroupName="Train" Click="ButtonBase_OnClick"  CommandParameter="{Binding}" Content="Start Training From Here"  ></RadioButton>
 
             </Grid>
         </DataTemplate>
@@ -68,6 +71,7 @@
                     <ColumnDefinition></ColumnDefinition>
                     <ColumnDefinition></ColumnDefinition>
                     <ColumnDefinition></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition></RowDefinition>
@@ -78,16 +82,18 @@
                 <Label Grid.Column="2" Grid.Row="0" Margin="4">Weight Cost</Label>
                 <Label Grid.Column="3" Grid.Row="0" Margin="4">Initial Momentum</Label>
                 <Label Grid.Column="4" Grid.Row="0" Margin="4">Final Momentum</Label>
-                <Label Grid.Column="5" Grid.Row="0" Margin="4">Weight Initialization StDev</Label>
-                <Label Grid.Column="6" Grid.Row="0" Margin="4">Train StDev</Label>
+                <Label Grid.Column="5" Grid.Row="0" Margin="4">Momentum Increment Step</Label>
+                <Label Grid.Column="6" Grid.Row="0" Margin="4">Weight Initialization StDev</Label>
+                <Label Grid.Column="7" Grid.Row="0" Margin="4">Train StDev</Label>
                 <TextBox Grid.Column="0" Grid.Row="1" Margin="4" Text="{Binding NumVisibleNeurons, Mode=TwoWay}"></TextBox>
                 <TextBox Grid.Column="1" Grid.Row="1" Margin="4" Text="{Binding NumHiddenNeurons, Mode=TwoWay}"></TextBox>
                 <TextBox Grid.Column="2" Grid.Row="1" Margin="4" Text="{Binding WeightCost, Mode=TwoWay}"></TextBox>
                 <TextBox Grid.Column="3" Grid.Row="1" Margin="4" Text="{Binding InitialMomentum, Mode=TwoWay}"></TextBox>
                 <TextBox Grid.Column="4" Grid.Row="1" Margin="4" Text="{Binding FinalMomentum, Mode=TwoWay}"></TextBox>
-                <TextBox Grid.Column="5" Grid.Row="1" Margin="4" Text="{Binding WeightInitializationStDev, Mode=TwoWay}"></TextBox>
-                <TextBox Grid.Column="6" Grid.Row="1" Margin="4" Text="{Binding TrainRandStDev, Mode=TwoWay}"></TextBox>
-                <RadioButton Grid.Column="7" Grid.Row="1" GroupName="Train" Click="ButtonBase_OnClick" CommandParameter="{Binding}" Content="Start Training From Here"  ></RadioButton>
+                <TextBox Grid.Column="5" Grid.Row="1" Margin="4" Text="{Binding MomentumIncrementStep, Mode=TwoWay}"></TextBox>
+                <TextBox Grid.Column="6" Grid.Row="1" Margin="4" Text="{Binding WeightInitializationStDev, Mode=TwoWay}"></TextBox>
+                <TextBox Grid.Column="7" Grid.Row="1" Margin="4" Text="{Binding TrainRandStDev, Mode=TwoWay}"></TextBox>
+                <RadioButton Grid.Column="8" Grid.Row="1" GroupName="Train" Click="ButtonBase_OnClick" CommandParameter="{Binding}" Content="Start Training From Here"  ></RadioButton>
 
             </Grid>
         </DataTemplate>

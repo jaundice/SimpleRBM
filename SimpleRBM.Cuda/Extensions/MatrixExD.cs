@@ -69,8 +69,13 @@ namespace SimpleRBM.Cuda
             return working;
         }
 
+        public enum MultiplyPreOp
+        {
+            Normal,
+            Transpose
+        }
 
-        //public static Matrix1D<TElement> ToSingleRank(this Matrix2D<TElement> self, out int stride)
+            //public static Matrix1D<TElement> ToSingleRank(this Matrix2D<TElement> self, out int stride)
         //{
         //    Matrix1D<TElement> result = self.GPU.AllocateNoSet<TElement>(self.GetLength(0) * self.GetLength(1));
         //    dim3 grid, block;

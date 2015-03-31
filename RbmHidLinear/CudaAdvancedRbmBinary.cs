@@ -135,11 +135,11 @@ namespace CudaNN
             int numHiddenNeurons, bool convertActivationsToStates,
             TElement weightcost = (TElement) 0.0002,
             TElement initialMomentum = (TElement) 0.5, TElement finalMomentum = (TElement) 0.9,
-            TElement encodingNoiseLevel = (TElement) 1, TElement decodingNoiseLevel = (TElement) 1, TElement weightInitializationStDev = (TElement)0.01)
+            TElement encodingNoiseLevel = (TElement) 1, TElement decodingNoiseLevel = (TElement) 1, TElement weightInitializationStDev = (TElement)0.01, TElement momentumIncrementStep = 0.01)
             : base(
                 gpu, rand, layerIndex, numVisibleNeurons, numHiddenNeurons, /*epsilonw, epsilonvb, epsilonhb,*/
                 weightcost,
-                initialMomentum, finalMomentum, weightInitializationStDev)
+                initialMomentum, finalMomentum, weightInitializationStDev, momentumIncrementStep)
         {
             ConvertActivationsToStates = convertActivationsToStates;
             _decodingNoiseLevel = decodingNoiseLevel;
@@ -160,7 +160,7 @@ namespace CudaNN
                     poshidprobs.LogisticInPlace();
                     using (
                         Matrix2D<TElement> rand = AsCuda.GPU.UniformDistribution(AsCuda.GPURAND, numcases,
-                            NumHiddenNeurons, (TElement) _encodingNoiseLevel))
+                            NumHiddenNeurons, (TElement)_encodingNoiseLevel))
                     {
                         SetState(state);
                         //end positive phase
@@ -190,7 +190,7 @@ namespace CudaNN
                     using (negdata)
                     using (
                         var rnd = AsCuda.GPU.UniformDistribution(AsCuda.GPURAND, numcases, NumVisibleNeurons,
-                            (TElement) _decodingNoiseLevel))
+                            (TElement)_decodingNoiseLevel))
                     {
                         negdata = negdata.GreaterThan(rnd);
                     }
@@ -304,7 +304,8 @@ namespace CudaNN
             Matrix2D<TElement> posvisact, int epoch, int numcases,
             TElement weightLearningRate,
             TElement hidBiasLearningRate,
-            TElement visBiasLearningRate)
+            TElement visBiasLearningRate,
+            TElement momentum)
         {
             TElement error;
 
@@ -323,7 +324,7 @@ namespace CudaNN
                     posprods = dataTransposed.Multiply(poshidprobs);
                     using (
                         Matrix2D<TElement> rand = AsCuda.GPU.UniformDistribution(AsCuda.GPURAND, batchCases,
-                            NumHiddenNeurons, (TElement) _encodingNoiseLevel))
+                            NumHiddenNeurons, (TElement)_encodingNoiseLevel))
                     {
                         //end positive phase
                         poshidstates = poshidprobs.GreaterThan(rand);
@@ -359,11 +360,9 @@ namespace CudaNN
                 using (negdata)
                 using (Matrix2D<TElement> delta = data.Subtract(negdata))
                 {
-                    delta.PowInPlace((TElement) 2);
+                    delta.PowInPlace((TElement)2);
                     error = delta.Sum();
                 }
-
-                TElement momentum = epoch > 5 ? FinalMomentum : InitialMomentum;
 
                 using (negprods)
                 using (posprods)
@@ -371,11 +370,12 @@ namespace CudaNN
                 using (Matrix2D<TElement> posprodsminusnegprods = posprods.Subtract(negprods))
                 using (Matrix2D<TElement> weightcostWeight = AsCuda.Weights.Multiply(WeightCost))
                 {
-                    posprodsminusnegprods.MultiplyInPlace((TElement) 1/(TElement) numcases);
+                    posprodsminusnegprods.MultiplyInPlace((TElement)1 / (TElement)numcases);
                     posprodsminusnegprods.SubtractInPlace(weightcostWeight);
                     posprodsminusnegprods.MultiplyInPlace(weightLearningRate);
                     WeightInc.Dispose();
                     _vishidinc = momentumvishidinc.Add(posprodsminusnegprods);
+                    AsCuda.Weights.AddInPlace(WeightInc);
                 }
 
                 using (negvisact)
@@ -383,28 +383,31 @@ namespace CudaNN
                 using (Matrix2D<TElement> posvisactminusnegvisact = posvisact.Subtract(negvisact))
                 {
                     posvisactminusnegvisact.MultiplyInPlace(
-                        visBiasLearningRate/numcases);
+                        visBiasLearningRate / numcases);
                     VisibleBiasInc.Dispose();
                     _visbiasinc = momentumvisbiasinc.Add(posvisactminusnegvisact);
+                    AsCuda.VisibleBiases.AddInPlace(VisibleBiasInc);
                 }
 
                 using (neghidact)
-                using(poshidact)
+                using (poshidact)
                 using (Matrix2D<TElement> momentumhidbiasinc = HiddenBiasInc.Multiply(momentum))
                 using (Matrix2D<TElement> poshidactminusneghidact = poshidact.Subtract(neghidact))
                 {
                     poshidactminusneghidact.MultiplyInPlace(
-                        hidBiasLearningRate/numcases);
+                        hidBiasLearningRate / numcases);
                     HiddenBiasInc.Dispose();
                     _hidbiasinc = momentumhidbiasinc.Add(poshidactminusneghidact);
+                    AsCuda.HiddenBiases.AddInPlace(HiddenBiasInc);
                 }
 
-                AsCuda.Weights.AddInPlace(WeightInc);
-                AsCuda.VisibleBiases.AddInPlace(VisibleBiasInc);
-                AsCuda.HiddenBiases.AddInPlace(HiddenBiasInc);
             }
             return error;
         }
+
+
+
+
 
         //public override void GreedyBatchedTrainMem(Matrix2D<TElement> data, int batchSize,
         //    IExitConditionEvaluator<TElement> exitConditionEvaluator,
@@ -476,10 +479,10 @@ namespace CudaNN
         {
             base.LoadSpecific(info);
             ConvertActivationsToStates = info.GetBoolean("convertActivationsToStates");
-            _encodingNoiseLevel = (TElement) info.GetValue("encNoise", typeof (TElement));
-            _decodingNoiseLevel = (TElement) info.GetValue("decNoise", typeof (TElement));
+            _encodingNoiseLevel = (TElement)info.GetValue("encNoise", typeof(TElement));
+            _decodingNoiseLevel = (TElement)info.GetValue("decNoise", typeof(TElement));
         }
 
-       
+
     }
 }

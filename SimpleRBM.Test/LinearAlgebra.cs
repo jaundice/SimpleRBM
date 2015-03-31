@@ -6,8 +6,19 @@ using SimpleRBM.Cuda;
 namespace SimpleRBM.Test
 {
     [TestClass]
-    public class UnitTest3 : CudaTestBase
+    public class LinearAlgebra : CudaTestBase
     {
+
+        [TestMethod]
+        public void CudaGuassian()
+        {
+            using (var guassian = _dev.GuassianDistribution(_rand, 500, 500, 0.0))
+            {
+                PrintArray(guassian.CopyLocal());
+            }
+        }
+
+
         [TestMethod]
         public void RepMatRows()
         {
@@ -16,7 +27,7 @@ namespace SimpleRBM.Test
             double[,] res;
 
             using (var data = _dev.Upload(source))
-            using (var repl = data.RepMatRows(4))
+            using (var repl = data.RepMatRows(1000))
             {
                 res = repl.CopyLocal();
             }
@@ -34,7 +45,7 @@ namespace SimpleRBM.Test
             double[,] res;
 
             using (var data = _dev.Upload(source))
-            using (var repl = data.RepMatCols(5))
+            using (var repl = data.RepMatCols(1000))
             {
                 res = repl.CopyLocal();
             }
@@ -98,15 +109,13 @@ namespace SimpleRBM.Test
             src[0, 1] = 1f;
             src[1, 0] = 1f;
             src[1, 1] = 1f;
-            float[,] ret;
+            float ret;
             using (var data = _dev.Upload(src))
-            using (var cols = data.SumColumns())
-            using (var res = cols.SumRows())
             {
-                ret = res.CopyLocal();
+                ret = data.Sum();
             }
-
-            PrintArray(ret);
+            Console.WriteLine(ret);
+            PrintArray(src);
         }
 
 
@@ -193,7 +202,7 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void TestTranspose()
         {
-            using (var bin = _dev.GuassianDistribution(_rand, 3, 4, 0.0))
+            using (var bin = _dev.GuassianDistribution(_rand, 300, 400, 0.0))
             {
                 bin.ToBinary();
 
@@ -210,7 +219,7 @@ namespace SimpleRBM.Test
         [TestMethod]
         public void Fill()
         {
-            using (var m = _dev.AllocateAndSet<double>(256, 256))
+            using (var m = _dev.AllocateAndSet<double>(2000, 500))
             {
                 m.Fill(3);
                 PrintArray(m.CopyLocal());
@@ -231,7 +240,7 @@ namespace SimpleRBM.Test
             return m;
         }
 
-        private void PrintArray<T>(T[,] ret)
+        public static void PrintArray<T>(T[,] ret)
         {
             for (int i = 0; i < ret.GetLength(0); i++)
             {

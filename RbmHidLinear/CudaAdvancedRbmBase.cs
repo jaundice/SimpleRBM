@@ -61,11 +61,12 @@ namespace CudaNN
 
         protected CudaAdvancedRbmBase(GPGPU gpu, GPGPURAND rand, int layerIndex, int numVisibleNeurons,
             int numHiddenNeurons, TElement weightcost = (TElement) 0.0002,
-            TElement initialMomentum = (TElement) 0.5, TElement finalMomentum = (TElement) 0.9, TElement weightInitializationStDev = (TElement)0.01)
+            TElement initialMomentum = (TElement) 0.5, TElement finalMomentum = (TElement) 0.9, TElement weightInitializationStDev = (TElement)0.01, TElement momentumStep=(TElement)0.01)
         {
             _weightcost = weightcost;
             _initialmomentum = initialMomentum;
             _finalmomentum = finalMomentum;
+            _momentumStep = momentumStep;
             _numHiddenNeurons = numHiddenNeurons;
             _numVisibleNeurons = numVisibleNeurons;
             _layerIndex = layerIndex;
@@ -247,7 +248,7 @@ namespace CudaNN
                     TElement hidBiasLearningRate = hidBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
 
                     error = BatchedTrainEpoch(data, dataTransposed, posvisact, epoch, numcases,
-                        weightLearningRate, hidBiasLearningRate, visBiasLearningRate);
+                        weightLearningRate, hidBiasLearningRate, visBiasLearningRate, Math.Min((InitialMomentum + epoch*MomentumStep), FinalMomentum));
 
                     TElement delta;
                     var shouldExit = exitConditionEvaluator.Exit(epoch, error, sw.Elapsed, out delta);
@@ -351,7 +352,7 @@ namespace CudaNN
                         error =
                             datasets.Sum(
                                 block => BatchedTrainEpoch(block.Item1, block.Item2, block.Item3, epoch, numcases,
-                                    weightLearningRate, hidBiasLearningRate, visBiasLearningRate));
+                                    weightLearningRate, hidBiasLearningRate, visBiasLearningRate, Math.Min((InitialMomentum + epoch * MomentumStep), FinalMomentum)));
                     }
                     catch (AggregateException agg)
                     {
@@ -443,7 +444,7 @@ namespace CudaNN
                         using (var p = AsCuda.GPU.Upload(block.Item3))
                             return BatchedTrainEpoch(d, t, p, epoch, numcases,
                                 weightLearningRate, hidBiasLearningRate,
-                                visBiasLearningRate);
+                                visBiasLearningRate, Math.Min((InitialMomentum + epoch * MomentumStep), FinalMomentum));
                     });
                 }
                 catch (AggregateException agg)
@@ -494,6 +495,11 @@ namespace CudaNN
             get { return _vishidinc; }
         }
 
+        public double MomentumStep
+        {
+            get { return _momentumStep; }
+        }
+
         public void Suspend()
         {
             if (State != SuspendState.Suspended)
@@ -514,6 +520,7 @@ namespace CudaNN
         }
 
         private List<TElement[,]> _cache;
+        private TElement _momentumStep;
 
 
         protected virtual void DoSuspend()
@@ -566,7 +573,8 @@ namespace CudaNN
             Matrix2D<TElement> posvisact,
             int epoch, int numcases, TElement weightLearningRate,
             TElement hidBiasLearningRate,
-            TElement visBiasLearningRate);
+            TElement visBiasLearningRate,
+            TElement momentum);
 
         protected virtual List<System.Tuple<Matrix2D<TElement>, Matrix2D<TElement>, Matrix2D<TElement>>>
             PartitionDataAsMatrices(
@@ -771,7 +779,7 @@ namespace CudaNN
                         using (var p = AsCuda.GPU.Upload(block.Item3))
                             return BatchedTrainEpoch(d, t, p, epoch, numcases,
                                 weightLearningRate, hidBiasLearningRate,
-                                visBiasLearningRate);
+                                visBiasLearningRate, Math.Min((InitialMomentum + epoch * MomentumStep), FinalMomentum));
                     });
                 }
                 catch (AggregateException agg)

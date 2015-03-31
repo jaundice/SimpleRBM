@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SimpleRBM.Demo.Util;
@@ -66,6 +67,38 @@ namespace SimpleRBM.Test
                 return string.Format("{0}\t{1}\t{2}\t[{3}]", a, GrayCodeU8.DebugString(coded), decoded, string.Join(",", GrayCodeU8.GetSetBits(coded, '1', '0')));
             }).ToList();
             vals.ForEach(Console.WriteLine);
+        }
+
+
+
+        [TestMethod]
+        public void TestByteLabel()
+        {
+            
+            FieldGrayEncoder<int> encoder = new FieldGrayEncoder<int>(new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 });
+
+            int[] labels = new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+            double[,] encoded = new double[labels.Length, encoder.ElementsRequired];
+
+            for (var i = 0; i < labels.Length; i++)
+            {
+                encoder.Encode(labels[i], encoded, i, 0, 1.0, 0.0);
+            }
+
+            LinearAlgebra.PrintArray(encoded);
+
+            int[] reconstructed = new int[labels.Length];
+
+
+            for (var i = 0; i < labels.Length; i++)
+            {
+                reconstructed[i] = encoder.Decode(encoded, i, 0, 1.0, 0.0);
+            }
+
+
+            Assert.IsTrue(labels.SequenceEqual(reconstructed));
+
         }
     }
 

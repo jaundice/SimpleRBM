@@ -137,10 +137,10 @@ namespace CudaNN
         public CudaAdvancedRbmLinearHidden(GPGPU gpu, GPGPURAND rand, int layerIndex, int numVisibleNeurons,
             int numHiddenNeurons,
             TElement weightcost = (TElement) 0.0002,
-            TElement initialMomentum = (TElement) 0.5, TElement finalMomentum = (TElement) 0.9, TElement weightInitializationStDev = (TElement)0.01, TElement trainRandStDev = (TElement)0.5)
+            TElement initialMomentum = (TElement) 0.5, TElement finalMomentum = (TElement) 0.9, TElement weightInitializationStDev = (TElement)0.01, TElement trainRandStDev = (TElement)0.5, TElement momentumIncrementStep=0.01)
             : base(
                 gpu, rand, layerIndex, numVisibleNeurons, numHiddenNeurons, /*epsilonw, epsilonvb, epsilonhb,*/
-                weightcost, initialMomentum, finalMomentum, weightInitializationStDev)
+                weightcost, initialMomentum, finalMomentum, weightInitializationStDev, momentumIncrementStep)
         {
             _trainingRandStDev = trainRandStDev;
         }
@@ -201,7 +201,8 @@ namespace CudaNN
             Matrix2D<TElement> posvisact, int epoch, int numcases,
             TElement weightLearningRate,
             TElement hidBiasLearningRate,
-            TElement visBiasLearningRate)
+            TElement visBiasLearningRate,
+            TElement momentum)
         {
             TElement error;
             //start positive phase
@@ -261,7 +262,6 @@ namespace CudaNN
                     error = delta.Sum();
                 }
 
-                TElement momentum = epoch < 5 ? InitialMomentum : FinalMomentum;
                 using (negprods)
                 using (Matrix2D<TElement> momentumvishidinc = WeightInc.Multiply(momentum))
                 using (

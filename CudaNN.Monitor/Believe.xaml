@@ -271,7 +271,7 @@
                                         <RowDefinition Height="Auto"></RowDefinition>
                                         <RowDefinition Height="*"></RowDefinition>
                                     </Grid.RowDefinitions>
-                                    <Grid Grid.Row="0">
+                                    <Grid Grid.Row="0" Grid.Column="0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="3*"></ColumnDefinition>
                                             <ColumnDefinition Width="*"></ColumnDefinition>
@@ -281,7 +281,6 @@
                                     </Grid>
                                     <Image Grid.Row="1" Margin="4" Stretch="Uniform" UseLayoutRounding="False"  StretchDirection="Both"  Source="{Binding Path=DataImage, Mode=OneWay}" Grid.Column="0" Loaded="FrameworkElement_OnLoaded"/>
                                 </Grid>
-
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

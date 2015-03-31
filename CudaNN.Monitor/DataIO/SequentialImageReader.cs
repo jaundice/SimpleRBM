@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using SimpleRBM.Demo;
 
 namespace CudaNN.DeepBelief.DataIO
@@ -11,11 +10,11 @@ namespace CudaNN.DeepBelief.DataIO
     {
         public SequentialImageReader(string directoryPath, bool useGrayCodesForLabels, int dataWidth,
             IEnumerable<string> allLabels, string[] imageExtensions, int skipCount, int totalRecordCount,
-            ImageUtils.ConvertPixel<T> convertFromImage, Func<T, byte> convertToImage)
+            Func<T, T> sourceToTargetConverter, Func<T, T> targetToSourceConverter, ImageUtils.ConvertPixel<T> pixelConverter )
             : base(
                 directoryPath, useGrayCodesForLabels, dataWidth, allLabels, imageExtensions, totalRecordCount,
-                convertFromImage,
-                convertToImage)
+                sourceToTargetConverter,
+                targetToSourceConverter, pixelConverter)
         {
             SkipRecords = skipCount;
         }
@@ -35,8 +34,8 @@ namespace CudaNN.DeepBelief.DataIO
             labelsEncoded = new T[files.Count, LabelDataWidth];
             labels = new string[files.Count];
             var data = new T[files.Count, DataWidth];
-            var on = (T)Convert.ChangeType(1, typeof(T));
-            var off = (T)Convert.ChangeType(0, typeof(T));
+            var on = (T) Convert.ChangeType(1, typeof (T));
+            var off = (T) Convert.ChangeType(0, typeof (T));
             for (int i = 0; i < files.Count; i++)
             {
                 string lblName = new FileInfo(files[i]).Directory.Name;
@@ -68,8 +67,8 @@ namespace CudaNN.DeepBelief.DataIO
                     .ToList();
 
             var data = new T[files.Count, DataWidth];
-            var on = (T)Convert.ChangeType(1, typeof(T));
-            var off = (T)Convert.ChangeType(0, typeof(T));
+            var on = (T) Convert.ChangeType(1, typeof (T));
+            var off = (T) Convert.ChangeType(0, typeof (T));
             for (int i = 0; i < files.Count; i++)
             {
                 CopyImageDataToTarget(data, i, 0, files[i]);
@@ -78,23 +77,24 @@ namespace CudaNN.DeepBelief.DataIO
         }
 
 
-        public override IList<T[,]> ReadWithLabels(int count, int batchSize, out IList<T[,]> labelsEncoded, out IList<string[]> labels)
+        public override IList<T[,]> ReadWithLabels(int count, int batchSize, out IList<T[,]> labelsEncoded,
+            out IList<string[]> labels)
         {
             var res = new List<T[,]>();
             var lbls = new List<string[]>();
             var coded = new List<T[,]>();
-            var on = (T)Convert.ChangeType(1, typeof(T));
-            var off = (T)Convert.ChangeType(0, typeof(T));
+            var on = (T) Convert.ChangeType(1, typeof (T));
+            var off = (T) Convert.ChangeType(0, typeof (T));
 
             List<string> files =
-               Directory.EnumerateFiles(DirectoryPath,
-                   string.Join("|", ValidImageExtensions.Select(a => string.Format("*{0}", a))),
-                   SearchOption.AllDirectories)
-                   .Skip(SkipRecords)
-                   .Take(count)
-                   .ToList();
+                Directory.EnumerateFiles(DirectoryPath,
+                    string.Join("|", ValidImageExtensions.Select(a => string.Format("*{0}", a))),
+                    SearchOption.AllDirectories)
+                    .Skip(SkipRecords)
+                    .Take(count)
+                    .ToList();
 
-            var batches = Partition(files, batchSize);
+            IEnumerable<IList<string>> batches = Partition(files, batchSize);
             foreach (var batch in batches)
             {
                 var lb = new string[batch.Count];
@@ -114,7 +114,6 @@ namespace CudaNN.DeepBelief.DataIO
                         cod[i, NonGrayEncoderIndexes[lblName]] = on;
                     }
                     CopyImageDataToTarget(data, i, 0, batch[i]);
-
                 }
                 res.Add(data);
                 lbls.Add(lb);
@@ -126,23 +125,21 @@ namespace CudaNN.DeepBelief.DataIO
         }
 
 
-
-
         public override IList<T[,]> Read(int count, int batchSize)
         {
             var res = new List<T[,]>();
-            var on = (T)Convert.ChangeType(1, typeof(T));
-            var off = (T)Convert.ChangeType(0, typeof(T));
+            var on = (T) Convert.ChangeType(1, typeof (T));
+            var off = (T) Convert.ChangeType(0, typeof (T));
 
             List<string> files =
-               Directory.EnumerateFiles(DirectoryPath,
-                   string.Join("|", ValidImageExtensions.Select(a => string.Format("*{0}", a))),
-                   SearchOption.AllDirectories)
-                   .Skip(SkipRecords)
-                   .Take(count)
-                   .ToList();
+                Directory.EnumerateFiles(DirectoryPath,
+                    string.Join("|", ValidImageExtensions.Select(a => string.Format("*{0}", a))),
+                    SearchOption.AllDirectories)
+                    .Skip(SkipRecords)
+                    .Take(count)
+                    .ToList();
 
-            var batches = Partition(files, batchSize);
+            IEnumerable<IList<string>> batches = Partition(files, batchSize);
             foreach (var batch in batches)
             {
                 var data = new T[batch.Count, DataWidth];
@@ -150,7 +147,6 @@ namespace CudaNN.DeepBelief.DataIO
                 for (int i = 0; i < batch.Count; i++)
                 {
                     CopyImageDataToTarget(data, i, 0, batch[i]);
-
                 }
                 res.Add(data);
             }
@@ -158,26 +154,24 @@ namespace CudaNN.DeepBelief.DataIO
             return res;
         }
 
-        public override T[,] ReadWithLabels(int count, out T[,] labelsEncoded, out string[] labels, Func<T, T> sourceToTargetConverter)
-        {
-            throw new NotImplementedException();
-        }
+        //public override T[,] ReadWithLabels(int count, out T[,] labelsEncoded, out string[] labels, Func<T, T> sourceToTargetConverter)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
-        public override T[,] Read(int count, Func<T, T> sourceToTargetConverter)
-        {
-            throw new NotImplementedException();
-        }
+        //public override T[,] Read(int count, Func<T, T> sourceToTargetConverter)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
-        public override IList<T[,]> ReadWithLabels(int count, int batchSize, out IList<T[,]> labelsEncoded, out IList<string[]> labels, Func<T, T> sourceToTargetConverter)
-        {
-            throw new NotImplementedException();
-        }
+        //public override IList<T[,]> ReadWithLabels(int count, int batchSize, out IList<T[,]> labelsEncoded, out IList<string[]> labels, Func<T, T> sourceToTargetConverter)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
-        public override IList<T[,]> Read(int count, int batchSize, Func<T, T> sourceToTargetConverter)
-        {
-            throw new NotImplementedException();
-        }
-
-       
+        //public override IList<T[,]> Read(int count, int batchSize, Func<T, T> sourceToTargetConverter)
+        //{
+        //    throw new NotImplementedException();
+        //}
     }
 }

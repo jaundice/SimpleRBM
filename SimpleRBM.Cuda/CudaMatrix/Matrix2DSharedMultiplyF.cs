@@ -8,7 +8,7 @@ namespace SimpleRBM.Cuda
     public partial class Matrix2DCuda
     {
         //[Cudafy]
-        //public unsafe static void SGEMM64D(GThread thread, double[,] mA, double[,] mB, double[,] mC, double alpha = 1.0,
+        //public unsafe static void GEMMD(GThread thread, double[,] mA, double[,] mB, double[,] mC, double alpha = 1.0,
         //    double beta = 1.0)
         //{
 

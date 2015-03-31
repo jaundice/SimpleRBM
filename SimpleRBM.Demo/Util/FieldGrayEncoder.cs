@@ -47,8 +47,8 @@ namespace SimpleRBM.Demo.Util
 
     public class FieldGrayEncoder<TLabel>
     {
-        private readonly Dictionary<TLabel, ulong> _labelToIndexMap;
-        private Dictionary<ulong, TLabel> _indexToLabelMap;
+        private readonly Dictionary<TLabel, ulong> _labelToCodeMap;
+        private readonly Dictionary<ulong, TLabel> _codeToLabelMap;
         private readonly ulong _numElements;
 
         public int ElementsRequired
@@ -71,16 +71,37 @@ namespace SimpleRBM.Demo.Util
         {
             var distinct = allPossibleLabels.Distinct().OrderBy(a => a).ToList();
             _numElements = (ulong)distinct.LongCount();
+
+            Func<ulong, ulong> encodeIdx = a =>
+            {
+                if (_numElements == 8)
+                {
+                    return ((GrayCodeU8)a).Code;
+                }
+                if (_numElements == 16)
+                {
+                    return ((GrayCodeU16)a).Code;
+                }
+                if (_numElements == 32)
+                {
+                    return ((GrayCodeU32)a).Code;
+                }
+                else
+                {
+                    return ((GrayCodeU64)a).Code;
+                }
+            };
+
             var temp = distinct.Select((a, i) =>
 
                 new
                 {
                     el = a,
-                    ind = (ulong)i
+                    code = encodeIdx((ulong)i)
 
                 }).ToList();
-            _labelToIndexMap = temp.ToDictionary(a => a.el, b => b.ind);
-            _indexToLabelMap = temp.ToDictionary(a => a.ind, b => b.el);
+            _labelToCodeMap = temp.ToDictionary(a => a.el, b => b.code);
+            _codeToLabelMap = temp.ToDictionary(a => a.code, b => b.el);
         }
 
         public TLabel Decode<T>(T[,] target, int targetRow, int rowOffset, T onValue, T offValue)
@@ -109,14 +130,14 @@ namespace SimpleRBM.Demo.Util
         private TLabel DecodeU8<T>(T[,] target, int targetRow, int rowOffset, T onValue, T offValue)
         {
             TLabel lbl;
-
-            return _indexToLabelMap.TryGetValue(GrayCodeU8.ReadBits(target, targetRow, rowOffset, onValue, offValue).Code, out lbl) ? lbl : default (TLabel);
+            var code = GrayCodeU8.ReadBits(target, targetRow, rowOffset, onValue, offValue).Code;
+            return _codeToLabelMap.TryGetValue(code, out lbl) ? lbl : default(TLabel);
         }
         private TLabel DecodeU16<T>(T[,] target, int targetRow, int rowOffset, T onValue, T offValue)
         {
             TLabel lbl;
 
-            return _indexToLabelMap.TryGetValue(GrayCodeU16.ReadBits(target, targetRow, rowOffset, onValue, offValue).Code, out lbl) ? lbl : default(TLabel);
+            return _codeToLabelMap.TryGetValue(GrayCodeU16.ReadBits(target, targetRow, rowOffset, onValue, offValue).Code, out lbl) ? lbl : default(TLabel);
         }
         private TLabel DecodeU32<T>(T[,] target, int targetRow, int rowOffset, T onValue, T offValue)
         {
@@ -177,8 +198,8 @@ namespace SimpleRBM.Demo.Util
 
         private void EncodeU64<T>(TLabel label, T[,] target, int targetRow, int startColumn, T on, T off)
         {
-            var idx = (ulong)_labelToIndexMap[label];
-            var code = (GrayCodeU64)idx;
+            var idx = (ulong)_labelToCodeMap[label];
+            var code = GrayCodeU64.FromCode(idx);
             var setBits = GrayCodeU64.GetSetBits(code, on, off);
             for (var j = 0; j < setBits.Length; j++)
             {
@@ -188,23 +209,23 @@ namespace SimpleRBM.Demo.Util
 
         private void EncodeU32<T>(TLabel label, T[,] target, int targetRow, int startColumn, T on, T off)
         {
-            var idx = (uint)_labelToIndexMap[label];
-            var code = (GrayCodeU32)idx;
+            var idx = (uint)_labelToCodeMap[label];
+            var code = GrayCodeU32.FromCode(idx);
             GrayCodeU32.SetBits(code, target, targetRow, startColumn, on, off);
         }
 
         private void EncodeU16<T>(TLabel label, T[,] target, int targetRow, int startColumn, T on, T off)
         {
-            var idx = (ushort)_labelToIndexMap[label];
-            var code = (GrayCodeU16)idx;
+            var idx = (ushort)_labelToCodeMap[label];
+            var code = GrayCodeU16.FromCode(idx);
             GrayCodeU16.SetBits(code, target, targetRow, startColumn, on, off);
 
         }
 
         private void EncodeU8<T>(TLabel label, T[,] target, int targetRow, int startColumn, T on, T off)
         {
-            var idx = (byte)_labelToIndexMap[label];
-            var code = (GrayCodeU8)idx;
+            var idx = (byte)_labelToCodeMap[label];
+            var code = GrayCodeU8.FromCode(idx);
             GrayCodeU8.SetBits(code, target, targetRow, startColumn, on, off);
         }
 

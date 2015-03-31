@@ -86,31 +86,49 @@ namespace SimpleRBM.Cuda
 
             if (big == small)
             {
-                var d = big < 32 ? 16 : 32;
-
+                //var d = big < 32 ? 16 : 32;
+                var d = 16;
                 block = new dim3(d, d);
                 var g = Math.Max(1, (int)Math.Round((double)big / d));
                 grid = new dim3(g, g);
 
             }
-            else if (big <= 1024 && small > 1)
+            //else if (big <= 1024 && small > 1)
+            //{
+            //    var rat = (double)small / big;
+            //    dim3 b, g;
+
+            //    if (rat >= 0.5)
+            //    {
+
+            //        var d = big < 32 ? 16 : 32;
+            //        b = new dim3(d, d);
+            //        g = new dim3(Math.Max((int)Math.Round(big / (double)d), 1), Math.Max((int)Math.Round(small / (double)d), 1));
+            //    }
+            //    else
+            //    {
+            //        b = new dim3((int)Math.Ceiling(big / 32.0) * 32, 1);
+            //        g = new dim3(1, small);
+
+            //    }
+            //    if (rows > cols)
+            //    {
+            //        block = b;
+            //        grid = g;
+            //    }
+            //    else
+            //    {
+            //        block = new dim3(b.y, b.x);
+            //        grid = new dim3(g.y, g.x);
+            //    }
+            //}
+            else if (small == 1)
             {
-                var rat = (double)small / big;
-                dim3 b, g;
+                bi = 256;
+                sm = 1;
 
-                if (rat >= 0.5)
-                {
-
-                    var d = big < 32 ? 16 : 32;
-                    b = new dim3(d, d);
-                    g = new dim3(Math.Max((int)Math.Round(big / (double)d), 1), Math.Max((int)Math.Round(small / (double)d), 1));
-                }
-                else
-                {
-                    b = new dim3((int)Math.Ceiling(big / 32.0) * 32, 1);
-                    g = new dim3(1, small);
-
-                }
+                var b = new dim3(bi, sm);
+                var g = new dim3(Math.Max(1, (int)Math.Ceiling((double)big / bi)), 1);
                 if (rows > cols)
                 {
                     block = b;
@@ -124,7 +142,7 @@ namespace SimpleRBM.Cuda
             }
             else
             {
-                if (small >= 1024)
+                /*if (small >= 1024)
                 {
                     bi = 1;
                     sm = 1024;
@@ -139,16 +157,16 @@ namespace SimpleRBM.Cuda
                     bi = 1;
                     sm = 512;
                 }
-                else if (small >= 256)
+                else*/ if (small >= 256)
                 {
                     bi = 1;
                     sm = 256;
                 }
-                else if (small >= 32)
-                {
-                    bi = 1;
-                    sm = (int)Math.Round(small / 32.0, MidpointRounding.ToEven) * 32;
-                }
+                //else if (small >= 32)
+                //{
+                //    bi = 1;
+                //    sm = (int)Math.Round(small / 32.0, MidpointRounding.ToEven) * 32;
+                //}
 
                 var b = new dim3(bi, sm);
                 var g = new dim3((int)Math.Max(1, Math.Floor((double)big / bi)), Math.Max(1, (int)Math.Floor((double)small / sm)));

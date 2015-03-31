@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace SimpleRBM.Test
 {
     [TestClass]
-    public class UnitTest2
+    public class LPF
     {
 
         float[] _data = new float[]

@@ -5,7 +5,7 @@ using SimpleRBM.Common.ExitCondition;
 namespace SimpleRBM.Test
 {
     [TestClass]
-    public class UnitTest1
+    public class CircularBufferTests
     {
         [TestMethod]
         public void TestMethod1()

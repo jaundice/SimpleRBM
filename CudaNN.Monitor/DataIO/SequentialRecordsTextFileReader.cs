@@ -9,7 +9,8 @@ namespace CudaNN.DeepBelief.DataIO
         public SequentialRecordsTextFileReader(LineReader<T> labelReader, LineReader<T> dataReader,
             bool firstLineIsHeaders,
             int totalRecordCount, string filePath, char fieldSeparator, int skipRecords)
-            : base(labelReader, dataReader, firstLineIsHeaders, totalRecordCount, filePath, fieldSeparator)
+            : base(
+                labelReader, dataReader, firstLineIsHeaders, totalRecordCount, filePath, fieldSeparator)
         {
             SkipRecords = skipRecords;
         }
@@ -76,10 +77,9 @@ namespace CudaNN.DeepBelief.DataIO
         public override IList<T[,]> ReadWithLabels(int count, int batchSize, out IList<T[,]> labelsEncoded,
             out IList<string[]> labels)
         {
-
-            List<string[]> lbls = new List<string[]>();
-            List<T[,]> coded = new List<T[,]>();
-            List<T[,]> data = new List<T[,]>();
+            var lbls = new List<string[]>();
+            var coded = new List<T[,]>();
+            var data = new List<T[,]>();
 
             using (FileStream fs = File.OpenRead(FilePath))
             using (var sr = new StreamReader(fs))
@@ -112,7 +112,7 @@ namespace CudaNN.DeepBelief.DataIO
                     if (j == dat.GetLength(0) - 1)
                     {
                         j = 0;
-                        var newbatchSize = lineNo + batchSize < count ? batchSize : count - lineNo;
+                        int newbatchSize = lineNo + batchSize < count ? batchSize : count - lineNo;
                         if (newbatchSize > 0)
                         {
                             dat = new T[newbatchSize, DataWidth];
@@ -133,7 +133,7 @@ namespace CudaNN.DeepBelief.DataIO
 
         public override IList<T[,]> Read(int count, int batchSize)
         {
-            List<T[,]> data = new List<T[,]>();
+            var data = new List<T[,]>();
 
             using (FileStream fs = File.OpenRead(FilePath))
             using (var sr = new StreamReader(fs))
@@ -160,7 +160,7 @@ namespace CudaNN.DeepBelief.DataIO
                     if (j == dat.GetLength(0) - 1)
                     {
                         j = 0;
-                        var newbatchSize = lineNo + batchSize < count ? batchSize : count - lineNo;
+                        int newbatchSize = lineNo + batchSize < count ? batchSize : count - lineNo;
                         if (newbatchSize > 0)
                         {
                             dat = new T[newbatchSize, DataWidth];
@@ -172,24 +172,24 @@ namespace CudaNN.DeepBelief.DataIO
             }
         }
 
-        public override T[,] ReadWithLabels(int count, out T[,] labelsEncoded, out string[] labels, Func<T, T> sourceToTargetConverter)
-        {
-            throw new NotImplementedException();
-        }
+        //public override T[,] ReadWithLabels(int count, out T[,] labelsEncoded, out string[] labels, Func<T, T> sourceToTargetConverter)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
-        public override T[,] Read(int count, Func<T, T> sourceToTargetConverter)
-        {
-            throw new NotImplementedException();
-        }
+        //public override T[,] Read(int count, Func<T, T> sourceToTargetConverter)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
-        public override IList<T[,]> ReadWithLabels(int count, int batchSize, out IList<T[,]> labelsEncoded, out IList<string[]> labels, Func<T, T> sourceToTargetConverter)
-        {
-            throw new NotImplementedException();
-        }
+        //public override IList<T[,]> ReadWithLabels(int count, int batchSize, out IList<T[,]> labelsEncoded, out IList<string[]> labels, Func<T, T> sourceToTargetConverter)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
-        public override IList<T[,]> Read(int count, int batchSize, Func<T, T> sourceToTargetConverter)
-        {
-            throw new NotImplementedException();
-        }
+        //public override IList<T[,]> Read(int count, int batchSize, Func<T, T> sourceToTargetConverter)
+        //{
+        //    throw new NotImplementedException();
+        //}
     }
 }
