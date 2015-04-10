@@ -22,7 +22,7 @@ namespace SimpleRBM.Common.ExitCondition
 
         private ConsoleKeyListener()
         {
-            _task = Task.Run(() =>
+            _task = Task.Factory.StartNew(() =>
             {
                 while (true)
                 {

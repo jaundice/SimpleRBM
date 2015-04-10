@@ -217,7 +217,7 @@ namespace SimpleRBM.MultiDim
         public Task AsyncGreedyTrain(TElement[,] data, IExitConditionEvaluator<TElement> exitEvaluator,
             ILearningRateCalculator<TElement> learningRateCalculator, CancellationToken cancelToken)
         {
-            return Task.Run(() => GreedyTrain(data, exitEvaluator, learningRateCalculator, cancelToken), cancelToken);
+            return Task.Factory.StartNew(() => GreedyTrain(data, exitEvaluator, learningRateCalculator, cancelToken), cancelToken);
         }
 
         public event EventHandler<EpochEventArgs<TElement>> EpochEnd;

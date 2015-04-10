@@ -135,7 +135,7 @@ namespace SimpleRBM.MultiDim
             IExitConditionEvaluatorFactory<TElement> exitEvaluatorFactory,
             ILearningRateCalculatorFactory<TElement> learningRateCalculatorFactory, CancellationToken cancelToken)
         {
-            return Task.Run(
+            return Task.Factory.StartNew(
                 () => GreedyTrain(data, layerIndex, exitEvaluatorFactory, learningRateCalculatorFactory, cancelToken), cancelToken);
         }
 

@@ -499,7 +499,7 @@ namespace CudaNN.DeepBelief.ViewModels
         }
 
 
-        private async void Run()
+        private void Run()
         {
             string pathBase = Path.Combine(Environment.CurrentDirectory,
                 string.Format("{0}_{1}", DateTime.Now.ToString("u").Replace(':', '-'), DemoMode));
@@ -514,7 +514,7 @@ namespace CudaNN.DeepBelief.ViewModels
                 if (_cancelSource != null)
                     _cancelSource.Cancel();
                 if (_runTask != null)
-                    await _runTask;
+                    _runTask.Wait();
             }
             catch (TaskCanceledException)
             {
@@ -721,7 +721,7 @@ namespace CudaNN.DeepBelief.ViewModels
         }
 
 
-        private async void ExecuteWithGPUMemory(LayerBuilderViewModel layerBuilderViewModel,
+        private void ExecuteWithGPUMemory(LayerBuilderViewModel layerBuilderViewModel,
             DataConfigViewModelBase dataConfigViewModel, int batchSize, SuspendState defaultSuspendState,
             string pathBase)
         {
@@ -736,7 +736,7 @@ namespace CudaNN.DeepBelief.ViewModels
                 DataReaderBase<TElement> testReader = null;
                 DataReaderBase<TElement> trainingReader = null;
                 DataReaderBase<TElement> validationReader = null;
-                await Dispatcher.InvokeIfRequired(() =>
+                Dispatcher.InvokeIfRequired(() =>
                 {
                     startTrainingLayer = layerBuilderViewModel.StartTrainLayerIndex;
                     dtType = dataConfigViewModel.DataTransformationType;
@@ -745,7 +745,7 @@ namespace CudaNN.DeepBelief.ViewModels
                     trainingRecords = dataConfigViewModel.TrainingRecordCount;
                     testRecords = dataConfigViewModel.TestRecordCount;
                     dataConfigViewModel.GetDataReaders(out trainingReader, out validationReader, out testReader);
-                });
+                }).Wait();
 
                 Func<TElement[,], Task<IList<BitmapSource>>> imageFactory = dtType ==
                                                                             DataConfigViewModelBase
@@ -771,11 +771,11 @@ namespace CudaNN.DeepBelief.ViewModels
 
                 if (usageType == DataConfigViewModelBase.NetworkUsageTypes.SupervisedLabellingNetwork)
                 {
-                    await Dispatcher.InvokeIfRequired(
-                        async () =>
+                    Dispatcher.InvokeIfRequired(
+                         () =>
                             TrainingSet =
-                                new ObservableCollection<ImageSet>((await imageFactory(trainingData)).Zip(
-                                    await GenerateImageSources(trainingLabelsCoded), (a, b) => new ImageSet
+                                new ObservableCollection<ImageSet>(imageFactory(trainingData).Result.Zip(
+                                    GenerateImageSources(trainingLabelsCoded).Result, (a, b) => new ImageSet
                                     {
                                         DataImage = a,
                                         CodeImage = b
@@ -783,26 +783,26 @@ namespace CudaNN.DeepBelief.ViewModels
                                     {
                                         a.Label = b;
                                         return a;
-                                    })));
+                                    }))).Wait();
                 }
                 else
                 {
-                    await Dispatcher.InvokeIfRequired(
-                        async () =>
+                    Dispatcher.InvokeIfRequired(
+                         () =>
                             TrainingSet =
                                 new ObservableCollection<ImageSet>(
-                                    (await imageFactory(trainingData)).Select(a => new ImageSet { DataImage = a })));
+                                    imageFactory(trainingData).Result.Select(a => new ImageSet { DataImage = a }))).Wait();
                 }
 
 
                 if (usageType == DataConfigViewModelBase.NetworkUsageTypes.SupervisedLabellingNetwork)
                 {
                     Task<IList<BitmapSource>> validationCodes = GenerateImageSources(validationLabelsCoded);
-                    await Dispatcher.InvokeIfRequired(
-                        async () =>
+                    Dispatcher.InvokeIfRequired(
+                         () =>
                             Reconstructions =
-                                new ObservableCollection<ValidationSet>((await validationImages).Zip(
-                                    await validationCodes,
+                                new ObservableCollection<ValidationSet>(validationImages.Result.Zip(
+                                    validationCodes.Result,
                                     (source, bitmapSource) =>
                                         new ValidationSet
                                         {
@@ -818,30 +818,30 @@ namespace CudaNN.DeepBelief.ViewModels
                                         {
                                             set.OriginalImageSet.Label = s;
                                             return set;
-                                        })));
+                                        }))).Wait();
                 }
                 else
                 {
-                    await Dispatcher.InvokeIfRequired(
-                        async () =>
+                    Dispatcher.InvokeIfRequired(
+                         () =>
                             Reconstructions =
                                 new ObservableCollection<ValidationSet>(
-                                    (await validationImages).Select(a => new ValidationSet
+                                    validationImages.Result.Select(a => new ValidationSet
                                     {
                                         OriginalImageSet = new ImageSet
                                         {
                                             DataImage = a
                                         },
                                         ReconstructedImageSet = new ImageSet()
-                                    })));
+                                    }))).Wait();
                 }
 
 
-                await Dispatcher.InvokeIfRequired(() =>
+                Dispatcher.InvokeIfRequired(() =>
                 {
                     ExitEvaluatorFactory = new InteractiveExitEvaluatorFactory<TElement>(greedyTracker, 0.5, 5000);
                     NumTrainingExamples = trainingData.GetLength(0);
-                });
+                }).Wait();
 
                 GPGPU dev;
                 GPGPURAND rand;
@@ -924,7 +924,7 @@ namespace CudaNN.DeepBelief.ViewModels
         }
 
 
-        private async void ExecuteWithSystemMemory(LayerBuilderViewModel layerBuilderViewModel,
+        private void ExecuteWithSystemMemory(LayerBuilderViewModel layerBuilderViewModel,
             DataConfigViewModelBase dataConfigViewModel, int batchSize, SuspendState defaultSuspendState,
             string pathBase)
         {
@@ -938,7 +938,7 @@ namespace CudaNN.DeepBelief.ViewModels
                 DataReaderBase<TElement> testReader = null;
                 DataReaderBase<TElement> trainingReader = null;
                 DataReaderBase<TElement> validationReader = null;
-                await Dispatcher.InvokeIfRequired(() =>
+                Dispatcher.InvokeIfRequired(() =>
                 {
                     dtType = dataConfigViewModel.DataTransformationType;
                     usageType = dataConfigViewModel.NetworkUsageType;
@@ -947,7 +947,7 @@ namespace CudaNN.DeepBelief.ViewModels
                     testRecords = dataConfigViewModel.TestRecordCount;
                     startTrainFrom = layerBuilderViewModel.StartTrainLayerIndex;
                     dataConfigViewModel.GetDataReaders(out trainingReader, out validationReader, out testReader);
-                });
+                }).Wait();
 
                 Func<TElement[,], Task<IList<BitmapSource>>> imageFactory = dtType ==
                                                                             DataConfigViewModelBase
@@ -972,11 +972,11 @@ namespace CudaNN.DeepBelief.ViewModels
                 var bmps = new List<BitmapSource>();
                 int maxTrain = 1000;
 
-                Task<List<BitmapSource>> tGetImages = Task.Run(async () =>
+                Task<List<BitmapSource>> tGetImages = Task.Factory.StartNew(() =>
                 {
                     foreach (var batch in trainingData)
                     {
-                        bmps.AddRange(await imageFactory(batch));
+                        bmps.AddRange(imageFactory(batch).Result);
                         if (bmps.Count >= maxTrain)
                             break;
                     }
@@ -986,22 +986,22 @@ namespace CudaNN.DeepBelief.ViewModels
 
                 if (usageType == DataConfigViewModelBase.NetworkUsageTypes.SupervisedLabellingNetwork)
                 {
-                    Task<List<BitmapSource>> tGetCodedLabels = Task.Run(async () =>
+                    Task<List<BitmapSource>> tGetCodedLabels = Task.Factory.StartNew(() =>
                     {
                         foreach (var batch in trainingLabelsCoded)
                         {
-                            bmps.AddRange(await GenerateImageSources(batch));
+                            bmps.AddRange(GenerateImageSources(batch).Result);
                             if (bmps.Count >= maxTrain)
                                 break;
                         }
                         return bmps;
                     });
 
-                    await Dispatcher.InvokeIfRequired(
-                        async () =>
+                    Dispatcher.InvokeIfRequired(
+                         () =>
                             TrainingSet =
-                                new ObservableCollection<ImageSet>((await tGetImages).Zip(
-                                    await tGetCodedLabels, (a, b) => new ImageSet
+                                new ObservableCollection<ImageSet>(tGetImages.Result.Zip(
+                                    tGetCodedLabels.Result, (a, b) => new ImageSet
                                     {
                                         DataImage = a,
                                         CodeImage = b
@@ -1009,25 +1009,25 @@ namespace CudaNN.DeepBelief.ViewModels
                                     {
                                         a.Label = b;
                                         return a;
-                                    })));
+                                    }))).Wait();
                 }
                 else
                 {
-                    await Dispatcher.InvokeIfRequired(
-                        async () =>
+                    Dispatcher.InvokeIfRequired(
+                         () =>
                             TrainingSet =
                                 new ObservableCollection<ImageSet>(
-                                    (await tGetImages).Select(a => new ImageSet { DataImage = a })));
+                                    tGetImages.Result.Select(a => new ImageSet { DataImage = a }))).Wait();
                 }
 
                 if (usageType == DataConfigViewModelBase.NetworkUsageTypes.SupervisedLabellingNetwork)
                 {
                     Task<IList<BitmapSource>> validationCodes = GenerateImageSources(validationLabelsCoded);
-                    await Dispatcher.InvokeIfRequired(
-                        async () =>
+                    Dispatcher.InvokeIfRequired(
+                         () =>
                             Reconstructions =
-                                new ObservableCollection<ValidationSet>((await validationImages).Zip(
-                                    await validationCodes,
+                                new ObservableCollection<ValidationSet>(validationImages.Result.Zip(
+                                    validationCodes.Result,
                                     (source, bitmapSource) =>
                                         new ValidationSet
                                         {
@@ -1040,28 +1040,28 @@ namespace CudaNN.DeepBelief.ViewModels
                                         {
                                             set.OriginalImageSet.Label = s;
                                             return set;
-                                        })));
+                                        }))).Wait();
                 }
                 else
                 {
-                    await Dispatcher.InvokeIfRequired(
-                        async () =>
+                    Dispatcher.InvokeIfRequired(
+                         () =>
                             Reconstructions =
                                 new ObservableCollection<ValidationSet>(
-                                    (await validationImages).Select(a => new ValidationSet
+                                    validationImages.Result.Select(a => new ValidationSet
                                     {
                                         OriginalImageSet = new ImageSet
                                         {
                                             DataImage = a
                                         }
-                                    })));
+                                    }))).Wait();
                 }
 
-                await Dispatcher.InvokeIfRequired(() =>
+                Dispatcher.InvokeIfRequired(() =>
                 {
                     ExitEvaluatorFactory = new InteractiveExitEvaluatorFactory<TElement>(greedyTracker, 0.5, 5000);
                     NumTrainingExamples = trainingData.Sum(a => a.GetLength(0));
-                });
+                }).Wait();
 
                 GPGPU dev;
                 GPGPURAND rand;
@@ -1129,7 +1129,7 @@ namespace CudaNN.DeepBelief.ViewModels
             TElement[,] tdata,
             List<TElement[,]> identityMatrices, Func<TElement[,], Task<IList<BitmapSource>>> imgGenerator)
         {
-            return async (a, b) =>
+            return (a, b) =>
             {
                 var nn = ((ICudaNetwork<TElement>)a);
                 IAdvancedRbmCuda<TElement> m = nn.Machines[b.Layer];
@@ -1155,11 +1155,11 @@ namespace CudaNN.DeepBelief.ViewModels
                         codes = nn.Encode(tdata);
                         computedCodes = GenerateCodeStrings(codes);
                     }
-                    await
-                        Task.Run(
-                            () =>
-                                UpdateUIProperties(pathBase, b, recon, feats, activations, dreams, imgGenerator,
-                                    validationLabels: computedCodes, validationLabelsEncoded: codes));
+
+                    Task.Factory.StartNew(
+                        () =>
+                            UpdateUIProperties(pathBase, b, recon, feats, activations, dreams, imgGenerator,
+                                validationLabels: computedCodes, validationLabelsEncoded: codes)).Wait();
                 }
                 else
                 {
@@ -1172,7 +1172,7 @@ namespace CudaNN.DeepBelief.ViewModels
                     {
                         activations = null;
                     }
-                    await Task.Run(() => UpdateUIProperties(pathBase, b, activations));
+                    Task.Factory.StartNew(() => UpdateUIProperties(pathBase, b, activations)).Wait();
                 }
             };
         }
@@ -1194,7 +1194,7 @@ namespace CudaNN.DeepBelief.ViewModels
             TElement[,] tdata, List<TElement[,]> identityMatrices, GPGPU dev,
             Func<TElement[,], Task<IList<BitmapSource>>> imgGenerator, DataReaderBase<TElement> trainingReader)
         {
-            return async (a, b) =>
+            return (a, b) =>
             {
                 var nn = ((ICudaNetwork<TElement>)a);
                 IAdvancedRbmCuda<TElement> m = nn.Machines[b.Layer];
@@ -1233,10 +1233,10 @@ namespace CudaNN.DeepBelief.ViewModels
                     }
 
 
-                    await Task.Run(
+                    Task.Factory.StartNew(
                         () =>
                             UpdateUIProperties(pathBase, b, recon, feats, activations, dreams, imgGenerator,
-                                encodedValidationLabels, validationLabels));
+                                encodedValidationLabels, validationLabels)).Wait();
                 }
                 else
                 {
@@ -1256,7 +1256,7 @@ namespace CudaNN.DeepBelief.ViewModels
                     {
                         activations = null;
                     }
-                    await Task.Run(() => UpdateUIProperties(pathBase, b, activations));
+                    Task.Factory.StartNew(() => UpdateUIProperties(pathBase, b, activations)).Wait();
                 }
             };
         }
@@ -1307,7 +1307,7 @@ namespace CudaNN.DeepBelief.ViewModels
             return identityMatrices;
         }
 
-        private async Task UpdateUIProperties(string pathBase, EpochEventArgs<TElement> epochEventArgs,
+        private Task UpdateUIProperties(string pathBase, EpochEventArgs<TElement> epochEventArgs,
             TElement[,] activations)
         {
             Epoch = epochEventArgs.Epoch;
@@ -1319,13 +1319,14 @@ namespace CudaNN.DeepBelief.ViewModels
 
             if (activations != null)
             {
-                IList<BitmapSource> actiim = await GenerateImageSources(activations);
+                IList<BitmapSource> actiim = GenerateImageSources(activations).Result;
 
-                await Dispatcher.InvokeIfRequired(() => { ActivationFrequency = actiim[0]; });
+                return Dispatcher.InvokeIfRequired(() => { ActivationFrequency = actiim[0]; });
             }
+            return Task.Factory.StartNew(() => { });
         }
 
-        private async void UpdateUIProperties(string pathBase, EpochEventArgs<TElement> b, TElement[,] recon,
+        private void UpdateUIProperties(string pathBase, EpochEventArgs<TElement> b, TElement[,] recon,
             TElement[,] feats,
             TElement[,] activations, TElement[,] dreams, Func<TElement[,], Task<IList<BitmapSource>>> imgGenerator,
             TElement[,] validationLabelsEncoded = null, string[] validationLabels = null)
@@ -1333,40 +1334,40 @@ namespace CudaNN.DeepBelief.ViewModels
             DisplayedEpoch = b.Epoch;
             Task t = UpdateUIProperties(pathBase, b, activations);
 
-            Task<IList<BitmapSource>> tRecon = Task.Run(async () => await imgGenerator(recon));
+            Task<IList<BitmapSource>> tRecon = Task.Factory.StartNew(() => imgGenerator(recon).Result);
             Task<IList<BitmapSource>> tValid =
-                Task.Run(
-                    async () => validationLabels == null ? null : await GenerateImageSources(validationLabelsEncoded));
-            Task<IList<BitmapSource>> tDreams = Task.Run(async () => await imgGenerator(dreams));
-            Task<IList<BitmapSource>> tFeats = Task.Run(async () => await imgGenerator(feats));
+                Task.Factory.StartNew(
+                     () => validationLabels == null ? null : GenerateImageSources(validationLabelsEncoded).Result);
+            Task<IList<BitmapSource>> tDreams = Task.Factory.StartNew(() => imgGenerator(dreams).Result);
+            Task<IList<BitmapSource>> tFeats = Task.Factory.StartNew(() => imgGenerator(feats).Result);
             Task.WaitAll(tRecon, tValid, tDreams, tFeats);
 
             Task t1 =
-                Task.Run(
-                    async () =>
-                        UpdateImageResult(Reconstructions, await tRecon,
-                            await tValid,
+                Task.Factory.StartNew(
+                     () =>
+                        UpdateImageResult(Reconstructions, tRecon.Result,
+                            tValid.Result,
                             validationLabels));
-            Task<Task> t2 = Task.Run(
+            Task<Task> t2 = Task.Factory.StartNew(
                 () =>
                     Dispatcher.InvokeIfRequired(
-                        async () => { DayDreams = new ObservableCollection<BitmapSource>(await tDreams); }));
-            Task<Task> t3 = Task.Run(
+                         () => { DayDreams = new ObservableCollection<BitmapSource>(tDreams.Result); }));
+            Task<Task> t3 = Task.Factory.StartNew(
                 () =>
                     Dispatcher.InvokeIfRequired(
-                        async () =>
-                        {
-                            Features = new ObservableCollection<BitmapSource>(await tFeats);
-                            SelectFeature(SelectedFeatureIndex);
-                        }));
+                         () =>
+                         {
+                             Features = new ObservableCollection<BitmapSource>(tFeats.Result);
+                             SelectFeature(SelectedFeatureIndex);
+                         }));
 
-            await Task.Run(() => Task.WaitAll(t, t1, t2, t3));
+            Task.Factory.StartNew(() => Task.WaitAll(t, t1, t2, t3)).Wait();
         }
 
-        private async void UpdateImageResult(ObservableCollection<ValidationSet> set, IList<BitmapSource> reconIm,
+        private void UpdateImageResult(ObservableCollection<ValidationSet> set, IList<BitmapSource> reconIm,
             IList<BitmapSource> labelsEncoded, string[] labels)
         {
-            await Dispatcher.InvokeIfRequired(() =>
+            Dispatcher.InvokeIfRequired(() =>
             {
                 for (int i = 0; i < reconIm.Count; i++)
                 {
@@ -1377,18 +1378,18 @@ namespace CudaNN.DeepBelief.ViewModels
                         CodeImage = labelsEncoded == null ? null : labelsEncoded[i]
                     };
                 }
-            });
+            }).Wait();
         }
 
 
-        private async void DisplayResults<TLabel>(string pathBase, IDataIO<TElement, TLabel> dataProvider,
+        private void DisplayResults<TLabel>(string pathBase, IDataIO<TElement, TLabel> dataProvider,
             TElement[,] reconstructions, TElement[,] referenceData, TLabel[] labels,
             TElement[,] referenceCode = null, TElement[,] computedCode = null)
         {
             dataProvider.PrintToConsole(reconstructions, referenceData, labels, referenceCode,
                 computedLabels: computedCode);
-            IList<BitmapSource> finalTest = await GenerateImageSources(referenceData);
-            IList<BitmapSource> finalRecon = await GenerateImageSources(reconstructions);
+            IList<BitmapSource> finalTest = GenerateImageSources(referenceData).Result;
+            IList<BitmapSource> finalRecon = GenerateImageSources(reconstructions).Result;
             Reconstructions =
                 new ObservableCollection<ValidationSet>(finalTest.Zip(finalRecon,
                     (a, b) =>
@@ -1399,18 +1400,18 @@ namespace CudaNN.DeepBelief.ViewModels
                         }));
         }
 
-        private async Task<IList<BitmapSource>> GenerateImageSources(TElement[,] data, int maxResults = int.MaxValue)
+        private Task<IList<BitmapSource>> GenerateImageSources(TElement[,] data, int maxResults = int.MaxValue)
         {
-            return await GenerateImageSources(data, b => (byte)(b * 255f), maxResults);
+            return GenerateImageSources(data, b => (byte)(b * 255f), maxResults);
         }
 
-        private async Task<IList<BitmapSource>> GenerateImageSources(TElement[,] data,
+        private Task<IList<BitmapSource>> GenerateImageSources(TElement[,] data,
             Func<TElement, byte> converter, int maxResults)
         {
             int num = Math.Min(data.GetLength(0), maxResults);
             var bmps = new Bitmap[num];
 
-            await Task.Run(() =>
+            Task.Factory.StartNew(() =>
             {
                 //for (int a = 0; a < num; a++)
                 Parallel.For(0, num, a =>
@@ -1418,11 +1419,11 @@ namespace CudaNN.DeepBelief.ViewModels
                     int stride;
                     bmps[a] = ImageUtils.GenerateBitmap(data, a, converter, out stride);
                 });
-            });
+            }).Wait();
 
             var images = new BitmapSource[data.GetLength(0)];
 
-            await Dispatcher.InvokeIfRequired(
+            Dispatcher.InvokeIfRequired(
                 () =>
                 {
                     for (int a = 0; a < num; a++)
@@ -1440,27 +1441,27 @@ namespace CudaNN.DeepBelief.ViewModels
                             DeleteObject(h);
                         }
                     }
-                });
+                }).Wait();
             foreach (Bitmap bitmap in bmps)
             {
                 bitmap.Dispose();
             }
-            return images;
+            return Task.Factory.StartNew(() => (IList<BitmapSource>)images);
         }
 
         [DllImport("gdi32", EntryPoint = "DeleteObject")]
         private static extern int DeleteObject(IntPtr o);
 
 
-        private async Task<IList<BitmapSource>> GenerateImageSourcesInt(TElement[,] data, int maxResults = int.MaxValue)
+        private Task<IList<BitmapSource>> GenerateImageSourcesInt(TElement[,] data, int maxResults = int.MaxValue)
         {
-            return await GenerateImageSources(data, b => (byte)(b), maxResults);
+            return GenerateImageSources(data, b => (byte)(b), maxResults);
         }
 
-        private async Task<IList<BitmapSource>> GenerateImageSourcesPosNeg(
+        private Task<IList<BitmapSource>> GenerateImageSourcesPosNeg(
             TElement[,] data, int maxResults = int.MaxValue)
         {
-            return await GenerateImageSources(data, b => (byte)((b * 127) + 128), maxResults);
+            return GenerateImageSources(data, b => (byte)((b * 127) + 128), maxResults);
         }
 
 

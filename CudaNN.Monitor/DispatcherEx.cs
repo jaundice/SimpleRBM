@@ -6,21 +6,30 @@ namespace CudaNN.DeepBelief
 {
     public static class DispatcherEx
     {
-        public static async Task InvokeIfRequired(this Dispatcher self, Action action)
+        public static Task InvokeIfRequired(this Dispatcher self, Action action)
         {
             if (self.CheckAccess())
+            {
                 action();
+                return Task.Factory.StartNew(() => { });
+            }
             else
-                await self.InvokeAsync(action);
+            {
+                return Task.Factory.StartNew(() => self.BeginInvoke(action).Wait());
+                //self.InvokeAsync(action).Wait();
+            }
         }
 
-        public static async Task<T> InvokeIfRequired<T>(this Dispatcher self, Func<T> action)
+        public static Task<T> InvokeIfRequired<T>(this Dispatcher self, Func<T> action)
         {
             if (self.CheckAccess())
-                return action();
-            return await self.InvokeAsync(action);
+            {
+                var res = action();
+                return Task.Factory.StartNew(() => res);
+            }
+            return Task.Factory.StartNew<T>(() => (T)self.BeginInvoke(action).Result);
         }
 
-       
+
     }
 }

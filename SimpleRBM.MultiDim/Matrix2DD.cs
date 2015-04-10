@@ -506,7 +506,9 @@ namespace SimpleRBM.MultiDim
             }
         }
 
+#if NET45
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static unsafe void UnsafeUpdate2DArray(TElement* array, int dim1Length, int row, int col, TElement value)
         {
             array[dim1Length*row + col] = value;

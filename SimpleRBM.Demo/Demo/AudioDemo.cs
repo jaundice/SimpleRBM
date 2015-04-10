@@ -57,7 +57,7 @@ namespace SimpleRBM.Demo.Demo
                 {
                     var ddd = (IDeepBeliefNetworkExtended<TDataElement>) dbn;
                     TDataElement[,] runningtestData = dataProvider.ReadTestData(0, 20);
-                    Task.Run(() =>
+                    Task.Factory.StartNew(() =>
                         Parallel.For(0, runningtestData.GetLength(0), kk =>
                             WavUtil<TDataElement>.SaveWavData(runningtestData, kk,
                                 Path.Combine(pathBase, "Original",
@@ -71,7 +71,7 @@ namespace SimpleRBM.Demo.Demo
                         {
                             //Console.WriteLine("daydream:");
                             TDataElement[,] dream = ddd.DayDream(10, args.Layer);
-                            Task.Run(() =>
+                            Task.Factory.StartNew(() =>
                                 Parallel.For(0, dream.GetLength(0), kk =>
                                     WavUtil<TDataElement>.SaveWavData(dream, kk,
                                         Path.Combine(pathBase,
@@ -100,7 +100,7 @@ namespace SimpleRBM.Demo.Demo
                             //dataProvider.PrintToConsole(reconstructedRunningTestData, runningtestData, keys: runningKeys,
                             //    computedLabels: calculatedLabels);
 
-                            Task.Run(() =>
+                            Task.Factory.StartNew(() =>
                                 Parallel.For(0, reconstructedRunningTestData.GetLength(0), kk =>
                                     WavUtil<TDataElement>.SaveWavData(reconstructedRunningTestData, kk,
                                         Path.Combine(pathBase,
@@ -124,7 +124,7 @@ namespace SimpleRBM.Demo.Demo
                         skipTrainingRecords,
                         trainingSize,
                         out labels, out referenceLabelsCoded);
-                    Task.Run(() =>
+                    Task.Factory.StartNew(() =>
                         Parallel.For(0, trainingData.GetLength(0), kk =>
                             WavUtil<TDataElement>.SaveWavData(trainingData, kk,
                                 Path.Combine(pathBase, "Original",
@@ -238,7 +238,7 @@ namespace SimpleRBM.Demo.Demo
                 dataProvider.PrintToConsole(reconstructedItems, tdata, labels2, keys: featureKeys,
                     computedLabels: labelsComputed, referenceLabelsCoded: labelsCoded);
 
-                Task.Run(() =>
+                Task.Factory.StartNew(() =>
                     Parallel.For(0, reconstructedItems.GetLength(0), kk =>
                         WavUtil<TDataElement>.SaveWavData(reconstructedItems, kk,
                             Path.Combine(pathBase,
@@ -262,7 +262,7 @@ namespace SimpleRBM.Demo.Demo
 
                 dataProvider.PrintToConsole(reconstructedTestData, testData, keys: featKeys2,
                     computedLabels: computedLabels2);
-                Task.Run(() =>
+                Task.Factory.StartNew(() =>
                     Parallel.For(0, reconstructedTestData.GetLength(0), kk =>
                         WavUtil<TDataElement>.SaveWavData(reconstructedTestData, kk,
                             Path.Combine(pathBase,
@@ -279,7 +279,7 @@ namespace SimpleRBM.Demo.Demo
                     //Day dream 10 images
                     TDataElement[,] dreams = dbn.DayDream(10);
                     dataProvider.PrintToConsole(dreams);
-                    Task.Run(() =>
+                    Task.Factory.StartNew(() =>
                         Parallel.For(0, dreams.GetLength(0), kk =>
                             WavUtil<TDataElement>.SaveWavData(dreams, kk,
                                 Path.Combine(pathBase,
