@@ -137,7 +137,7 @@ namespace CudaNN
         public CudaAdvancedRbmLinearHidden(GPGPU gpu, GPGPURAND rand, int layerIndex, int numVisibleNeurons,
             int numHiddenNeurons,
             TElement weightcost = (TElement) 0.0002,
-            TElement initialMomentum = (TElement) 0.5, TElement finalMomentum = (TElement) 0.9, TElement weightInitializationStDev = (TElement)0.01, TElement trainRandStDev = (TElement)0.5, TElement momentumIncrementStep=0.01)
+            TElement initialMomentum = (TElement) 0.5, TElement finalMomentum = (TElement) 0.9, TElement weightInitializationStDev = (TElement)0.01, TElement trainRandStDev = (TElement)0.5, TElement momentumIncrementStep = 0.01)
             : base(
                 gpu, rand, layerIndex, numVisibleNeurons, numHiddenNeurons, /*epsilonw, epsilonvb, epsilonhb,*/
                 weightcost, initialMomentum, finalMomentum, weightInitializationStDev, momentumIncrementStep)
@@ -207,6 +207,8 @@ namespace CudaNN
             TElement error;
             //start positive phase
             int batchCases = data.GetLength(0);
+            //numcases = batchCases;//testing
+
             using (Matrix2D<TElement> tiledHiddenBiases = AsCuda.HiddenBiases.RepMatRows(batchCases))
             using (Matrix2D<TElement> datavishid = data.Multiply(AsCuda.Weights))
             using (Matrix2D<TElement> poshidprobs = datavishid.Add(tiledHiddenBiases))
@@ -264,9 +266,8 @@ namespace CudaNN
 
                 using (negprods)
                 using (Matrix2D<TElement> momentumvishidinc = WeightInc.Multiply(momentum))
-                using (
-                    Matrix2D<TElement> posprodsminusnegprods =
-                        posprobs.Subtract(negprods).MultiplyInPlace((TElement)1 / (TElement)numcases))
+                //using (Matrix2D<TElement> posprodsminusnegprods = posprobs.Subtract(negprods).MultiplyInPlace((TElement)1 / (TElement)numcases))
+                using (Matrix2D<TElement> posprodsminusnegprods = posprobs.Subtract(negprods).MultiplyInPlace((TElement)1 / (TElement)batchCases))
                 using (Matrix2D<TElement> vishidweightcost = AsCuda.Weights.Multiply(WeightCost))
                 {
                     posprodsminusnegprods.SubtractInPlace(vishidweightcost);
@@ -278,16 +279,16 @@ namespace CudaNN
 
                 using (negvisact)
                 using (Matrix2D<TElement> momentumvisbiasinc = VisibleBiasInc.Multiply(momentum))
-                using (Matrix2D<TElement> posvisactminusnegvisact = posvisact.Subtract(negvisact).MultiplyInPlace(
-                    visBiasLearningRate / (TElement)numcases))
+                //using (Matrix2D<TElement> posvisactminusnegvisact = posvisact.Subtract(negvisact).MultiplyInPlace(visBiasLearningRate / (TElement)numcases))
+                using (Matrix2D<TElement> posvisactminusnegvisact = posvisact.Subtract(negvisact).MultiplyInPlace(visBiasLearningRate / (TElement)batchCases))
                 {
                     VisibleBiasInc.Dispose();
                     _visbiasinc = momentumvisbiasinc.Add(posvisactminusnegvisact);
                 }
                 using (neghidact)
                 using (Matrix2D<TElement> momentumhidbiasinc = HiddenBiasInc.Multiply(momentum))
-                using (Matrix2D<TElement> poshidactminusneghidact = poshidact.Subtract(neghidact).MultiplyInPlace(
-                    hidBiasLearningRate / (TElement)numcases))
+                //using (Matrix2D<TElement> poshidactminusneghidact = poshidact.Subtract(neghidact).MultiplyInPlace(hidBiasLearningRate / (TElement)numcases))
+                using (Matrix2D<TElement> poshidactminusneghidact = poshidact.Subtract(neghidact).MultiplyInPlace(hidBiasLearningRate / (TElement)batchCases))
                 {
                     HiddenBiasInc.Dispose();
                     _hidbiasinc = momentumhidbiasinc.Add(poshidactminusneghidact);

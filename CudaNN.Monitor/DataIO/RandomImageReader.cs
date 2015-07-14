@@ -70,7 +70,7 @@ namespace CudaNN.DeepBelief.DataIO
             var cutoff = (double)count / TotalRecordCount;
 
 
-            var filteredFiles = files.Where(a => rnd.NextDouble() < cutoff).Take(count).ToList();
+            var filteredFiles = files.Where(a => rnd.NextDouble() <= cutoff).Take(count).ToList();
 
             var data = new T[filteredFiles.Count, DataWidth];
 
@@ -99,7 +99,7 @@ namespace CudaNN.DeepBelief.DataIO
                Directory.EnumerateFiles(DirectoryPath,
                    string.Join("|", ValidImageExtensions.Select(a => string.Format("*{0}", a))),
                    SearchOption.AllDirectories)
-                   .Where(a => rnd.NextDouble() < cutOff)
+                   .Where(a => rnd.NextDouble() <= cutOff)
                    .Take(count)
                    .ToList();
 
@@ -146,7 +146,7 @@ namespace CudaNN.DeepBelief.DataIO
                Directory.EnumerateFiles(DirectoryPath,
                    string.Join("|", ValidImageExtensions.Select(a => string.Format("*{0}", a))),
                    SearchOption.AllDirectories)
-                   .Where(a => rnd.NextDouble() < cutOff)
+                   .Where(a => rnd.NextDouble() <= cutOff)
                    .Take(count)
                    .ToList();
 
@@ -177,7 +177,7 @@ namespace CudaNN.DeepBelief.DataIO
             var i = 0;
             var cutoff = (double)count / TotalRecordCount;
 
-            var filteredFiles = files.Where(a => rnd.NextDouble() < cutoff).Take(count).ToList();
+            var filteredFiles = files.Where(a => rnd.NextDouble() <= cutoff).Take(count).ToList();
 
             labelsEncoded = new T[filteredFiles.Count, LabelDataWidth];
             labels = new string[filteredFiles.Count];

@@ -512,8 +512,8 @@ namespace SimpleRBM.Cuda
                 ActivateInPlace(posHiddenActivations, HiddenActivation);
 
                 using (
-                    Matrix2D<TElement> uniformRandom = GPU.UniformDistribution(GPURAND, numExamples,
-                        NumHiddenNeurons + 1, (TElement)1))
+                    Matrix2D<TElement> uniformRandom = GPU.UniformDistribution(GPURAND, posHiddenActivations.GetLength(0),
+                        posHiddenActivations.GetLength(1), (TElement)1))
                 {
                     posHiddenStates = posHiddenActivations.GreaterThan(uniformRandom);
                 }

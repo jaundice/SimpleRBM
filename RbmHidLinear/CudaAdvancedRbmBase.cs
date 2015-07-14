@@ -61,7 +61,7 @@ namespace CudaNN
 
         protected CudaAdvancedRbmBase(GPGPU gpu, GPGPURAND rand, int layerIndex, int numVisibleNeurons,
             int numHiddenNeurons, TElement weightcost = (TElement) 0.0002,
-            TElement initialMomentum = (TElement) 0.5, TElement finalMomentum = (TElement) 0.9, TElement weightInitializationStDev = (TElement)0.01, TElement momentumStep=(TElement)0.01)
+            TElement initialMomentum = (TElement) 0.5, TElement finalMomentum = (TElement) 0.9, TElement weightInitializationStDev = (TElement)0.01, TElement momentumStep = (TElement)0.01)
         {
             _weightcost = weightcost;
             _initialmomentum = initialMomentum;
@@ -248,7 +248,7 @@ namespace CudaNN
                     TElement hidBiasLearningRate = hidBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
 
                     error = BatchedTrainEpoch(data, dataTransposed, posvisact, epoch, numcases,
-                        weightLearningRate, hidBiasLearningRate, visBiasLearningRate, Math.Min((InitialMomentum + epoch*MomentumStep), FinalMomentum));
+                        weightLearningRate, hidBiasLearningRate, visBiasLearningRate, Math.Min((InitialMomentum + epoch * MomentumStep), FinalMomentum));
 
                     TElement delta;
                     var shouldExit = exitConditionEvaluator.Exit(epoch, error, sw.Elapsed, out delta);
@@ -264,6 +264,9 @@ namespace CudaNN
                     OnEpochComplete(args);
                     if (shouldExit)
                         break;
+                    HiddenBiasInc.Zeros();
+                    VisibleBiasInc.Zeros();
+                    WeightInc.Zeros();
                 }
 
                 OnTrainComplete(args);
@@ -349,10 +352,15 @@ namespace CudaNN
 
                     try
                     {
-                        error =
-                            datasets.Sum(
-                                block => BatchedTrainEpoch(block.Item1, block.Item2, block.Item3, epoch, numcases,
-                                    weightLearningRate, hidBiasLearningRate, visBiasLearningRate, Math.Min((InitialMomentum + epoch * MomentumStep), FinalMomentum)));
+                        var momentum = Math.Min((InitialMomentum + epoch * MomentumStep), FinalMomentum);
+                        error = 0;
+                        foreach (var batch in datasets)
+                        {
+
+                            error += BatchedTrainEpoch(batch.Item1, batch.Item2, batch.Item3, epoch, numcases,
+                                weightLearningRate, hidBiasLearningRate,
+                                visBiasLearningRate, momentum);
+                        }
                     }
                     catch (AggregateException agg)
                     {
@@ -376,6 +384,10 @@ namespace CudaNN
                     OnEpochComplete(args);
                     if (shouldExit)
                         break;
+
+                    HiddenBiasInc.Zeros();
+                    VisibleBiasInc.Zeros();
+                    WeightInc.Zeros();
                 }
 
                 OnTrainComplete(args);
@@ -437,15 +449,23 @@ namespace CudaNN
                 TElement hidBiasLearningRate = hidBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
                 try
                 {
-                    error = datasets.Sum(block =>
+
+                    var momentum = Math.Min((InitialMomentum + epoch * MomentumStep), FinalMomentum);
+                    error = 0;
+                    foreach (var batch in datasets)
                     {
-                        using (var d = AsCuda.GPU.Upload(block.Item1))
-                        using (var t = AsCuda.GPU.Upload(block.Item2))
-                        using (var p = AsCuda.GPU.Upload(block.Item3))
-                            return BatchedTrainEpoch(d, t, p, epoch, numcases,
+                        using (var d = AsCuda.GPU.Upload(batch.Item1))
+                        using (var t = AsCuda.GPU.Upload(batch.Item2))
+                        using (var p = AsCuda.GPU.Upload(batch.Item3))
+                            error += BatchedTrainEpoch(d, t, p, epoch, numcases,
                                 weightLearningRate, hidBiasLearningRate,
-                                visBiasLearningRate, Math.Min((InitialMomentum + epoch * MomentumStep), FinalMomentum));
-                    });
+                                visBiasLearningRate, momentum);
+
+                    }
+
+                    HiddenBiasInc.Zeros();
+                    VisibleBiasInc.Zeros();
+                    WeightInc.Zeros();
                 }
                 catch (AggregateException agg)
                 {
@@ -453,7 +473,7 @@ namespace CudaNN
                         throw agg.InnerException;
                     else
                         throw;
-                    
+
                 }
 
                 TElement delta;
@@ -470,6 +490,7 @@ namespace CudaNN
                 OnEpochComplete(args);
                 if (shouldExit)
                     break;
+
             }
 
             OnTrainComplete(args);
@@ -806,6 +827,10 @@ namespace CudaNN
                 OnEpochComplete(args);
                 if (shouldExit)
                     break;
+
+                HiddenBiasInc.Zeros();
+                VisibleBiasInc.Zeros();
+                WeightInc.Zeros();
             }
 
             OnTrainComplete(args);

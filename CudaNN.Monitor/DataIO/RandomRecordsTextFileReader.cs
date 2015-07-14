@@ -34,7 +34,7 @@ namespace CudaNN.DeepBelief.DataIO
                     !sr.EndOfStream && lineNo < count && !string.IsNullOrWhiteSpace(line);
                     line = sr.ReadLine())
                 {
-                    if (rnd.NextDouble() < cutOff)
+                    if (rnd.NextDouble() <= cutOff)
                     {
                         string[] lineParts = line.Split(FieldSeparator);
                         LabelReader.CopyToTarget(labelsEncoded, lineParts, lineNo);
@@ -83,7 +83,7 @@ namespace CudaNN.DeepBelief.DataIO
                     !sr.EndOfStream && lineNo < count && !string.IsNullOrWhiteSpace(line);
                     line = sr.ReadLine())
                 {
-                    if (rnd.NextDouble() < cutOff)
+                    if (rnd.NextDouble() <= cutOff)
                     {
                         string[] lineParts = line.Split(FieldSeparator);
                         DataReader.CopyToTarget(data, lineParts, lineNo);
@@ -145,7 +145,7 @@ namespace CudaNN.DeepBelief.DataIO
                     !sr.EndOfStream && lineNo < count && !string.IsNullOrWhiteSpace(line);
                     line = sr.ReadLine())
                 {
-                    if (rnd.NextDouble() < cutOff)
+                    if (rnd.NextDouble() <= cutOff)
                     {
                         string[] lineParts = line.Split(FieldSeparator);
                         LabelReader.CopyToTarget(cod, lineParts, j);
@@ -220,7 +220,7 @@ namespace CudaNN.DeepBelief.DataIO
                     !sr.EndOfStream && lineNo < count && !string.IsNullOrWhiteSpace(line);
                     line = sr.ReadLine())
                 {
-                    if (rnd.NextDouble() < cutOff)
+                    if (rnd.NextDouble() <= cutOff)
                     {
                         string[] lineParts = line.Split(FieldSeparator);
                         DataReader.CopyToTarget(dat, lineParts, j);

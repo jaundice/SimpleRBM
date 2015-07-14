@@ -51,6 +51,9 @@ namespace SimpleRBM.Cuda
 
         public static Matrix2D<TElement> Multiply(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
+            if (self.GetLength(1) != other.GetLength(0))
+                throw new ArgumentException("Invalid matrix dimensions");
+
             var blas = CudaToolsRegistry.GetBlas(self.GPU);
             int m = self.GetLength(0);
             int k = self.GetLength(1);
@@ -75,7 +78,7 @@ namespace SimpleRBM.Cuda
             Transpose
         }
 
-            //public static Matrix1D<TElement> ToSingleRank(this Matrix2D<TElement> self, out int stride)
+        //public static Matrix1D<TElement> ToSingleRank(this Matrix2D<TElement> self, out int stride)
         //{
         //    Matrix1D<TElement> result = self.GPU.AllocateNoSet<TElement>(self.GetLength(0) * self.GetLength(1));
         //    dim3 grid, block;
@@ -190,6 +193,8 @@ namespace SimpleRBM.Cuda
 
         public static Matrix2D<TElement> DivideElements(this Matrix2D<TElement> self, Matrix2D<TElement> denominator)
         {
+            CheckEqualDimensions(self, denominator);
+
             var res = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
@@ -240,6 +245,8 @@ namespace SimpleRBM.Cuda
 
         public static Matrix2D<TElement> GreaterThan(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
+            CheckEqualDimensions(self, other);
+
             Matrix2D<TElement> res = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
@@ -251,6 +258,8 @@ namespace SimpleRBM.Cuda
 
         public static Matrix2D<TElement> GreaterThanLinear(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
+            CheckEqualDimensions(self, other);
+
             Matrix2D<TElement> res = self.GPU.AllocateNoSet<TElement>(self.GetLength(0), self.GetLength(1));
             dim3 grid, block;
             ThreadOptimiser.Instance.GetStrategy(self, out grid, out block);
@@ -290,6 +299,8 @@ namespace SimpleRBM.Cuda
 
         public static Matrix2D<TElement> Subtract(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
+            CheckEqualDimensions(self, other);
+
             Matrix2D<TElement> res = self.CloneOnDevice();
 
             res.SubtractInPlace(other);
@@ -298,6 +309,7 @@ namespace SimpleRBM.Cuda
 
         public static Matrix2D<TElement> SubtractInPlace(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
+            CheckEqualDimensions(self, other);
 
             using (var self1d = self.Cast1D())
             using (var other1d = other.Cast1D())
@@ -311,6 +323,7 @@ namespace SimpleRBM.Cuda
 
         public static Matrix2D<TElement> Add(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
+            CheckEqualDimensions(self, other);
             Matrix2D<TElement> res = self.CloneOnDevice();
             res.AddInPlace(other);
             return res;
@@ -319,6 +332,8 @@ namespace SimpleRBM.Cuda
 
         public static Matrix2D<TElement> AddInPlace(this Matrix2D<TElement> self, Matrix2D<TElement> other)
         {
+            CheckEqualDimensions(self, other);
+
             using (var self1d = self.Cast1D())
             using (var other1d = other.Cast1D())
             {
@@ -327,6 +342,12 @@ namespace SimpleRBM.Cuda
                 blas.AXPY(1, other1d.Matrix, self1d.Matrix);
             }
             return self;
+        }
+
+        private static void CheckEqualDimensions(Matrix2D<double> self, Matrix2D<double> other)
+        {
+            if (self.GetLength(0) != other.GetLength(0) || self.GetLength(1) != other.GetLength(1))
+                throw new ArgumentException("Invalid matrix dimensions");
         }
 
         public static Matrix2D<TElement> UpdateWithMomentum(this Matrix2D<TElement> self, Matrix2D<TElement> other,

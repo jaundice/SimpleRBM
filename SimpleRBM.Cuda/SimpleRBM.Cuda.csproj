@@ -202,38 +202,6 @@
     <Compile Include="ThreadOptimiser.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\CudafyV1.28CustomBuild\cudafycl.AnyCPU.exe">
-      <Link>cudafycl.AnyCPU.exe</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\CudafyV1.28CustomBuild\cudafycl.AnyCPU.pdb">
-      <Link>cudafycl.AnyCPU.pdb</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\CudafyV1.28CustomBuild\cudafycl.x86.exe">
-      <Link>cudafycl.x86.exe</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\CudafyV1.28CustomBuild\cudafycl.x86.pdb">
-      <Link>cudafycl.x86.pdb</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\CudafyV1.28CustomBuild\CudafyViewer.AnyCPU.exe">
-      <Link>CudafyViewer.AnyCPU.exe</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\CudafyV1.28CustomBuild\CudafyViewer.AnyCPU.pdb">
-      <Link>CudafyViewer.AnyCPU.pdb</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\CudafyV1.28CustomBuild\CudafyViewer.x86.exe">
-      <Link>CudafyViewer.x86.exe</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\CudafyV1.28CustomBuild\CudafyViewer.x86.pdb">
-      <Link>CudafyViewer.x86.pdb</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="optdigits-tra.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -243,24 +211,6 @@
       <Project>{62c68210-6a25-4e4c-a840-e85629403c3b}</Project>
       <Name>SimpleRBM.Common</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\CudafyV1.28CustomBuild\cudafycl.AnyCPU.exe.config">
-      <Link>cudafycl.AnyCPU.exe.config</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\CudafyV1.28CustomBuild\cudafycl.x86.exe.config">
-      <Link>cudafycl.x86.exe.config</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\CudafyV1.28CustomBuild\CudafyViewer.AnyCPU.exe.config">
-      <Link>CudafyViewer.AnyCPU.exe.config</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\CudafyV1.28CustomBuild\CudafyViewer.x86.exe.config">
-      <Link>CudafyViewer.x86.exe.config</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />

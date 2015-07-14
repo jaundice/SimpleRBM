@@ -106,9 +106,9 @@ namespace SimpleRBM.Test
         {
             float[,] src = new float[2, 2];
             src[0, 0] = 1f;
-            src[0, 1] = 1f;
+            src[0, 1] = 3f;
             src[1, 0] = 1f;
-            src[1, 1] = 1f;
+            src[1, 1] = 2f;
             float ret;
             using (var data = _dev.Upload(src))
             {
@@ -227,6 +227,38 @@ namespace SimpleRBM.Test
 
         }
 
+        [TestMethod]
+        public void TestGreaterThanLower()
+        {
+            using (var a = _dev.AllocateAndSet<double>(4000, 4000))
+            using (var b = _dev.AllocateAndSet<double>(4000, 4000))
+            {
+                a.Fill(0.5);
+                b.Fill(0.7);
+
+                using (var c = a.GreaterThan(b))
+                {
+                    Assert.IsTrue(c.Sum() == 0);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void TestGreaterThanHigher()
+        {
+            using (var a = _dev.AllocateAndSet<double>(4000, 4000))
+            using (var b = _dev.AllocateAndSet<double>(4000, 4000))
+            {
+                a.Fill(0.8);
+                b.Fill(0.7);
+
+                using (var c = a.GreaterThan(b))
+                {
+                    Assert.IsTrue(c.Sum() == 4000 * 4000);
+                }
+            }
+        }
+
         private double[,] RandomMatrix(int rows, int cols)
         {
             var m = new double[rows, cols];
@@ -251,5 +283,7 @@ namespace SimpleRBM.Test
                 }
             }
         }
+
+
     }
 }

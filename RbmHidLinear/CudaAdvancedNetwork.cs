@@ -69,15 +69,26 @@ namespace CudaNN
         Matrix2D<TElement> ICudaNetwork<TElement>.Encode(Matrix2D<TElement> data, int maxDepth = -1)
         {
             Matrix2D<TElement> d = data;
+
+            int dataLen = data.GetLength(0);
+
+
             int depth = maxDepth == -1 ? Machines.Count - 1 : maxDepth;
             for (int i = 0; i < depth + 1; i++)
             {
+
+
                 Matrix2D<TElement> encoded = Machines[i].Encode(d);
                 if (!ReferenceEquals(d, data))
                 {
                     d.Dispose();
                 }
                 d = encoded;
+
+                if (d.GetLength(0) != dataLen)
+                {
+                    throw new Exception("Data length has changed");
+                }
             }
             return d;
         }
@@ -92,9 +103,13 @@ namespace CudaNN
         Matrix2D<TElement> ICudaNetwork<TElement>.EncodeWithLabelExpansion(Matrix2D<TElement> data)
         {
             Matrix2D<TElement> d = data;
+            int dataLen = data.GetLength(0);
+
             int depth = Machines.Count - 1;
             for (int i = 0; i < depth + 1; i++)
             {
+
+
                 if (i == Machines.Count - 1)
                 {
                     Matrix2D<TElement> expanded = Machines[0].GPU.AllocateAndSet<TElement>(data.GetLength(0),
@@ -112,7 +127,13 @@ namespace CudaNN
                 {
                     d.Dispose();
                 }
+
                 d = encoded;
+
+                if (d.GetLength(0) != dataLen)
+                {
+                    throw new Exception("Data length has changed");
+                }
             }
             return d;
         }
@@ -142,15 +163,26 @@ namespace CudaNN
         {
             int depth = maxDepth == -1 ? Machines.Count - 1 : maxDepth;
 
+            int dataLen = activations.GetLength(0);
             Matrix2D<TElement> d = activations;
 
             for (int i = depth; i > -1; i--)
             {
+
+
                 Matrix2D<TElement> constructed = Machines[i].Decode(d);
                 if (!ReferenceEquals(d, activations))
                     d.Dispose();
                 d = constructed;
+
+                if (d.GetLength(0) != dataLen)
+                {
+                    throw new Exception("Data length has changed");
+                }
             }
+
+
+
             return d;
         }
 
@@ -197,11 +229,14 @@ namespace CudaNN
             out Matrix2D<TElement> labels, bool softmaxLabels = true)
         {
             int depth = Machines.Count - 1;
+            int dataLen = activations.GetLength(0);
 
             labels = null;
             Matrix2D<TElement> d = activations;
             for (int i = depth; i > -1; i--)
             {
+
+
                 Matrix2D<TElement> constructed = Machines[i].Decode(d);
 
                 if (i == depth)
@@ -223,6 +258,11 @@ namespace CudaNN
                 if (!ReferenceEquals(d, activations))
                     d.Dispose();
                 d = constructed;
+
+                if (d.GetLength(0) != dataLen)
+                {
+                    throw new Exception("Data length has changed");
+                }
             }
             return d;
         }
@@ -311,8 +351,13 @@ namespace CudaNN
             int trainFrom = 0)
         {
             Matrix2D<TElement> layerTrainData = data;
+
+            int dataLen = data.GetLength(0);
+
             for (int i = 0; i < Machines.Count; i++)
             {
+
+
                 cancelToken.ThrowIfCancellationRequested();
                 if (i >= trainFrom)
                     Machines[i].GreedyTrain(layerTrainData, exitConditionFactory.Create(i),
@@ -325,6 +370,11 @@ namespace CudaNN
                     layerTrainData.Dispose();
                 }
                 layerTrainData = encoded;
+
+                if (layerTrainData.GetLength(0) != dataLen)
+                {
+                    throw new Exception("Data length has changed");
+                }
             }
         }
 
@@ -336,8 +386,12 @@ namespace CudaNN
             int trainFrom = 0)
         {
             Matrix2D<TElement> layerTrainData = data;
+
+            int dataLen = data.GetLength(0);
+
             for (int i = 0; i < Machines.Count; i++)
             {
+
                 cancelToken.ThrowIfCancellationRequested();
                 if (i == Machines.Count - 1)
                 {
@@ -363,6 +417,11 @@ namespace CudaNN
                     layerTrainData.Dispose();
                 }
                 layerTrainData = encoded;
+
+                if (layerTrainData.GetLength(0) != dataLen)
+                {
+                    throw new Exception("Data length has changed");
+                }
             }
 
             if (!ReferenceEquals(layerTrainData, data))
@@ -395,6 +454,8 @@ namespace CudaNN
             int trainFrom = 0)
         {
             Matrix2D<TElement> layerTrainData = data;
+            int dataLen = data.GetLength(0);
+
             for (int i = 0; i < Machines.Count; i++)
             {
                 cancelToken.ThrowIfCancellationRequested();
@@ -409,6 +470,11 @@ namespace CudaNN
                     layerTrainData.Dispose();
                 }
                 layerTrainData = encoded;
+
+                if (layerTrainData.GetLength(0) != dataLen)
+                {
+                    throw new Exception("Data length has changed");
+                }
             }
         }
 
@@ -420,8 +486,11 @@ namespace CudaNN
             int trainFrom = 0)
         {
             Matrix2D<TElement> layerTrainData = data;
+            int dataLen = data.GetLength(0);
+
             for (int i = 0; i < Machines.Count; i++)
             {
+
                 cancelToken.ThrowIfCancellationRequested();
                 if (i == Machines.Count - 1)
                 {
@@ -447,6 +516,12 @@ namespace CudaNN
                     layerTrainData.Dispose();
                 }
                 layerTrainData = encoded;
+
+                if (layerTrainData.GetLength(0) != dataLen)
+                {
+                    throw new Exception("Data length has changed");
+                }
+
             }
 
             if (!ReferenceEquals(layerTrainData, data))
@@ -463,7 +538,10 @@ namespace CudaNN
             ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken,
             int trainFrom = 0)
         {
+
             Matrix2D<TElement> layerTrainData = data;
+            int dataLen = data.GetLength(0);
+
             for (int i = 0; i < Machines.Count; i++)
             {
                 cancelToken.ThrowIfCancellationRequested();
@@ -481,6 +559,11 @@ namespace CudaNN
                 }
 
                 layerTrainData = encoded;
+
+                if (layerTrainData.GetLength(0) != dataLen)
+                {
+                    throw new Exception("Data length has changed");
+                }
             }
         }
 
@@ -492,6 +575,9 @@ namespace CudaNN
             int trainFrom = 0)
         {
             Matrix2D<TElement> layerTrainData = data;
+
+            int dataLen = data.GetLength(0);
+
             for (int i = 0; i < Machines.Count; i++)
             {
                 cancelToken.ThrowIfCancellationRequested();
@@ -528,6 +614,11 @@ namespace CudaNN
                 }
 
                 layerTrainData = encoded;
+
+                if (layerTrainData.GetLength(0) != dataLen)
+                {
+                    throw new Exception("Data length has changed");
+                }
             }
 
 
@@ -713,8 +804,11 @@ namespace CudaNN
             ILearningRateCalculatorFactory<TElement> visBiasLearningRateCalculatorFactory, CancellationToken cancelToken, int trainFrom = 0)
         {
             IList<TElement[,]> layerTrainData = batches;
+            int dataLen = batches.Sum(a => a.GetLength(0));
+
             for (int i = 0; i < Machines.Count; i++)
             {
+
                 cancelToken.ThrowIfCancellationRequested();
                 if (i >= trainFrom)
                     Machines[i].GreedyBatchedTrainMem(layerTrainData, exitConditionFactory.Create(i),
@@ -723,6 +817,11 @@ namespace CudaNN
                         visBiasLearningRateCalculatorFactory.Create(i), cancelToken);
 
                 layerTrainData = layerTrainData.Select(Machines[i].Encode).ToList();
+
+                if (layerTrainData.Sum(a => a.GetLength(0)) != dataLen)
+                {
+                    throw new Exception("Data length has changed");
+                }
             }
         }
 
@@ -737,8 +836,13 @@ namespace CudaNN
                 throw new Exception("Mismatch between lengths of batch data and batch labels");
             }
             IList<TElement[,]> layerTrainData = batches;
+
+            int dataLen = batches.Sum(a => a.GetLength(0));
+
             for (int i = 0; i < Machines.Count; i++)
             {
+
+
                 cancelToken.ThrowIfCancellationRequested();
                 if (i == Machines.Count - 1)
                 {
@@ -775,6 +879,11 @@ namespace CudaNN
 
 
                 layerTrainData = layerTrainData.Select(Machines[i].Encode).ToList();
+
+                if (layerTrainData.Sum(a => a.GetLength(0)) != dataLen)
+                {
+                    throw new Exception("Data length has changed");
+                }
             }
         }
     }

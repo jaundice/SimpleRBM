@@ -1,3 +1,6 @@
+//#define NoHidBias
+//#define NoVisBias
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -144,6 +147,19 @@ namespace CudaNN
             ConvertActivationsToStates = convertActivationsToStates;
             _decodingNoiseLevel = decodingNoiseLevel;
             _encodingNoiseLevel = encodingNoiseLevel;
+
+            var state = this.State;
+
+#if NoHidBias
+            this.Wake();
+            _hiddenBiases.Fill(1);
+#endif
+#if NoVisBias
+            this.Wake();
+            _visibleBiases.Fill(1);
+#endif
+
+            SetState(state);
         }
 
 
@@ -310,6 +326,7 @@ namespace CudaNN
             TElement error;
 
             var batchCases = data.GetLength(0);
+            //numcases = batchCases;//testing
 
 
             //start positive phase
@@ -370,9 +387,11 @@ namespace CudaNN
                 using (Matrix2D<TElement> posprodsminusnegprods = posprods.Subtract(negprods))
                 using (Matrix2D<TElement> weightcostWeight = AsCuda.Weights.Multiply(WeightCost))
                 {
-                    posprodsminusnegprods.MultiplyInPlace((TElement)1 / (TElement)numcases);
+                    //posprodsminusnegprods.MultiplyInPlace((TElement)1 / (TElement)numcases);
+                    posprodsminusnegprods.MultiplyInPlace((TElement)1 / (TElement)batchCases);
                     posprodsminusnegprods.SubtractInPlace(weightcostWeight);
                     posprodsminusnegprods.MultiplyInPlace(weightLearningRate);
+
                     WeightInc.Dispose();
                     _vishidinc = momentumvishidinc.Add(posprodsminusnegprods);
                     AsCuda.Weights.AddInPlace(WeightInc);
@@ -382,11 +401,15 @@ namespace CudaNN
                 using (Matrix2D<TElement> momentumvisbiasinc = VisibleBiasInc.Multiply(momentum))
                 using (Matrix2D<TElement> posvisactminusnegvisact = posvisact.Subtract(negvisact))
                 {
-                    posvisactminusnegvisact.MultiplyInPlace(
-                        visBiasLearningRate / numcases);
+
+#if !NoVisBias
+
+                    //posvisactminusnegvisact.MultiplyInPlace(visBiasLearningRate / numcases);
+                    posvisactminusnegvisact.MultiplyInPlace(visBiasLearningRate / batchCases);
                     VisibleBiasInc.Dispose();
                     _visbiasinc = momentumvisbiasinc.Add(posvisactminusnegvisact);
                     AsCuda.VisibleBiases.AddInPlace(VisibleBiasInc);
+#endif
                 }
 
                 using (neghidact)
@@ -394,12 +417,16 @@ namespace CudaNN
                 using (Matrix2D<TElement> momentumhidbiasinc = HiddenBiasInc.Multiply(momentum))
                 using (Matrix2D<TElement> poshidactminusneghidact = poshidact.Subtract(neghidact))
                 {
-                    poshidactminusneghidact.MultiplyInPlace(
-                        hidBiasLearningRate / numcases);
+#if !NoHidBias
+                    //poshidactminusneghidact.MultiplyInPlace(hidBiasLearningRate / numcases);
+                    poshidactminusneghidact.MultiplyInPlace(hidBiasLearningRate / batchCases);
+
                     HiddenBiasInc.Dispose();
                     _hidbiasinc = momentumhidbiasinc.Add(poshidactminusneghidact);
                     AsCuda.HiddenBiases.AddInPlace(HiddenBiasInc);
+#endif
                 }
+
 
             }
             return error;

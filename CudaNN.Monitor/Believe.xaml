@@ -32,10 +32,10 @@
                             <ColumnDefinition Width="*"></ColumnDefinition>
                             <ColumnDefinition Width="3*"></ColumnDefinition>
                         </Grid.ColumnDefinitions>
-                        <Label Grid.Column="0" Margin="4" Content="{Binding OriginalImageSet.Label}"></Label>
-                        <Image Grid.Column="1" Margin="4" Stretch="Uniform" UseLayoutRounding="False" Loaded="FrameworkElement_OnLoaded"  StretchDirection="Both" Source="{Binding OriginalImageSet.CodeImage}"></Image>
-                        <Image Grid.Column="2" Margin="4" Stretch="Uniform" UseLayoutRounding="False" Loaded="FrameworkElement_OnLoaded"  StretchDirection="Both" Source="{Binding ReconstructedImageSet.CodeImage}"></Image>
-                        <Label Grid.Column="3" Margin="4" Content="{Binding ReconstructedImageSet.Label}"></Label>
+                        <Label Grid.Column="0" Margin="4" Content="{Binding OriginalImageSet.Label, Mode=OneWay}"></Label>
+                        <Image Grid.Column="1" Margin="4" Stretch="Uniform" UseLayoutRounding="False" Loaded="FrameworkElement_OnLoaded"  StretchDirection="Both" Source="{Binding OriginalImageSet.CodeImage, Mode=OneWay}"></Image>
+                        <Image Grid.Column="2" Margin="4" Stretch="Uniform" UseLayoutRounding="False" Loaded="FrameworkElement_OnLoaded"  StretchDirection="Both" Source="{Binding ReconstructedImageSet.CodeImage, Mode=OneWay}"></Image>
+                        <Label Grid.Column="3" Margin="4" Content="{Binding ReconstructedImageSet.Label, Mode=OneWay}"></Label>
                     </Grid>
                     <Image Grid.Row="1" Margin="4" Stretch="Uniform" UseLayoutRounding="False"  StretchDirection="Both"  Source="{Binding Path=OriginalImageSet.DataImage, Mode=OneWay}" Grid.Column="0" Loaded="FrameworkElement_OnLoaded"/>
                     <Image Grid.Row="1" Margin="4" Stretch="Uniform" UseLayoutRounding="False" StretchDirection="Both" Source="{Binding Path=ReconstructedImageSet.DataImage, Mode=OneWay}" Grid.Column="1" Loaded="FrameworkElement_OnLoaded"/>
@@ -54,7 +54,7 @@
             <DataTemplate x:Key="LoadedLayerTemplate"  DataType="layerBuilders:LoadLayerInfo">
                 <WrapPanel>
                     <Label>Loaded From</Label>
-                    <Label  Margin="4" Content="{Binding Path}"></Label>
+                    <Label  Margin="4" Content="{Binding Path, Mode=OneWay}"></Label>
                 </WrapPanel>
             </DataTemplate>
             <DataTemplate x:Key="BinaryLayerTemplate" DataType="layerBuilders:ConstructBinaryLayer">
@@ -157,40 +157,49 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Label Grid.Column="0" Grid.Row="0" Margin="4" Content="Layer"/>
-                <Label Grid.Column="0" Grid.Row="1" Margin="4" Content="{Binding Layer, Mode=OneWay}" />
-                <Label Grid.Column="1" Grid.Row="0" Margin="4" Content="Epoch"/>
-                <Label Grid.Column="1" Grid.Row="1" Margin="4" Content="{Binding Epoch, Mode=OneWay}" />
-                <Label Grid.Column="2" Grid.Row="0" Margin="4" Content="Error"/>
-                <Label Grid.Column="2" Grid.Row="1" Margin="4" Content="{Binding Error, Mode=OneWay}" Foreground="{Binding ErrorLabelBrush}" />
-                <Label Grid.Column="3" Grid.Row="0" Margin="4" Content="Delta"/>
-                <Label Grid.Column="3" Grid.Row="1" Margin="4" Content="{Binding Delta, Mode=OneWay}" Foreground="{Binding DeltaLabelBrush}" />
-                <Label Grid.Column="4" Grid.Row="0" Margin="4" Content="Elapsed"/>
-                <Label Grid.Column="4" Grid.Row="1" Margin="4" Content="{Binding Elapsed, Mode=OneWay}" />
-                <Label Grid.Column="5" Grid.Row="0" Margin="4" Content="Learning Rate"/>
-                <Label Grid.Column="5" Grid.Row="1" Margin="4" Content="{Binding LearningRate, Mode=OneWay}" />
-                <Label Grid.Column="6" Grid.Row="0" Margin="4" Content="Update Frequency"/>
-                <TextBox Grid.Column="6" Grid.Row="1" Margin="4" Text="{Binding UpdateFrequency, Mode=TwoWay}" />
-                <Label Grid.Column="7" Grid.Row="0" Content="Backup Frequency"/>
-                <TextBox Grid.Column="7" Grid.Row="1" Margin="4" Text="{Binding BackupFrequency, Mode=TwoWay}" />
-                <Label Grid.Column="8" Grid.Row="0" Content="#Training Examples"/>
-                <Label Grid.Column="8" Grid.Row="1" Margin="4" Content="{Binding NumTrainingExamples, Mode=TwoWay}" />
-                <Label Grid.Column="9" Grid.Row="0" Content="Max Epochs"/>
-                <TextBox Grid.Column="9" Grid.Row="1" Margin="4" Text="{Binding ExitEvaluatorFactory.MaxEpochs, Mode=TwoWay}" />
-                <Label Grid.Column="10" Grid.Row="0" Content="Min Error"/>
-                <TextBox Grid.Column="10" Grid.Row="1" Margin="4" Text="{Binding ExitEvaluatorFactory.MinError, Mode=TwoWay}" />
+                <Label Grid.Column="0" Grid.Row="0" Margin="4" Content="Device"/>
+                <ComboBox Grid.Column="0" Grid.Row="1" Margin="4" ItemsSource="{Binding GraphicsCards, Mode=OneWay}" SelectedIndex="0" SelectedItem="{Binding SelectedGraphicsCard, Mode=TwoWay}" >
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Label Content="{Binding Item2, Mode=OneWay}"></Label>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ComboBox>
+                <Label Grid.Column="1" Grid.Row="0" Margin="4" Content="Layer"/>
+                <Label Grid.Column="1" Grid.Row="1" Margin="4" Content="{Binding Layer, Mode=OneWay}" />
+                <Label Grid.Column="2" Grid.Row="0" Margin="4" Content="Epoch"/>
+                <Label Grid.Column="2" Grid.Row="1" Margin="4" Content="{Binding Epoch, Mode=OneWay}" />
+                <Label Grid.Column="3" Grid.Row="0" Margin="4" Content="Error"/>
+                <Label Grid.Column="3" Grid.Row="1" Margin="4" Content="{Binding Error, Mode=OneWay}" Foreground="{Binding ErrorLabelBrush, Mode=OneWay}" />
+                <Label Grid.Column="4" Grid.Row="0" Margin="4" Content="Delta"/>
+                <Label Grid.Column="4" Grid.Row="1" Margin="4" Content="{Binding Delta, Mode=OneWay}" Foreground="{Binding DeltaLabelBrush, Mode=OneWay}" />
+                <Label Grid.Column="5" Grid.Row="0" Margin="4" Content="Elapsed"/>
+                <Label Grid.Column="5" Grid.Row="1" Margin="4" Content="{Binding Elapsed, Mode=OneWay}" />
+                <Label Grid.Column="6" Grid.Row="0" Margin="4" Content="Learning Rate"/>
+                <Label Grid.Column="6" Grid.Row="1" Margin="4" Content="{Binding LearningRate, Mode=OneWay}" />
+                <Label Grid.Column="7" Grid.Row="0" Margin="4" Content="Update Frequency"/>
+                <TextBox Grid.Column="7" Grid.Row="1" Margin="4" Text="{Binding UpdateFrequency, Mode=TwoWay}" />
+                <Label Grid.Column="8" Grid.Row="0" Content="Backup Frequency"/>
+                <TextBox Grid.Column="8" Grid.Row="1" Margin="4" Text="{Binding BackupFrequency, Mode=TwoWay}" />
+                <Label Grid.Column="9" Grid.Row="0" Content="#Training Examples"/>
+                <Label Grid.Column="9" Grid.Row="1" Margin="4" Content="{Binding NumTrainingExamples, Mode=TwoWay}" />
+                <Label Grid.Column="10" Grid.Row="0" Content="Max Epochs"/>
+                <TextBox Grid.Column="10" Grid.Row="1" Margin="4" Text="{Binding ExitEvaluatorFactory.MaxEpochs, Mode=TwoWay}" />
+                <Label Grid.Column="11" Grid.Row="0" Content="Min Error"/>
+                <TextBox Grid.Column="11" Grid.Row="1" Margin="4" Text="{Binding ExitEvaluatorFactory.MinError, Mode=TwoWay}" />
 
 
-                <ComboBox Margin="4" Grid.Column="11" Grid.Row="0" ItemsSource="{StaticResource DemoNames}" DisplayMemberPath="." SelectedValuePath="."  SelectedValue="{Binding DemoMode, Mode=TwoWay}" SelectedIndex="0" />
-                <Button Margin="4" Grid.Column="12"  Grid.Row="0" Command="{Binding RunCommand}" Content="Start Training"/>
-                <Button Margin="4" Grid.Column="11"  Grid.Row="1" Command="{Binding ExitEvaluatorFactory.ExitNextCommand, Mode=OneWay}" Content="Exit Next"/>
-                <Button Margin="4" Grid.Column="12"  Grid.Row="1" Command="{Binding ExitEvaluatorFactory.ExitNowCommand, Mode=OneWay}" Content="Exit Now"/>
+                <ComboBox Margin="4" Grid.Column="12" Grid.Row="0" ItemsSource="{StaticResource DemoNames}" DisplayMemberPath="." SelectedValuePath="."  SelectedValue="{Binding DemoMode, Mode=TwoWay}" SelectedIndex="0" />
+                <Button Margin="4" Grid.Column="13"  Grid.Row="0" Command="{Binding RunCommand, Mode=OneWay}" Content="Start Training"/>
+                <Button Margin="4" Grid.Column="12"  Grid.Row="1" Command="{Binding ExitEvaluatorFactory.ExitNextCommand, Mode=OneWay}" Content="Exit Next"/>
+                <Button Margin="4" Grid.Column="13"  Grid.Row="1" Command="{Binding ExitEvaluatorFactory.ExitNowCommand, Mode=OneWay}" Content="Exit Now"/>
             </Grid>
         </Grid>
         <Expander Grid.Row="1" Grid.Column="0">
@@ -198,7 +207,7 @@
                 <Label>Layer Config</Label>
             </Expander.Header>
             <Expander.Content>
-                <ItemsControl  ItemsSource="{Binding LayerConfigs}" ItemTemplateSelector="{StaticResource LayerViewerSelector}" ></ItemsControl>
+                <ItemsControl  ItemsSource="{Binding LayerConfigs, Mode=OneWay}" ItemTemplateSelector="{StaticResource LayerViewerSelector}" ></ItemsControl>
             </Expander.Content>
         </Expander>
         <Grid Grid.Row="2" Grid.Column="0">
@@ -217,10 +226,10 @@
                 </Grid.RowDefinitions>
                 <WrapPanel Grid.Column="0" Grid.Row="0">
                     <Label  Margin="4">Reconstructions at last update epoch:</Label>
-                    <Label Margin="4" Content="{Binding DisplayedEpoch}"></Label>
+                    <Label Margin="4" Content="{Binding DisplayedEpoch, Mode=OneWay}"></Label>
                 </WrapPanel>
                 <ScrollViewer Margin="4" Grid.Row="1" Grid.Column="0">
-                    <ItemsControl  HorizontalAlignment="Left" ItemsSource="{Binding Path=Reconstructions}"  ItemTemplate="{Binding Source={StaticResource  ResourceKey=ImageComparison}}">
+                    <ItemsControl  HorizontalAlignment="Left" ItemsSource="{Binding Path=Reconstructions, Mode=OneWay}"  ItemTemplate="{Binding Source={StaticResource  ResourceKey=ImageComparison}}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <VirtualizingStackPanel></VirtualizingStackPanel>
@@ -241,7 +250,7 @@
                 <Label ToolTip="The features identified by each individual neuron"  Margin="4" Grid.Column="0" Grid.Row="0">Features</Label>
                 <Label ToolTip="The Training set. i.e Individual cases being learned" Margin="4" Grid.Column="1" Grid.Row="0">Training Set</Label>
                 <ScrollViewer  Margin="4" HorizontalAlignment="Left" Grid.Row="1" Grid.Column="0">
-                    <ItemsControl  HorizontalAlignment="Left" ItemsSource="{Binding Path=Features}" >
+                    <ItemsControl  HorizontalAlignment="Left" ItemsSource="{Binding Path=Features, Mode=OneWay}" >
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <VirtualizingStackPanel  VerticalAlignment="Top"></VirtualizingStackPanel>
@@ -249,13 +258,13 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Image Margin="4" Stretch="Uniform" UseLayoutRounding="False"  Source="{Binding Path=.}" Loaded="FrameworkElement_OnLoaded" ></Image>
+                                <Image Margin="4" Stretch="Uniform" UseLayoutRounding="False"  Source="{Binding Path=., Mode=OneWay}" Loaded="FrameworkElement_OnLoaded" ></Image>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </ScrollViewer>
                 <ScrollViewer Margin="4" HorizontalAlignment="Left"  Grid.Row="1" Grid.Column="1">
-                    <ItemsControl  HorizontalAlignment="Left" ItemsSource="{Binding Path=TrainingSet}" >
+                    <ItemsControl  HorizontalAlignment="Left" ItemsSource="{Binding Path=TrainingSet, Mode=OneWay}" >
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <VirtualizingStackPanel VerticalAlignment="Top"></VirtualizingStackPanel>
@@ -276,7 +285,7 @@
                                             <ColumnDefinition Width="3*"></ColumnDefinition>
                                             <ColumnDefinition Width="*"></ColumnDefinition>
                                         </Grid.ColumnDefinitions>
-                                        <Label Grid.Column="0" Margin="4" Content="{Binding Label}"></Label>
+                                        <Label Grid.Column="0" Margin="4" Content="{Binding Label, Mode=OneWay}"></Label>
                                         <Image Grid.Column="1" Margin="4" Stretch="Uniform" UseLayoutRounding="False" Loaded="FrameworkElement_OnLoaded"  StretchDirection="Both" Source="{Binding CodeImage}"></Image>
                                     </Grid>
                                     <Image Grid.Row="1" Margin="4" Stretch="Uniform" UseLayoutRounding="False"  StretchDirection="Both"  Source="{Binding Path=DataImage, Mode=OneWay}" Grid.Column="0" Loaded="FrameworkElement_OnLoaded"/>
@@ -297,7 +306,7 @@
                 </Grid.RowDefinitions>
                 <Label ToolTip="Reconstructions of random noise." Margin="4" Grid.Column="0" Grid.Row="0">Day Dreams</Label>
                 <ScrollViewer  Margin="4" HorizontalAlignment="Left" Grid.Row="1" Grid.Column="0">
-                    <ItemsControl HorizontalAlignment="Left" ItemsSource="{Binding Path=DayDreams}" >
+                    <ItemsControl HorizontalAlignment="Left" ItemsSource="{Binding Path=DayDreams, Mode=OneWay}" >
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <VirtualizingStackPanel  VerticalAlignment="Top"></VirtualizingStackPanel>
@@ -305,7 +314,7 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Image Margin="4" Stretch="Uniform" UseLayoutRounding="False"  Source="{Binding Path=.}" Loaded="FrameworkElement_OnLoaded" ></Image>
+                                <Image Margin="4" Stretch="Uniform" UseLayoutRounding="False"  Source="{Binding Path=., Mode=OneWay}" Loaded="FrameworkElement_OnLoaded" ></Image>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -328,9 +337,9 @@
                                     </Image>
                                     <WrapPanel>
                                         <Label>Highlighted Feature</Label>
-                                        <Label Content="{Binding SelectedFeatureIndex}"></Label>
+                                        <Label Content="{Binding SelectedFeatureIndex, Mode=OneWay}"></Label>
                                     </WrapPanel>
-                                    <Image  Margin="4" Stretch="Uniform"  Source="{Binding SelectedFeature}" Loaded="FrameworkElement_OnLoaded"></Image>
+                                    <Image  Margin="4" Stretch="Uniform"  Source="{Binding SelectedFeature, Mode=OneWay}" Loaded="FrameworkElement_OnLoaded"></Image>
                                 </StackPanel>
                             </Expander.Content>
                         </Expander>
@@ -342,13 +351,13 @@
                             <Expander.Content>
                                 <StackPanel>
                                     <WrapPanel>
-                                        <Button Margin="4" Content="*0.1" Command="{Binding ScaleLearningRatesCommand}" CommandParameter="0.1"  ></Button>
-                                        <Button Margin="4" Content="*0.5" Command="{Binding ScaleLearningRatesCommand}" CommandParameter="0.5" ></Button>
-                                        <Button Margin="4" Content="*2" Command="{Binding ScaleLearningRatesCommand}" CommandParameter="2" ></Button>
-                                        <Button Margin="4" Content="*10" Command="{Binding ScaleLearningRatesCommand}" CommandParameter="10" ></Button>
+                                        <Button Margin="4" Content="*0.1" Command="{Binding ScaleLearningRatesCommand, Mode=OneWay}" CommandParameter="0.1"  ></Button>
+                                        <Button Margin="4" Content="*0.5" Command="{Binding ScaleLearningRatesCommand, Mode=OneWay}" CommandParameter="0.5" ></Button>
+                                        <Button Margin="4" Content="*2" Command="{Binding ScaleLearningRatesCommand, Mode=OneWay}" CommandParameter="2" ></Button>
+                                        <Button Margin="4" Content="*10" Command="{Binding ScaleLearningRatesCommand, Mode=OneWay}" CommandParameter="10" ></Button>
                                     </WrapPanel>
                                     <Label>Weight Learning Rates</Label>
-                                    <ItemsControl ItemsSource="{Binding WeightLearningRateFactory.InnerCalculators}" ItemTemplate="{StaticResource LearningRateEditor}" >
+                                    <ItemsControl ItemsSource="{Binding WeightLearningRateFactory.InnerCalculators, Mode=OneWay}" ItemTemplate="{StaticResource LearningRateEditor}" >
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
                                                 <WrapPanel></WrapPanel>
@@ -356,7 +365,7 @@
                                         </ItemsControl.ItemsPanel>
                                     </ItemsControl>
                                     <Label>Hidden Bias Learning Rates</Label>
-                                    <ItemsControl ItemsSource="{Binding HidBiasLearningRateFactory.InnerCalculators}" ItemTemplate="{StaticResource LearningRateEditor}">
+                                    <ItemsControl ItemsSource="{Binding HidBiasLearningRateFactory.InnerCalculators, Mode=OneWay}" ItemTemplate="{StaticResource LearningRateEditor}">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
                                                 <WrapPanel></WrapPanel>
@@ -364,7 +373,7 @@
                                         </ItemsControl.ItemsPanel>
                                     </ItemsControl>
                                     <Label>Visible Bias Learning Rates</Label>
-                                    <ItemsControl ItemsSource="{Binding VisBiasLearningRateFactory.InnerCalculators}" ItemTemplate="{StaticResource LearningRateEditor}">
+                                    <ItemsControl ItemsSource="{Binding VisBiasLearningRateFactory.InnerCalculators, Mode=OneWay}" ItemTemplate="{StaticResource LearningRateEditor}">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
                                                 <WrapPanel></WrapPanel>

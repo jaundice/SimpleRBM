@@ -19,6 +19,7 @@ using Cudafy.Maths.RAND;
 using Cudafy.Translator;
 using CudaNN.DeepBelief.DataIO;
 using CudaNN.DeepBelief.LayerBuilders;
+using Mono.CSharp;
 using SimpleRBM.Common;
 using SimpleRBM.Common.ExitCondition;
 using SimpleRBM.Cuda;
@@ -169,12 +170,38 @@ namespace CudaNN.DeepBelief.ViewModels
             typeof(ObservableCollection<ConstructLayerBase>), typeof(BelieveViewModel),
             new PropertyMetadata(default(ObservableCollection<ConstructLayerBase>)));
 
+        public static readonly DependencyProperty GraphicsCardsProperty = DependencyProperty.Register("GraphicsCards",
+            typeof(ObservableCollection<System.Tuple<int, string>>), typeof(BelieveViewModel),
+            new PropertyMetadata(null));
+
+        public static readonly DependencyProperty SelectedGraphicsCardProperty = DependencyProperty.Register("SelectedGraphicsCard",
+    typeof(System.Tuple<int, string>), typeof(BelieveViewModel),
+    new PropertyMetadata(null));
+
         private static GPGPU _dev;
         private static GPGPURAND _rand;
 
 
         private CancellationTokenSource _cancelSource;
         private Task _runTask;
+
+
+        public ObservableCollection<System.Tuple<int, string>> GraphicsCards
+        {
+            get { return (ObservableCollection<System.Tuple<int, string>>)Dispatcher.InvokeIfRequired(() => GetValue(GraphicsCardsProperty)).Result; }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(GraphicsCardsProperty, value)).Wait(); }
+        }
+
+        public System.Tuple<int, string> SelectedGraphicsCard
+        {
+            get
+            {
+                return
+                    (System.Tuple<int, string>)
+                        Dispatcher.InvokeIfRequired(() => GetValue(SelectedGraphicsCardProperty)).Result;
+            }
+            set { Dispatcher.InvokeIfRequired(() => SetValue(SelectedGraphicsCardProperty, value)).Wait(); }
+        }
 
 
         public BelieveViewModel()
@@ -194,7 +221,23 @@ namespace CudaNN.DeepBelief.ViewModels
 
             GPGPU dev;
             GPGPURAND rand;
-            InitCuda(out dev, out rand);
+
+            GraphicsCards = new ObservableCollection<System.Tuple<int, string>>(Enumerable.Range(0, CudafyHost.GetDeviceCount(eGPUType.Cuda)).Select(
+                a =>
+                {
+                    var d = CudafyHost.GetDevice(eGPUType.Cuda, a);
+                    return Tuple.Create(a, d.GetDeviceProperties(false).Name);
+                }));
+
+            SelectedGraphicsCard = GraphicsCards[0];
+
+            InitCuda(SelectedGraphicsCard.Item1, out dev, out rand);
+
+            Application.Current.Exit += (sender, args) =>
+            {
+                if (_cancelSource != null)
+                    _cancelSource.Cancel();
+            };
         }
 
         public SuspendState[] AllSuspendStates
@@ -845,7 +888,7 @@ namespace CudaNN.DeepBelief.ViewModels
 
                 GPGPU dev;
                 GPGPURAND rand;
-                InitCuda(out dev, out rand);
+                InitCuda(SelectedGraphicsCard.Item1, out dev, out rand);
                 dev.SetCurrentContext();
                 using (var net = new CudaAdvancedNetwork(layerBuilderViewModel.CreateLayers(dev, rand)))
                 {
@@ -877,6 +920,12 @@ namespace CudaNN.DeepBelief.ViewModels
                         IEnumerable<double[,]> codeBatches =
                             testReader.Read(testRecords, batchSize).Select(a => net.Encode(a));
                         IEnumerable<string[]> codeStringBatches = codeBatches.Select(GenerateCodeStrings);
+
+                        if (codeBatches.Sum(a => a.GetLength(0)) != codeStringBatches.Sum(a => a.GetLength(0)))
+                        {
+                            throw new Exception("Mismatch in data lengths");
+                        }
+
                         foreach (var batch in codeStringBatches)
                         {
                             File.AppendAllLines(Path.Combine(pathBase, "ComputedCodes.csv"), batch);
@@ -897,6 +946,12 @@ namespace CudaNN.DeepBelief.ViewModels
 
                         IEnumerable<string[]> labelBatches =
                             labelCodeBatches.Select(a => testReader.DecodeLabels(a, 1.0, 0.0)).ToList();
+
+
+                        if (labelCodeBatches.Sum(a => a.GetLength(0)) != labelBatches.Sum(a => a.GetLength(0)))
+                        {
+                            throw new Exception("Mismatch in data lengths");
+                        }
 
                         foreach (var batch in labelBatches)
                         {
@@ -1065,7 +1120,7 @@ namespace CudaNN.DeepBelief.ViewModels
 
                 GPGPU dev;
                 GPGPURAND rand;
-                InitCuda(out dev, out rand);
+                InitCuda(SelectedGraphicsCard.Item1, out dev, out rand);
                 dev.SetCurrentContext();
                 using (var net = new CudaAdvancedNetwork(layerBuilderViewModel.CreateLayers(dev, rand)))
                 {
@@ -1097,6 +1152,11 @@ namespace CudaNN.DeepBelief.ViewModels
                         IEnumerable<double[,]> codeBatches =
                             testReader.Read(testRecords, batchSize).Select(a => net.Encode(a));
                         IEnumerable<string[]> codeStringBatches = codeBatches.Select(GenerateCodeStrings);
+
+                        if (codeBatches.Sum(a => a.GetLength(0)) != codeStringBatches.Sum(a => a.GetLength(0)))
+                        {
+                            throw new Exception("Mismatch in data lengths");
+                        }
                         foreach (var batch in codeStringBatches)
                         {
                             File.AppendAllLines(Path.Combine(pathBase, "ComputedCodes.csv"), batch);
@@ -1114,6 +1174,10 @@ namespace CudaNN.DeepBelief.ViewModels
                         IEnumerable<string[]> labelBatches =
                             labelCodeBatches.Select(a => testReader.DecodeLabels(a, 1.0, 0.0));
 
+                        if (labelCodeBatches.Sum(a => a.GetLength(0)) != labelBatches.Sum(a => a.GetLength(0)))
+                        {
+                            throw new Exception("Mismatch in data lengths");
+                        }
                         foreach (var batch in labelBatches)
                         {
                             File.AppendAllLines(Path.Combine(pathBase, "ComputedLabels.csv"), batch);
@@ -1464,7 +1528,7 @@ namespace CudaNN.DeepBelief.ViewModels
         }
 
 
-        private static void InitCuda(out GPGPU dev, out GPGPURAND rand)
+        private static void InitCuda(int graphicsCardIndex, out GPGPU dev, out GPGPURAND rand)
         {
             if (_dev != null)
             {
@@ -1474,7 +1538,7 @@ namespace CudaNN.DeepBelief.ViewModels
                 return;
             }
 
-            dev = CudafyHost.GetDevice(eGPUType.Cuda, 0);
+            dev = CudafyHost.GetDevice(eGPUType.Cuda, graphicsCardIndex);
 
             GPGPUProperties props = dev.GetDeviceProperties(false);
             Console.WriteLine(props.Name);

@@ -38,7 +38,7 @@ namespace CudaNN
 
         private static void Main(string[] args)
         {
-            string demo = Demos.Data;
+            string demo = Demos.Kaggle;
 
             int numTrainingExamples;
 

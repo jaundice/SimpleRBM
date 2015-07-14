@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace CudaNN.DeepBelief.DataIO
 {
@@ -42,7 +43,10 @@ namespace CudaNN.DeepBelief.DataIO
                     labels[lineNo] = string.Join(",", LabelReader.ReadTargetLineContents(labelsEncoded, lineNo));
                     DataReader.CopyToTarget(data, lineParts, lineNo);
                 }
-
+                if (data.GetLength(0) > count)
+                {
+                    throw new Exception("More data than expected");
+                }
                 return data;
             }
         }
@@ -68,7 +72,10 @@ namespace CudaNN.DeepBelief.DataIO
                     string[] lineParts = line.Split(FieldSeparator);
                     DataReader.CopyToTarget(data, lineParts, lineNo);
                 }
-
+                if (data.GetLength(0) > count)
+                {
+                    throw new Exception("More data than expected");
+                }
                 return data;
             }
         }
@@ -77,9 +84,18 @@ namespace CudaNN.DeepBelief.DataIO
         public override IList<T[,]> ReadWithLabels(int count, int batchSize, out IList<T[,]> labelsEncoded,
             out IList<string[]> labels)
         {
-            var lbls = new List<string[]>();
-            var coded = new List<T[,]>();
-            var data = new List<T[,]>();
+            var data =
+               Enumerable.Range(0, (int)Math.Ceiling((double)count / batchSize))
+                   .Select(
+                       i =>
+                           (i + 1) * batchSize < count
+                               ? new T[batchSize, DataWidth]
+                               : new T[count - ((i) * batchSize), DataWidth])
+                   .ToList();
+
+
+            var lbls = data.Select(a => new string[a.GetLength(0)]).ToList();
+            var coded = data.Select(a => new T[a.GetLength(0), LabelDataWidth]).ToList();
 
             using (FileStream fs = File.OpenRead(FilePath))
             using (var sr = new StreamReader(fs))
@@ -89,42 +105,19 @@ namespace CudaNN.DeepBelief.DataIO
                 for (int i = 0; i < SkipRecords; i++)
                     sr.ReadLine();
 
-                var dat = new T[batchSize, DataWidth];
-                var cod = new T[batchSize, LabelDataWidth];
-                var lb = new string[batchSize];
-
-                data.Add(dat);
-                coded.Add(cod);
-                lbls.Add(lb);
-
-                int lineNo = 0;
-                string line;
-                int j = 0;
-                for (line = sr.ReadLine(), lineNo = 0, j = 0;
-                    !sr.EndOfStream && lineNo < count && !string.IsNullOrWhiteSpace(line);
-                    line = sr.ReadLine(), lineNo++, j++)
+                for (var i = 0; i < data.Count; i++)
                 {
-                    string[] lineParts = line.Split(FieldSeparator);
-                    LabelReader.CopyToTarget(cod, lineParts, j);
-                    lb[j] = string.Join(",", LabelReader.ReadTargetLineContents(cod, j));
-                    DataReader.CopyToTarget(dat, lineParts, j);
-
-                    if (j == dat.GetLength(0) - 1)
+                    for (var j = 0; j < data[i].GetLength(0); j++)
                     {
-                        j = 0;
-                        int newbatchSize = lineNo + batchSize < count ? batchSize : count - lineNo;
-                        if (newbatchSize > 0)
-                        {
-                            dat = new T[newbatchSize, DataWidth];
-                            lb = new string[newbatchSize];
-                            cod = new T[newbatchSize, LabelDataWidth];
-                            data.Add(dat);
-                            lbls.Add(lb);
-                            coded.Add(cod);
-                        }
+
+                        var line = sr.ReadLine();
+                        string[] lineParts = line.Split(FieldSeparator);
+                        LabelReader.CopyToTarget(coded[i], lineParts, j);
+                        lbls[i][j] = string.Join(",", LabelReader.ReadTargetLineContents(coded[i], j));
+                        DataReader.CopyToTarget(data[i], lineParts, j);
+
                     }
                 }
-
                 labelsEncoded = coded;
                 labels = lbls;
                 return data;
@@ -133,7 +126,14 @@ namespace CudaNN.DeepBelief.DataIO
 
         public override IList<T[,]> Read(int count, int batchSize)
         {
-            var data = new List<T[,]>();
+            var data =
+                Enumerable.Range(0, (int)Math.Ceiling((double)count / batchSize))
+                    .Select(
+                        i =>
+                            (i + 1) * batchSize < count
+                                ? new T[batchSize, DataWidth]
+                                : new T[count - ((i) * batchSize), DataWidth])
+                    .ToList();
 
             using (FileStream fs = File.OpenRead(FilePath))
             using (var sr = new StreamReader(fs))
@@ -143,53 +143,21 @@ namespace CudaNN.DeepBelief.DataIO
                 for (int i = 0; i < SkipRecords; i++)
                     sr.ReadLine();
 
-                var dat = new T[batchSize, DataWidth];
-
-                data.Add(dat);
-
-                int lineNo = 0;
-                string line;
-                int j = 0;
-                for (line = sr.ReadLine(), lineNo = 0, j = 0;
-                    !sr.EndOfStream && lineNo < count && !string.IsNullOrWhiteSpace(line);
-                    line = sr.ReadLine(), lineNo++, j++)
+                for (var i = 0; i < data.Count; i++)
                 {
-                    string[] lineParts = line.Split(FieldSeparator);
-                    DataReader.CopyToTarget(dat, lineParts, j);
-
-                    if (j == dat.GetLength(0) - 1)
+                    for (var j = 0; j < data[i].GetLength(0); j++)
                     {
-                        j = 0;
-                        int newbatchSize = lineNo + batchSize < count ? batchSize : count - lineNo;
-                        if (newbatchSize > 0)
-                        {
-                            dat = new T[newbatchSize, DataWidth];
-                            data.Add(dat);
-                        }
+
+                        var line = sr.ReadLine();
+
+                        string[] lineParts = line.Split(FieldSeparator);
+                        DataReader.CopyToTarget(data[i], lineParts, j);
                     }
                 }
+
                 return data;
             }
         }
 
-        //public override T[,] ReadWithLabels(int count, out T[,] labelsEncoded, out string[] labels, Func<T, T> sourceToTargetConverter)
-        //{
-        //    throw new NotImplementedException();
-        //}
-
-        //public override T[,] Read(int count, Func<T, T> sourceToTargetConverter)
-        //{
-        //    throw new NotImplementedException();
-        //}
-
-        //public override IList<T[,]> ReadWithLabels(int count, int batchSize, out IList<T[,]> labelsEncoded, out IList<string[]> labels, Func<T, T> sourceToTargetConverter)
-        //{
-        //    throw new NotImplementedException();
-        //}
-
-        //public override IList<T[,]> Read(int count, int batchSize, Func<T, T> sourceToTargetConverter)
-        //{
-        //    throw new NotImplementedException();
-        //}
     }
 }

@@ -1,0 +1,2784 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Cudafy</name>
+    </assembly>
+    <members>
+        <member name="T:Cudafy.CudafyAttribute">
+            <summary>
+            Static methods, static fields and structures to be converted to CUDA C should be decorated with this attribute.
+            </summary>
+        </member>
+        <member name="M:Cudafy.CudafyAttribute.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.CudafyAttribute"/> class with type set to eCudafyType.Auto.
+            </summary>
+        </member>
+        <member name="M:Cudafy.CudafyAttribute.#ctor(Cudafy.eCudafyType)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.CudafyAttribute"/> class.
+            </summary>
+            <param name="type">The type.</param>
+        </member>
+        <member name="P:Cudafy.CudafyAttribute.CudafyType">
+            <summary>
+            Gets the type of the cudafy attribute.
+            </summary>
+            <value>
+            The type of the cudafy.
+            </value>
+        </member>
+        <member name="T:Cudafy.CudafyDummyAttribute">
+            <summary>
+            Methods, structures and fields that already have an equivalent in Cuda C should be decorated with this attribute.
+            The item should have the same name and be in a CUDA C (.cu) file of the same name unless specified.
+            </summary>
+        </member>
+        <member name="M:Cudafy.CudafyDummyAttribute.#ctor(Cudafy.eCudafyType,Cudafy.eCudafyDummyBehaviour)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.CudafyDummyAttribute"/> class.
+            </summary>
+            <param name="type">The type.</param>
+            <param name="behaviour">If set to Suppress then do not include CUDA C file of the same name.</param>
+        </member>
+        <member name="M:Cudafy.CudafyDummyAttribute.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.CudafyDummyAttribute"/> class.
+            </summary>
+        </member>
+        <member name="P:Cudafy.CudafyDummyAttribute.CudafyType">
+            <summary>
+            Gets the type of the cudafy attribute.
+            </summary>
+            <value>
+            The type of the cudafy.
+            </value>
+        </member>
+        <member name="P:Cudafy.CudafyDummyAttribute.Behaviour">
+            <summary>
+            Gets the behaviour.
+            </summary>
+        </member>
+        <member name="P:Cudafy.CudafyDummyAttribute.SupportsEmulation">
+            <summary>
+            Gets a value indicating whether supports emulation.
+            </summary>
+            <value>
+              <c>true</c> if supports emulation; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="T:Cudafy.CudafyIgnoreAttribute">
+            <summary>
+            Informs the CudafyTranslator to ignore the member of a struct.
+            </summary>
+        </member>
+        <member name="T:Cudafy.CudafyAddressSpaceAttribute">
+            <summary>
+            Placed on parameters to indicate the OpenCL address space. Note that if not specified then arrays will
+            automatically be marked global. Ignored when translating to CUDA.
+            </summary>
+        </member>
+        <member name="T:Cudafy.CudafyInlineAttribute">
+            <summary>
+            Optionally placed on methods to indicate whether the method should be inlined or not.
+            </summary>
+        </member>
+        <member name="M:Cudafy.CudafyInlineAttribute.#ctor(Cudafy.eCudafyInlineMode)">
+            <summary>
+            Constructor.
+            </summary>
+            <param name="mode"></param>
+        </member>
+        <member name="P:Cudafy.CudafyInlineAttribute.Mode">
+            <summary>
+            Gets the inline mode.
+            </summary>
+        </member>
+        <member name="T:Cudafy.Compilers.CompilerOptions">
+            <summary>
+            Abstract base class for options.
+            </summary>
+        </member>
+        <member name="T:Cudafy.Compilers.ICompilerOptions">
+            <summary>
+            Interface for options.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Compilers.CompilerOptions.#ctor(System.String,System.String,System.String,System.Version,Cudafy.ePlatform)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Compilers.CompilerOptions"/> class.
+            </summary>
+            <param name="name">The name.</param>
+            <param name="compilerPath">The compiler path.</param>
+            <param name="includeDirectory">The include directory.</param>
+            <param name="compilerVersion">Compiler/toolkit version (e.g. CUDA V5.0).</param>
+        </member>
+        <member name="M:Cudafy.Compilers.CompilerOptions.GetFileName">
+            <summary>
+            Gets the name of the compiler file.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Compilers.CompilerOptions.AddOption(System.String)">
+            <summary>
+            Adds an option.
+            </summary>
+            <param name="opt">The opt.</param>
+        </member>
+        <member name="M:Cudafy.Compilers.CompilerOptions.ClearOptions">
+            <summary>
+            Clears the options.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Compilers.CompilerOptions.AddSource(System.String)">
+            <summary>
+            Adds a source.
+            </summary>
+            <param name="src">The source file.</param>
+        </member>
+        <member name="M:Cudafy.Compilers.CompilerOptions.ClearSources">
+            <summary>
+            Clears the sources.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Compilers.CompilerOptions.AddOutput(System.String)">
+            <summary>
+            Adds an output.
+            </summary>
+            <param name="output">The output file.</param>
+        </member>
+        <member name="M:Cudafy.Compilers.CompilerOptions.ClearOutputs">
+            <summary>
+            Clears the outputs.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Compilers.CompilerOptions.GetArguments">
+            <summary>
+            Gets the arguments.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Compilers.CompilerOptions.TryTest">
+            <summary>
+            Checks if include directory exists.
+            </summary>
+            <returns>True if exists, else false.</returns>
+        </member>
+        <member name="M:Cudafy.Compilers.CompilerOptions.Test">
+            <summary>
+            Checks if include directory exists.
+            </summary>
+            <exception cref="T:Cudafy.CudafyCompileException">File or directory not found.</exception>
+        </member>
+        <member name="M:Cudafy.Compilers.CompilerOptions.ToString">
+            <summary>
+            Returns a <see cref="T:System.String"/> that represents this instance.
+            </summary>
+            <returns>
+            A <see cref="T:System.String"/> that represents this instance.
+            </returns>
+        </member>
+        <member name="F:Cudafy.Compilers.CompilerOptions._canEdit">
+            <summary>
+            Can edit.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Compilers.CompilerOptions.GetSummary">
+            <summary>
+            Gets the summary.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Cudafy.Compilers.CompilerOptions.Name">
+            <summary>
+            Gets the name.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Compilers.CompilerOptions.CompilerPath">
+            <summary>
+            Gets or sets the compiler path.
+            </summary>
+            <value>
+            The compiler path.
+            </value>
+        </member>
+        <member name="P:Cudafy.Compilers.CompilerOptions.Platform">
+            <summary>
+            Gets the platform.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Compilers.CompilerOptions.Architecture">
+            <summary>
+            Gets the architecture.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Compilers.CompilerOptions.GenerateDebugInfo">
+            <summary>
+            Gets or sets a value indicating whether to generate debug info.
+            </summary>
+            <value>
+              <c>true</c> if generate debug info; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.Compilers.CompilerOptions.Include">
+            <summary>
+            Gets or sets the include path.
+            </summary>
+            <value>
+            The include path.
+            </value>
+        </member>
+        <member name="P:Cudafy.Compilers.CompilerOptions.Version">
+            <summary>
+            Gets the version of the compiler.
+            </summary>
+            <value>
+            The version.
+            </value>
+        </member>
+        <member name="P:Cudafy.Compilers.CompilerOptions.Options">
+            <summary>
+            Gets the options.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Compilers.CompilerOptions.Sources">
+            <summary>
+            Gets the sources.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Compilers.CompilerOptions.Outputs">
+            <summary>
+            Gets the outputs.
+            </summary>
+        </member>
+        <member name="P:Cudafy.Compilers.CompilerOptions.CanEdit">
+            <summary>
+            Gets or sets a value indicating whether this instance can edit.
+            </summary>
+            <value>
+              <c>true</c> if this instance can edit; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.Compilers.CompilerOptions.TimeOut">
+            <summary>
+            Gets or sets the time out for compilation.
+            </summary>
+            <value>
+            The time out in milliseconds.
+            </value>
+        </member>
+        <member name="P:Cudafy.Compilers.CompilerOptions.CompileMode">
+            <summary>
+            Gets a flag indicating whether the compiler generates binary.
+            </summary>
+        </member>
+        <member name="T:Cudafy.Compilers.NvccCompilerOptions">
+            <summary>
+            Compiler options.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Compilers.NvccCompilerOptions.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Compilers.NvccCompilerOptions"/> class.
+            </summary>
+            <param name="name">The name.</param>
+        </member>
+        <member name="M:Cudafy.Compilers.NvccCompilerOptions.#ctor(System.String,System.String,System.String,System.Version,Cudafy.ePlatform)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Compilers.NvccCompilerOptions"/> class.
+            </summary>
+            <param name="name">The name.</param>
+            <param name="compiler">The compiler.</param>
+            <param name="includeDirectory">The include directory.</param>
+            <param name="compilerVersion">Compiler/toolkit version (e.g. CUDA V5.0).</param>
+        </member>
+        <member name="M:Cudafy.Compilers.NvccCompilerOptions.GetArguments">
+            <summary>
+            Gets the arguments.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Compilers.NvccCompilerOptions.Create">
+            <summary>
+            Creates a default x86 instance. Architecture is 2.0.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Compilers.NvccCompilerOptions.Createx86">
+            <summary>
+            Creates a default x86 instance. Architecture is 2.0.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Compilers.NvccCompilerOptions.Createx86(Cudafy.eArchitecture)">
+            <summary>
+            Creates a default x86 instance for specified architecture.
+            </summary>
+            <param name="arch">The architecture.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Compilers.NvccCompilerOptions.Createx86(System.Version,Cudafy.eArchitecture)">
+            <summary>
+            Creates a compiler instance for creating 32-bit apps.
+            </summary>
+            <param name="cudaVersion">The cuda version.</param>
+            <param name="arch">Architecture.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Compilers.NvccCompilerOptions.Createx64">
+            <summary>
+            Creates a default x64 instance. Architecture is 2.0.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Compilers.NvccCompilerOptions.Createx64(Cudafy.eArchitecture)">
+            <summary>
+            Creates a default x64 instance for specified architecture.
+            </summary>
+            <param name="arch">The architecture.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Compilers.NvccCompilerOptions.Createx64(System.Version,Cudafy.eArchitecture)">
+            <summary>
+            Creates a compiler instance for creating 64-bit apps.
+            </summary>
+            <param name="cudaVersion">The cuda version or null for auto.</param>
+            <param name="arch">Architecture.</param>
+            <returns></returns>
+            <exception cref="T:System.NotSupportedException">ProgramFilesx64 not found.</exception>
+        </member>
+        <member name="P:Cudafy.CompileProperties.TimeOut">
+            <summary>
+            Gets or sets the time out for compilation.
+            </summary>
+            <value>
+            The time out in milliseconds.
+            </value>
+        </member>
+        <member name="P:Cudafy.ProgramModule.TimeOut">
+            <summary>
+            Gets or sets the time out for compilation.
+            </summary>
+            <value>
+            The time out in milliseconds.
+            </value>
+        </member>
+        <member name="T:Cudafy.dim3">
+            <summary>
+            Cudafy equivalent of Cuda dim3.
+            </summary>
+        </member>
+        <member name="M:Cudafy.dim3.#ctor(System.Int32)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.dim3"/> class. Y and z will be 1.
+            </summary>
+            <param name="x">The x value.</param>
+        </member>
+        <member name="M:Cudafy.dim3.#ctor(System.Int32,System.Int32)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.dim3"/> class. Z will be 1.
+            </summary>
+            <param name="x">The x value.</param>
+            <param name="y">The y value.</param>
+        </member>
+        <member name="M:Cudafy.dim3.#ctor(System.Int64[])">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.dim3"/> class.
+            </summary>
+            <param name="dimensions">The dimensions.</param>
+        </member>
+        <member name="M:Cudafy.dim3.#ctor(System.Int64,System.Int64,System.Int64)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.dim3"/> class.
+            </summary>
+            <param name="x">The x value.</param>
+            <param name="y">The y value.</param>
+            <param name="z">The z value.</param>
+        </member>
+        <member name="M:Cudafy.dim3.ToArray">
+            <summary>
+            Helper method to transform into an array of dimension sizes.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.dim3.op_Implicit(System.Int32)~Cudafy.dim3">
+            <summary>
+            Performs an implicit conversion from <see cref="T:System.Int32"/> to <see cref="T:Cudafy.dim3"/>.
+            </summary>
+            <param name="dimX">The dim X.</param>
+            <returns>
+            The result of the conversion.
+            </returns>
+        </member>
+        <member name="P:Cudafy.dim3.x">
+            <summary>
+            Gets the x.
+            </summary>
+        </member>
+        <member name="P:Cudafy.dim3.y">
+            <summary>
+            Gets the y.
+            </summary>
+        </member>
+        <member name="P:Cudafy.dim3.z">
+            <summary>
+            Gets the z.
+            </summary>
+        </member>
+        <member name="T:Cudafy.eGPUType">
+            <summary>
+            GPU target type.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eGPUType.Emulator">
+            <summary>
+            Target GPU kernel emulator.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eGPUType.Cuda">
+            <summary>
+            Target a Cuda GPU.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eGPUType.OpenCL">
+            <summary>
+            Target an OpenCL Device
+            </summary>
+        </member>
+        <member name="T:Cudafy.eLanguage">
+            <summary>
+            Language type.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eLanguage.Cuda">
+            <summary>
+            NVIDIA CUDA C
+            </summary> 
+        </member>
+        <member name="F:Cudafy.eLanguage.OpenCL">
+            <summary>
+            OpenCL C
+            </summary>
+        </member>
+        <member name="T:Cudafy.eCudafyQuickMode">
+            <summary>
+            High level enumerator encapsulation eGPUType and eGPUCodeGenerator.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyQuickMode.CudaEmulate">
+            <summary>
+            Cuda emulator.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyQuickMode.Cuda">
+            <summary>
+            Cuda.
+            </summary>
+        </member>
+        <member name="T:Cudafy.CudafyModes">
+            <summary>
+            Convenience class for storing device settings.
+            </summary>
+        </member>
+        <member name="F:Cudafy.CudafyModes.Target">
+            <summary>
+            Target GPU.
+            </summary>
+        </member>
+        <member name="F:Cudafy.CudafyModes.Compiler">
+            <summary>
+            Target compiler.
+            </summary>
+        </member>
+        <member name="F:Cudafy.CudafyModes.Architecture">
+            <summary>
+            Target architecture.
+            </summary>
+        </member>
+        <member name="F:Cudafy.CudafyModes.Language">
+            <summary>
+            Language
+            </summary>
+        </member>
+        <member name="F:Cudafy.CudafyModes.Mode">
+            <summary>
+            Quick mode.
+            </summary>
+        </member>
+        <member name="F:Cudafy.CudafyModes.csCRCWARNING">
+            <summary>
+            Warning message if CRC check fails.
+            </summary>
+        </member>
+        <member name="M:Cudafy.CudafyModes.#cctor">
+            <summary>
+            Static constructor for the <see cref="T:Cudafy.CudafyModes"/> class.
+            Sets CodeGen to CudaC, Compiler to CudaNvcc, Target to Cuda and Mode to Cuda.
+            </summary>
+        </member>
+        <member name="P:Cudafy.CudafyModes.DeviceId">
+            <summary>
+            Gets or sets the device id.
+            </summary>
+            <value>
+            The device id.
+            </value>
+        </member>
+        <member name="T:Cudafy.eCudafyType">
+            <summary>
+            Enumerator for the type of CudafyAttribute.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyType.Auto">
+            <summary>
+            Auto. The code generator will determine it.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyType.Device">
+            <summary>
+            Used to indicate a method that should be made into a Cuda C device function.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyType.Global">
+            <summary>
+            Used to indicate a method that should be made into a Cuda C global function.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyType.Struct">
+            <summary>
+            Used to indicate a structure that should be converted to Cuda C.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyType.Constant">
+            <summary>
+            Used to indicate a static field that should be converted to Cuda C.
+            </summary>
+        </member>
+        <member name="T:Cudafy.ePlatform">
+            <summary>
+            Target platform.
+            </summary>
+        </member>
+        <member name="F:Cudafy.ePlatform.Auto">
+            <summary>
+            None selected.
+            </summary>
+        </member>
+        <member name="F:Cudafy.ePlatform.x86">
+            <summary>
+            x86
+            </summary>
+        </member>
+        <member name="F:Cudafy.ePlatform.x64">
+            <summary>
+            x64
+            </summary>
+        </member>
+        <member name="F:Cudafy.ePlatform.All">
+            <summary>
+            Both x86 and x64
+            </summary>
+        </member>
+        <member name="T:Cudafy.eArchitecture">
+            <summary>
+            CUDA or OpenCL Architecture
+            </summary>
+        </member>
+        <member name="F:Cudafy.eArchitecture.Unknown">
+            <summary>
+            Unspecified architecture.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eArchitecture.Emulator">
+            <summary>
+            CUDA Emulator
+            </summary>
+        </member>
+        <member name="F:Cudafy.eArchitecture.sm_10">
+            <summary>
+            CUDA sm_10
+            </summary>
+        </member>
+        <member name="F:Cudafy.eArchitecture.sm_11">
+            <summary>
+            CUDA sm_11
+            </summary>
+        </member>
+        <member name="F:Cudafy.eArchitecture.sm_12">
+            <summary>
+            CUDA sm_12
+            </summary>
+        </member>
+        <member name="F:Cudafy.eArchitecture.sm_13">
+            <summary>
+            CUDA sm_13
+            </summary>
+        </member>
+        <member name="F:Cudafy.eArchitecture.sm_20">
+            <summary>
+            CUDA sm_20
+            </summary>
+        </member>
+        <member name="F:Cudafy.eArchitecture.sm_21">
+            <summary>
+            CUDA sm_21
+            </summary>
+        </member>
+        <member name="F:Cudafy.eArchitecture.sm_30">
+            <summary>
+            CUDA sm_30
+            </summary>
+        </member>
+        <member name="F:Cudafy.eArchitecture.sm_35">
+            <summary>
+            CUDA sm_35
+            </summary>
+        </member>
+        <member name="F:Cudafy.eArchitecture.sm_37">
+            <summary>
+            CUDA sm_37
+            </summary>
+        </member>
+        <member name="F:Cudafy.eArchitecture.sm_50">
+            <summary>
+            CUDA sm_50
+            </summary>
+        </member>
+        <member name="F:Cudafy.eArchitecture.sm_52">
+            <summary>
+            CUDA sm_52
+            </summary>
+        </member>
+        <member name="F:Cudafy.eArchitecture.OpenCL">
+            <summary>
+            OpenCL 1.0
+            </summary>
+        </member>
+        <member name="F:Cudafy.eArchitecture.OpenCL11">
+            <summary>
+            OpenCL 1.1
+            </summary>
+        </member>
+        <member name="F:Cudafy.eArchitecture.OpenCL12">
+            <summary>
+            OpenCL 1.2
+            </summary>
+        </member>
+        <member name="T:Cudafy.eCudafyAddressSpace">
+            <summary>
+            OpenCL address space 
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyAddressSpace.None">
+            <summary>
+            Prevent automatic placement of an address space qualifier.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyAddressSpace.Global">
+            <summary>
+            Variable is in global memory.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyAddressSpace.Constant">
+            <summary>
+            Variable is in constant memory.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyAddressSpace.Shared">
+            <summary>
+            Variable is in shared (local) memory.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyAddressSpace.Private">
+            <summary>
+            Variable is in private/register memory.
+            </summary>
+        </member>
+        <member name="T:Cudafy.eCudafyDummyBehaviour">
+            <summary>
+            Use to specify the behaviour of the CudafyDummyAttribute.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyDummyBehaviour.Default">
+            <summary>
+            Default
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyDummyBehaviour.SuppressInclude">
+            <summary>
+            Do not write the include statements for dummy types in the generated CUDA C file.
+            </summary>
+        </member>
+        <member name="T:Cudafy.eCudafyCompileMode">
+            <summary>
+            Controls the type of compilation.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyCompileMode.Default">
+            <summary>
+            Default (PTX for CUDA). You will get a module for a minimum architecture.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyCompileMode.Binary">
+            <summary>
+            Binary (cubin for CUDA). You will get a module for a specific architecture.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyCompileMode.DynamicParallelism">
+            <summary>
+            Binary (cubin for CUDA) and includes relevant library files.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyCompileMode.TranslateOnly">
+            <summary>
+            Translate but do not compile.
+            </summary>
+        </member>
+        <member name="T:Cudafy.eCudafyInlineMode">
+            <summary>
+            Controls the inline type.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyInlineMode.Auto">
+            <summary>
+            Default - let the compiler choose.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyInlineMode.No">
+            <summary>
+            __noinline__
+            </summary>
+        </member>
+        <member name="F:Cudafy.eCudafyInlineMode.Force">
+            <summary>
+            __forceinline__
+            </summary>
+        </member>
+        <member name="T:Cudafy.GES">
+            <summary>
+            General Error Strings (GES).
+            </summary>
+        </member>
+        <member name="F:Cudafy.GES.csELEMENT_X_NOT_FOUND">
+            <summary>
+            Element '{0}' not found.
+            </summary>
+        </member>
+        <member name="F:Cudafy.GES.csATTRIBUTE_X_NOT_FOUND">
+            <summary>
+            Attribute '{0}' not found.
+            </summary>
+        </member>
+        <member name="F:Cudafy.GES.NOT_IMPLEMENTED">
+            <summary>
+            {0} is not yet implemented!
+            </summary>
+        </member>
+        <member name="F:Cudafy.GES.BINARY_STRING_LEN_ERR">
+            <summary>
+            Binary input string must be 32 characters long.
+            </summary>
+        </member>
+        <member name="F:Cudafy.GES.BINARY_STRING_FORMAT_ERR">
+            <summary>
+            Unexpected character '{0}' found in binary input string.
+            </summary>
+        </member>
+        <member name="F:Cudafy.GES.COULD_NOT_FIND_REQ_PARAM">
+            <summary>
+            Could not find required parameter '{0}'.
+            </summary>
+        </member>
+        <member name="F:Cudafy.GES.ILLEGAL_VALUE_FOR_PARAM">
+            <summary>
+            Illegal value '{0}' for parameter '{1}'.
+            </summary>
+        </member>
+        <member name="F:Cudafy.GES.EXCEP_CAUGHT_BY">
+            <summary>
+            Exception '{0}' caught by '{1}'.
+            </summary>
+        </member>
+        <member name="F:Cudafy.GES.BASESTREAM_NOT_SET_FOR_X">
+            <summary>
+            Basestream not set for '{0}'.
+            </summary>
+        </member>
+        <member name="F:Cudafy.GES.FILE_X_NOT_FOUND_FOR_X">
+            <summary>
+            File '{0}' not found for '{1}'.
+            </summary>
+        </member>
+        <member name="F:Cudafy.GES.csATTRIBUTE_X_NOT_FOUND_FOR_NODE_X">
+            <summary>
+            Attribute '{0}' not found for node '{1}'.
+            </summary>
+        </member>
+        <member name="F:Cudafy.GES.csFAILED_TO_CONVERT_ATTRIBUTE_X_TO_INT32_ERROR_X">
+            <summary>
+            Failed to convert attribute '{0}' to Int32. Error: '{1}'.
+            </summary>
+        </member>
+        <member name="T:Cudafy.CudafyCompileException">
+            <summary>
+            CudafyCompileException.
+            </summary>
+        </member>
+        <member name="T:Cudafy.CudafyException">
+            <summary>
+            Base exception for all exceptions except for CudafyFatalException.
+            </summary>
+        </member>
+        <member name="M:Cudafy.CudafyException.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.CudafyException"/> class.
+            </summary>
+            <param name="message">The message.</param>
+        </member>
+        <member name="M:Cudafy.CudafyException.#ctor(System.Exception,System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.CudafyException"/> class.
+            </summary>
+            <param name="inner">The inner.</param>
+            <param name="message">The message.</param>
+        </member>
+        <member name="M:Cudafy.CudafyException.#ctor(System.String,System.Object[])">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.CudafyException"/> class.
+            </summary>
+            <param name="errMsg">The err MSG.</param>
+            <param name="args">The args.</param>
+        </member>
+        <member name="M:Cudafy.CudafyException.#ctor(System.Exception,System.String,System.Object[])">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.CudafyException"/> class.
+            </summary>
+            <param name="inner">The inner exception.</param>
+            <param name="errMsg">The err message.</param>
+            <param name="args">The parameters.</param>
+        </member>
+        <member name="F:Cudafy.CudafyCompileException.csNO_SOURCES">
+            <summary>
+            No source code files specified.
+            </summary>
+        </member>
+        <member name="F:Cudafy.CudafyCompileException.csCOMPILATION_ERROR_X">
+            <summary>
+            Compilation error: {0}.
+            </summary>
+        </member>
+        <member name="F:Cudafy.CudafyCompileException.csCUDA_DIR_NOT_FOUND">
+            <summary>
+            CUDA directory not found.
+            </summary>
+        </member>
+        <member name="F:Cudafy.CudafyCompileException.csNO_X_SOURCE_CODE_PRESENT_IN_CUDAFY_MODULE">
+            <summary>
+            No {0} source code present in Cudafy module.
+            </summary>
+        </member>
+        <member name="F:Cudafy.CudafyCompileException.csNO_X_SOURCE_CODE_PRESENT_IN_CUDAFY_MODULE_FOR_X">
+            <summary>
+            No {0} source code present in Cudafy module for {1}.
+            </summary>
+        </member>
+        <member name="T:Cudafy.CudafyFatalException">
+            <summary>
+            An error mostly likely resulting from a programming error within the Cudafy library.
+            </summary>
+        </member>
+        <member name="M:Cudafy.CudafyFatalException.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.CudafyFatalException"/> class.
+            </summary>
+            <param name="message">The message.</param>
+        </member>
+        <member name="M:Cudafy.CudafyFatalException.#ctor(System.Exception,System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.CudafyFatalException"/> class.
+            </summary>
+            <param name="inner">The inner.</param>
+            <param name="message">The message.</param>
+        </member>
+        <member name="M:Cudafy.CudafyFatalException.#ctor(System.String,System.Object[])">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.CudafyFatalException"/> class.
+            </summary>
+            <param name="errMsg">The err MSG.</param>
+            <param name="args">The args.</param>
+        </member>
+        <member name="T:Cudafy.CudafyLanguageException">
+            <summary>
+            Base exception for all dataflow exceptions except for DataflowFatalException.
+            </summary>
+        </member>
+        <member name="M:Cudafy.CudafyLanguageException.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.CudafyLanguageException"/> class.
+            </summary>
+            <param name="message">The message.</param>
+        </member>
+        <member name="M:Cudafy.CudafyLanguageException.#ctor(System.Exception,System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.CudafyLanguageException"/> class.
+            </summary>
+            <param name="inner">The inner.</param>
+            <param name="message">The message.</param>
+        </member>
+        <member name="M:Cudafy.CudafyLanguageException.#ctor(System.String,System.Object[])">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.CudafyLanguageException"/> class.
+            </summary>
+            <param name="errMsg">The err MSG.</param>
+            <param name="args">The args.</param>
+        </member>
+        <member name="M:Cudafy.CudafyLanguageException.#ctor(System.Exception,System.String,System.Object[])">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.CudafyLanguageException"/> class.
+            </summary>
+            <param name="inner">The inner.</param>
+            <param name="errMsg">The err MSG.</param>
+            <param name="args">The args.</param>
+        </member>
+        <member name="T:Cudafy.AssemblyExtensions">
+            <summary>
+            Extensions to the Assembly class for handling related Cudafy Modules
+            </summary>
+        </member>
+        <member name="M:Cudafy.AssemblyExtensions.HasCudafyModule(System.Reflection.Assembly)">
+            <summary>
+            Determines whether the assembly has a cudafy module embedded.
+            </summary>
+            <param name="assembly">The assembly.</param>
+            <returns>
+              <c>true</c> if it has cudafy module; otherwise, <c>false</c>.
+            </returns>
+        </member>
+        <member name="M:Cudafy.AssemblyExtensions.GetCudafyModule(System.Reflection.Assembly)">
+            <summary>
+            Gets the embedded cudafy module from the assembly.
+            </summary>
+            <param name="assembly">The assembly.</param>
+            <returns>Cudafy module.</returns>
+        </member>
+        <member name="M:Cudafy.AssemblyExtensions.Cudafy(System.Reflection.Assembly,Cudafy.eArchitecture)">
+            <summary>
+            Cudafies the assembly producing a *.cdfy file with same name as assembly. Architecture is 2.0.
+            </summary>
+            <param name="assembly">The assembly.</param>
+            <param name="arch">The architecture.</param>
+            <returns>Output messages of the cudafycl.exe process.</returns>
+        </member>
+        <member name="M:Cudafy.AssemblyExtensions.TryCudafy(System.Reflection.Assembly,Cudafy.eArchitecture)">
+            <summary>
+            Tries cudafying the assembly producing a *.cdfy file with same name as assembly. Architecture is 2.0.
+            </summary>
+            <param name="assembly">The assembly.</param>
+            <param name="arch">The architecture.</param>
+            <returns>
+              <c>true</c> if successful; otherwise, <c>false</c>.
+            </returns>
+        </member>
+        <member name="M:Cudafy.AssemblyExtensions.TryCudafy(System.Reflection.Assembly,System.String@,Cudafy.eArchitecture)">
+            <summary>
+            Tries cudafying the assembly producing a *.cdfy file with same name as assembly. Architecture is 2.0.
+            </summary>
+            <param name="assembly">The assembly.</param>
+            <param name="messages">Output messages of the cudafycl.exe process.</param>
+            <param name="arch">The architecture.</param>
+            <returns>
+              <c>true</c> if successful; otherwise, <c>false</c>.
+            </returns>
+        </member>
+        <member name="T:Cudafy.Atomics.AtomicFunctions">
+            <summary>
+            Extension class containing atomic functions. See the NVIDIA CUDA documentation for more information.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Atomics.AtomicFunctions.atomicAdd(Cudafy.GThread,System.Single@,System.Single)">
+            <summary>
+            Not supported by OpenCL.
+            </summary>
+            <param name="thread">The thread.</param>
+            <param name="address">The address.</param>
+            <param name="val">The value.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Atomics.AtomicFunctions.atomicIncEx(Cudafy.GThread,System.UInt32@)">
+            <summary>
+            Supported by both CUDA and OpenCL.
+            </summary>
+            <param name="thread">The thread.</param>
+            <param name="address">The address.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Atomics.AtomicFunctions.atomicDecEx(Cudafy.GThread,System.UInt32@)">
+            <summary>
+            Supported by both CUDA and OpenCL.
+            </summary>
+            <param name="thread">The thread.</param>
+            <param name="address">The address.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Atomics.AtomicFunctions.atomicInc(Cudafy.GThread,System.UInt32@,System.UInt32)">
+            <summary>
+            Not supported by OpenCL.
+            </summary>
+            <param name="thread">The thread.</param>
+            <param name="address">The address.</param>
+            <param name="val">The val.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Atomics.AtomicFunctions.atomicDec(Cudafy.GThread,System.UInt32@,System.UInt32)">
+            <summary>
+            Not supported by OpenCL.
+            </summary>
+            <param name="thread">The thread.</param>
+            <param name="address">The address.</param>
+            <param name="val">The val.</param>
+            <returns></returns>
+        </member>
+        <member name="T:Cudafy.DynamicParallelism.DynamicParallelismFunctions">
+            <summary>
+            Extension methods for dynamic parallelism.  Compute 3.5 or higher.
+            </summary>
+        </member>
+        <member name="M:Cudafy.DynamicParallelism.DynamicParallelismFunctions.Launch(Cudafy.GThread,Cudafy.dim3,Cudafy.dim3,System.String,System.Object[])">
+            <summary>
+             NOTE: Compute Capability 3.5 and later only. Dynamic parallelism. Call from a single thread.
+             Not supported by emulator.
+            </summary>
+            <param name="gridSize">Size of grid.</param>
+            <param name="blockSize">Size of block.</param>
+            <param name="functionName">Name of function to launch.</param>
+            <param name="args">Arguments.</param>
+        </member>
+        <member name="M:Cudafy.DynamicParallelism.DynamicParallelismFunctions.SynchronizeDevice(Cudafy.GThread)">
+            <summary>
+            Synchronizes threads.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.DynamicParallelism.DynamicParallelismFunctions.GetLastError(Cudafy.GThread)">
+            <summary>
+            Gets the last error.
+            </summary>
+            <param name="thread"></param>
+            <returns>Int32 representation of last error.</returns>
+        </member>
+        <member name="M:Cudafy.DynamicParallelism.DynamicParallelismFunctions.GetDeviceCount(Cudafy.GThread,System.Int32@)">
+            <summary>
+            Gets the number of devices.
+            </summary>
+            <param name="thread"></param>
+            <param name="count">Number of devices.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.DynamicParallelism.DynamicParallelismFunctions.GetDeviceID(Cudafy.GThread,System.Int32@)">
+            <summary>
+            Gets the current device ID.
+            </summary>
+            <param name="thread"></param>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Cudafy.IntegerIntrinsics.IntegerIntrinsicsFunctions">
+            <summary>
+            Extension class containing Integer Intrinsics functions. 
+            </summary>
+        </member>
+        <member name="M:Cudafy.IntegerIntrinsics.IntegerIntrinsicsFunctions.popcount(Cudafy.GThread,System.UInt32)">
+            <summary>
+            Count the number of bits that are set to 1 in x.
+            </summary>
+            <param name="thread">The thread.</param>
+            <param name="val">The value.</param>
+            <returns>Returns a value between 0 and 32 inclusive representing the number of set bits.</returns>
+        </member>
+        <member name="M:Cudafy.IntegerIntrinsics.IntegerIntrinsicsFunctions.popcountll(Cudafy.GThread,System.UInt64)">
+            <summary>
+            Count the number of bits that are set to 1 in x.
+            </summary>
+            <param name="thread">The thread.</param>
+            <param name="val">The value.</param>
+            <returns>Returns a value between 0 and 64 inclusive representing the number of set bits.</returns>
+        </member>
+        <member name="M:Cudafy.IntegerIntrinsics.IntegerIntrinsicsFunctions.clz(Cudafy.GThread,System.Int32)">
+            <summary>
+            Count the number of consecutive leading zero bits, starting at the most significant bit (bit 31) of x.
+            </summary>
+            <param name="thread">The thread.</param>
+            <param name="val">The value.</param>
+            <returns>Returns a value between 0 and 32 inclusive representing the number of zero bits.</returns>
+        </member>
+        <member name="M:Cudafy.IntegerIntrinsics.IntegerIntrinsicsFunctions.clzll(Cudafy.GThread,System.Int64)">
+            <summary>
+            Count the number of consecutive leading zero bits, starting at the most significant bit (bit 63) of x.
+            </summary>
+            <param name="thread">The thread.</param>
+            <param name="val">The value.</param>
+            <returns>Returns a value between 0 and 64 inclusive representing the number of zero bits.</returns>
+        </member>
+        <member name="M:Cudafy.IntegerIntrinsics.IntegerIntrinsicsFunctions.mul24(Cudafy.GThread,System.Int32,System.Int32)">
+            <summary>
+            Calculate the least significant 32 bits of the product of the least significant 24 bits of x and y. The high order 8 bits of x and y are ignored.
+            </summary>
+            <param name="thread">The thread.</param>
+            <param name="val">The value.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.IntegerIntrinsics.IntegerIntrinsicsFunctions.umul24(Cudafy.GThread,System.UInt32,System.UInt32)">
+            <summary>
+            Calculate the least significant 32 bits of the product of the least significant 24 bits of x and y. The high order 8 bits of x and y are ignored.
+            </summary>
+            <param name="thread">The thread.</param>
+            <param name="val">The value.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.IntegerIntrinsics.IntegerIntrinsicsFunctions.mul64hi(Cudafy.GThread,System.Int64,System.Int64)">
+            <summary>
+            Calculate the most significant 64 bits of the 128-bit product x * y, where x and y are 64-bit integers.
+            </summary>
+            <param name="thread">The thread.</param>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <returns>Returns the most significant 64 bits of the product x * y.</returns>
+        </member>
+        <member name="M:Cudafy.IntegerIntrinsics.IntegerIntrinsicsFunctions.mulhi(Cudafy.GThread,System.Int32,System.Int32)">
+            <summary>
+            Calculate the most significant 32 bits of the 64-bit product x * y, where x and y are 32-bit integers.
+            </summary>
+            <param name="thread">The thread.</param>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <returns>Returns the most significant 32 bits of the product x * y.</returns>
+        </member>
+        <member name="M:Cudafy.IntegerIntrinsics.IntegerIntrinsicsFunctions.umul64hi(Cudafy.GThread,System.UInt64,System.UInt64)">
+            <summary>
+            Calculate the most significant 64 bits of the 128-bit product x * y, where x and y are 64-bit integers.
+            </summary>
+            <param name="thread">The thread.</param>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <returns>Returns the most significant 64 bits of the product x * y.</returns>
+        </member>
+        <member name="M:Cudafy.IntegerIntrinsics.IntegerIntrinsicsFunctions.umulhi(Cudafy.GThread,System.UInt32,System.UInt32)">
+            <summary>
+            Calculate the most significant 32 bits of the 64-bit product x * y, where x and y are 32-bit integers.
+            </summary>
+            <param name="thread">The thread.</param>
+            <param name="x">The x.</param>
+            <param name="y">The y.</param>
+            <returns>Returns the most significant 32 bits of the product x * y.</returns>
+        </member>
+        <member name="M:Cudafy.SIMDFunctions.SIMDFuncs.ProcessHalfWords(System.String,System.UInt32)">
+            <summary>
+            Break the 32-bit input word into two 16-bit halfwords and pass them off to be processed separately.
+            </summary>
+            <param name="fnName">function name to be passed along to method ProcessHalfWord</param>
+            <param name="a">32-bit word to be broken into two halfwords</param>
+            <returns>32-bit word assembled from two halfwords</returns>
+        </member>
+        <member name="M:Cudafy.SIMDFunctions.SIMDFuncs.ProcessHalfWords(System.String,System.UInt32,System.UInt32)">
+            <summary>
+            Break each 32-bit input word into two 16-bit halfwords and pass them off to be processed separately.
+            </summary>
+            <param name="fnName">function name to be passed along to method ProcessHalfWord</param>
+            <param name="a">32-bit word to be broken into two halfwords</param>
+            <param name="b">32-bit word to be broken into two halfwords</param>
+            <returns>32-bit word assembled from two halfwords</returns>
+        </member>
+        <member name="M:Cudafy.SIMDFunctions.SIMDFuncs.SumHalfWords(System.String,System.UInt32,System.UInt32)">
+            <summary>
+            Break each 32-bit input word into two 16-bit halfwords and pass them off to be processed separately.
+            Sum the results.
+            </summary>
+            <param name="fnName">function name to be passed along to method ProcessHalfWord</param>
+            <param name="a">32-bit word to be broken into two halfwords</param>
+            <param name="b">32-bit word to be broken into two halfwords</param>
+            <returns>32-bit word -- sum of two halfwords</returns>
+        </member>
+        <member name="M:Cudafy.SIMDFunctions.SIMDFuncs.ProcessBytes(System.String,System.UInt32)">
+            <summary>
+            Break the 32-bit input word into four bytes and pass them off to be processed separately.
+            </summary>
+            <param name="fnName">function name to be passed along to method ProcessByte</param>
+            <param name="a">32-bit word to be broken into four bytes</param>
+            <returns>32-bit word assembled from four bytes</returns>
+        </member>
+        <member name="M:Cudafy.SIMDFunctions.SIMDFuncs.ProcessBytes(System.String,System.UInt32,System.UInt32)">
+            <summary>
+            Break each 32-bit input word into four bytes and pass them off to be processed separately.
+            </summary>
+            <param name="fnName">function name to be passed along to method ProcessByte</param>
+            <param name="a">32-bit word to be broken into four bytes</param>
+            <param name="b">32-bit word to be broken into four bytes</param>
+            <returns>32-bit word assembled from four bytes</returns>
+        </member>
+        <member name="M:Cudafy.SIMDFunctions.SIMDFuncs.SumBytes(System.String,System.UInt32,System.UInt32)">
+            <summary>
+            Break each 32-bit input word into four bytes and pass them off to be processed separately.
+            Sum the results.
+            </summary>
+            <param name="fnName">function name to be passed along to method ProcessByte</param>
+            <param name="a">32-bit word to be broken into four bytes</param>
+            <param name="b">32-bit word to be broken into four bytes</param>
+            <returns>32-bit word -- sum of four bytes</returns>
+        </member>
+        <member name="T:Cudafy.GBlock">
+            <summary>
+            Represents an Cuda block.
+            </summary>
+        </member>
+        <member name="M:Cudafy.GBlock.#ctor(Cudafy.GGrid,Cudafy.dim3,System.Int32,System.Int32)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.GBlock"/> class.
+            </summary>
+            <param name="grid">The parent grid.</param>
+            <param name="size">The size.</param>
+            <param name="x">The x value.</param>
+            <param name="y">The y value.</param>
+        </member>
+        <member name="M:Cudafy.GBlock.AllocateShared``1(System.String,System.Int32)">
+            <summary>
+            Allocates a 1D array in shared memory.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="varName">Key of the variable.</param>
+            <param name="x">The x size.</param>
+            <returns>Pointer to the shared memory.</returns>
+        </member>
+        <member name="M:Cudafy.GBlock.AllocateShared``1(System.String,System.Int32,System.Int32)">
+            <summary>
+            Allocates a 2D array in shared memory.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="varName">Key of the variable.</param>
+            <param name="x">The x size.</param>
+            <param name="y">The y size.</param>
+            <returns>Pointer to the shared memory.</returns>
+        </member>
+        <member name="M:Cudafy.GBlock.AllocateShared``1(System.String,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Allocates a 2D array in shared memory.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="varName">Key of the variable.</param>
+            <param name="x">The x size.</param>
+            <param name="y">The y size.</param>
+            <param name="z">The z size.</param>
+            <returns>Pointer to the shared memory.</returns>
+        </member>
+        <member name="M:Cudafy.GBlock.SyncThreads">
+            <summary>
+            Syncs the threads in this block.
+            </summary>
+        </member>
+        <member name="M:Cudafy.GBlock.SyncThreadsCount(System.Boolean)">
+            <summary>
+            Syncs the threads in this block, returns number of threads that have true predicate in block
+            </summary>
+        </member>
+        <member name="M:Cudafy.GBlock.Any(System.Boolean,System.Int32)">
+            <summary>
+            Syncs the threads in the warp, returns true is any have true prediate
+            </summary>
+        </member>
+        <member name="M:Cudafy.GBlock.All(System.Boolean,System.Int32)">
+            <summary>
+            Syncs the threads in the warp, returns true iff all threads in warp are have true predicate;
+            </summary>
+        </member>
+        <member name="M:Cudafy.GBlock.Ballot(System.Boolean,System.Int32)">
+            <summary>
+            Syncs the threads in the warp, returns number of threads with true predicate, in warp
+            </summary>
+        </member>
+        <member name="P:Cudafy.GBlock.Idx">
+            <summary>
+            Gets the id of this block.
+            </summary>
+        </member>
+        <member name="P:Cudafy.GBlock.Dim">
+            <summary>
+            Gets the dimensions of this block.
+            </summary>
+        </member>
+        <member name="P:Cudafy.GBlock.Grid">
+            <summary>
+            Gets the parent grid.
+            </summary>
+        </member>
+        <member name="P:Cudafy.GBlock.Barrier">
+            <summary>
+            Gets or sets the barrier used to synchronize threads in a block.
+            </summary>
+            <value>
+            The barrier.
+            </value>
+        </member>
+        <member name="T:Cudafy.GGrid">
+            <summary>
+            Represents a Cuda grid.
+            </summary>
+        </member>
+        <member name="M:Cudafy.GGrid.#ctor(Cudafy.dim3)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.GGrid"/> class.
+            </summary>
+            <param name="size">The size.</param>
+        </member>
+        <member name="P:Cudafy.GGrid.Dim">
+            <summary>
+            Gets or sets the dimensions of the grid.
+            </summary>
+            <value>
+            The dim.
+            </value>
+        </member>
+        <member name="T:Cudafy.GMath">
+            <summary>
+            Many of the .NET math methods are double only.  When single point (float) is used 
+            this results in an unwanted cast to double. 
+            </summary>
+        </member>
+        <member name="F:Cudafy.GMath.PI">
+            <summary>
+            Represents the ratio of the circumference of a circle to its diameter, specified by the constant, π.
+            </summary>
+        </member>
+        <member name="F:Cudafy.GMath.E">
+            <summary>
+            Represents the natural logarithmic base, specified by the constant, e.
+            </summary>
+        </member>
+        <member name="M:Cudafy.GMath.Abs(System.Single)">
+            <summary>
+            Returns the absolute value of a single precision floating point number. For OpenCL compatibility, first cast
+            value to an integer.
+            </summary>
+            <param name="value">The value to find absolute value of.</param>
+            <returns>Absolute of specified value.</returns>
+        </member>
+        <member name="M:Cudafy.GMath.Abs(System.Int32)">
+            <summary>
+            Returns the absolute value of a single precision floating point number.  For OpenCL compatibility, first cast
+            value to an integer.
+            </summary>
+            <param name="value">The value to find absolute value of.</param>
+            <returns>Absolute of specified value.</returns>
+        </member>
+        <member name="M:Cudafy.GMath.Abs(System.Int64)">
+            <summary>
+            Returns the absolute value of a single precision floating point number.  For OpenCL compatibility, first cast
+            value to an integer.
+            </summary>
+            <param name="value">The value to find absolute value of.</param>
+            <returns>Absolute of specified value.</returns>
+        </member>
+        <member name="M:Cudafy.GMath.Sqrt(System.Single)">
+            <summary>
+            Returns the square root of a specified number.
+            </summary>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.GMath.Cos(System.Single)">
+            <summary>
+            Returns the cosine of the specified angle. 
+            </summary>
+            <param name="value">An angle, measured in radians.</param>
+            <returns>The cosine of value. If value is equal to NaN, NegativeInfinity, or PositiveInfinity, this method returns NaN.</returns>
+        </member>
+        <member name="M:Cudafy.GMath.Acos(System.Single)">
+            <summary>
+            Acoses the specified value.
+            </summary>
+            <param name="value">The value.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.GMath.Cosh(System.Single)">
+            <summary>
+            Returns the hyperbolic cosine of the specified angle.
+            </summary>
+            <param name="value">An angle, measured in radians.</param>
+            <returns>The hyperbolic cosine of value. If value is equal to NegativeInfinity or PositiveInfinity, PositiveInfinity is returned. If value is equal to NaN, NaN is returned.</returns>
+        </member>
+        <member name="M:Cudafy.GMath.Sin(System.Single)">
+            <summary>
+            Returns the sine of the specified angle. 
+            </summary>
+            <param name="value">An angle, measured in radians.</param>
+            <returns>The sine of value. If value is equal to NaN, NegativeInfinity, or PositiveInfinity, this method returns NaN.</returns>
+        </member>
+        <member name="M:Cudafy.GMath.Asin(System.Single)">
+            <summary>
+            Returns the sine of the specified angle. 
+            </summary>
+            <param name="value">An angle, measured in radians.</param>
+            <returns>The sine of value. If value is equal to NaN, NegativeInfinity, or PositiveInfinity, this method returns NaN.</returns>
+        </member>
+        <member name="M:Cudafy.GMath.Sinh(System.Single)">
+            <summary>
+            Returns the hyperbolic sine of the specified angle. 
+            </summary>
+            <param name="value">An angle, measured in radians.</param>
+            <returns>The hyperbolic sine of value. If value is equal to NaN, NegativeInfinity, or PositiveInfinity, this method returns NaN.</returns> 
+        </member>
+        <member name="M:Cudafy.GMath.Tan(System.Single)">
+            <summary>
+            Returns the tan of the specified angle. 
+            </summary>
+            <param name="value">An angle, measured in radians.</param>
+            <returns>The tan of value.</returns>
+        </member>
+        <member name="M:Cudafy.GMath.Atan(System.Single)">
+            <summary>
+            Returns the tan of the specified angle. 
+            </summary>
+            <param name="value">An angle, measured in radians.</param>
+            <returns>The tan of value.</returns>
+        </member>
+        <member name="M:Cudafy.GMath.Atan2(System.Single,System.Single)">
+            <summary>
+            Returns the angle whose tangent is the quotient of two specified numbers.
+            </summary>
+            <param name="y">The y coordinate of a point.</param>
+            <param name="x">The x coordinate of a point.</param>
+            <returns>Type: System.Double</returns>
+        </member>
+        <member name="M:Cudafy.GMath.Tanh(System.Single)">
+            <summary>
+            Returns hyperbolic the tangent of the specified angle. 
+            </summary>
+            <param name="value">An angle, measured in radians.</param>
+            <returns>The hyperbolic the tangent of value.</returns>
+        </member>
+        <member name="M:Cudafy.GMath.Round(System.Single)">
+            <summary>
+            Rounds the specified value.
+            </summary>
+            <param name="value">The value.</param>
+            <returns>Rounded value.</returns>
+        </member>
+        <member name="M:Cudafy.GMath.Ceiling(System.Single)">
+            <summary>
+            Ceilings the specified value.
+            </summary>
+            <param name="value">The value.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.GMath.Floor(System.Single)">
+            <summary>
+            Floors the specified value.
+            </summary>
+            <param name="value">The value.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.GMath.Pow(System.Single,System.Single)">
+            <summary>
+            Returns the specified number raised to the specified power.
+            </summary>
+            <param name="x">Number to be raised to a power.</param>
+            <param name="y">Number that specifies the power.</param>
+            <returns>X to the power of y.</returns>
+        </member>
+        <member name="M:Cudafy.GMath.Log10(System.Single)">
+            <summary>
+            Returns the base 10 log of the specified number.
+            </summary>
+            <param name="value">A number whose logarithm is to be found.</param>
+            <returns>Result.</returns>
+        </member>
+        <member name="M:Cudafy.GMath.Log(System.Single)">
+            <summary>
+            Returns the natural (base e) logarithm of a specified number.
+            </summary>
+            <param name="value">A number whose logarithm is to be found.</param>
+            <returns>Result.</returns>
+        </member>
+        <member name="M:Cudafy.GMath.Exp(System.Single)">
+            <summary>
+            Returns e raised to the specified power.
+            </summary>
+            <param name="value">A number specifying a power. </param>
+            <returns>The number e raised to the power d. If d equals NaN or PositiveInfinity, that value is returned. If d equals NegativeInfinity, 0 is returned.</returns>
+        </member>
+        <member name="M:Cudafy.GMath.Truncate(System.Single)">
+            <summary>
+            Truncates the specified value.
+            </summary>
+            <param name="value">The value.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.GMath.Max(System.Single,System.Single)">
+            <summary>
+            Returns the larger of two single float precision numbers.
+            </summary>
+            <param name="x">The first number to compare.</param>
+            <param name="y">The second number to compare.</param>
+            <returns>The larger of the two numbers.</returns>
+        </member>
+        <member name="M:Cudafy.GMath.Min(System.Single,System.Single)">
+            <summary>
+            Returns the smaller of two single float precision numbers.
+            </summary>
+            <param name="x">The first number to compare.</param>
+            <param name="y">The second number to compare.</param>
+            <returns>The smaller of the two numbers.</returns>
+        </member>
+        <member name="T:Cudafy.GThread">
+            <summary>
+            Represents a CUDA thread.
+            </summary>
+        </member>
+        <member name="M:Cudafy.GThread.#ctor(System.Int32,System.Int32,Cudafy.GBlock)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.GThread"/> class.
+            </summary>
+            <param name="xId">The x id.</param>
+            <param name="yId">The y id.</param>
+            <param name="parent">The parent block.</param>
+        </member>
+        <member name="M:Cudafy.GThread.SyncThreads">
+            <summary>
+            Syncs the threads in the block.
+            </summary>
+        </member>
+        <member name="M:Cudafy.GThread.AllocateShared``1(System.String,System.Int32)">
+            <summary>
+            Allocates a 1D array in shared memory.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="varName">Key of the variable.</param>
+            <param name="x">The x size.</param>
+            <returns>Pointer to the shared memory.</returns>
+        </member>
+        <member name="M:Cudafy.GThread.AllocateShared``1(System.String,System.Int32,System.Int32)">
+            <summary>
+            Allocates a 2D array in shared memory.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="varName">Key of the variable.</param>
+            <param name="x">The x size.</param>
+            <param name="y">The y size.</param>
+            <returns>Pointer to the shared memory.</returns>
+        </member>
+        <member name="M:Cudafy.GThread.AllocateShared``1(System.String,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Allocates a 3D array in shared memory.
+            </summary>
+            <typeparam name="T">Blittable type.</typeparam>
+            <param name="varName">Key of the variable.</param>
+            <param name="x">The x size.</param>
+            <param name="y">The y size.</param>
+            <param name="z">The z size.</param>
+            <returns>Pointer to the shared memory.</returns>
+        </member>
+        <member name="M:Cudafy.GThread.WarpId">
+            <summary>
+            Gets the warp id this thread belongs too
+            </summary>
+            <value>
+            The warp id
+            </value>
+        </member>
+        <member name="M:Cudafy.GThread.SyncThreadsCount(System.Boolean)">
+            <summary>
+            NOTE Compute Capability 2.x and later only. Syncs the threads in the block.
+            </summary>
+        </member>
+        <member name="M:Cudafy.GThread.Any(System.Boolean)">
+            <summary>
+            Syncs threads in warp, returns true if any had true predicate 
+            </summary>
+        </member>
+        <member name="M:Cudafy.GThread.All(System.Boolean)">
+            <summary>
+            Syncs threads in warp, returns true if any had true predicate 
+            </summary>
+        </member>
+        <member name="M:Cudafy.GThread.Ballot(System.Boolean)">
+            <summary>
+            NOTE Compute Capability 2.x and later only. Syncs threads in warp, returns true if any had true predicate. 
+            </summary>
+        </member>
+        <member name="M:Cudafy.GThread.InsertCode(System.String)">
+            <summary>
+            Inserts CUDA C code directly into kernel. Example: thread.InsertCode("#pragma unroll 5");
+            </summary>
+            <param name="text">The code to be inserted.</param>
+            <exception cref="T:Cudafy.CudafyException">Attempt to run code through emulator made.</exception>
+        </member>
+        <member name="M:Cudafy.GThread.InsertCode(System.String,System.Boolean)">
+            <summary>
+            Inserts CUDA C code directly into kernel. Example: thread.InsertCode("#pragma unroll 5", false);
+            </summary>
+            <param name="text">The code to be inserted.</param>
+            <param name="throwIfNotSupported">If true (default) then throw an exception if emulation is attempted.</param>
+            <exception cref="T:Cudafy.CudafyException">Attempt to run code through emulator made while throwIfNotSupported is true.</exception>
+        </member>
+        <member name="M:Cudafy.GThread.InsertCode(System.String,System.Object[])">
+            <summary>
+            Inserts CUDA C code directly into kernel. Example: thread.InsertCode("{0}[{2}] = {1}[{2}];", results, data, index); 
+            </summary>
+            <param name="text">The code to be inserted.</param>
+            <param name="args">Replaces place holders with names of one or more arguments.</param>
+            <exception cref="T:Cudafy.CudafyException">Attempt to run code through emulator made.</exception>
+        </member>
+        <member name="M:Cudafy.GThread.InsertCode(System.String,System.Boolean,System.Object[])">
+            <summary>
+            Inserts CUDA C code directly into kernel. Example: thread.InsertCode("{0}[{2}] = {1}[{2}];", results, data, index); 
+            </summary>
+            <param name="text">The code to be inserted.</param>
+            <param name="throwIfNotSupported">If true (default) then throw an exception if emulation is attempted.</param>
+            <param name="args">Replaces place holders with names of one or more arguments.</param>
+            <exception cref="T:Cudafy.CudafyException">Attempt to run code through emulator made while throwIfNotSupported is true.</exception>
+        </member>
+        <member name="P:Cudafy.GThread.block">
+            <summary>
+            Gets the parent block.
+            </summary>
+        </member>
+        <member name="P:Cudafy.GThread.warpSize">
+            <summary>
+            Gets the size of the warp.
+            </summary>
+            <value>
+            The size of the warp.
+            </value>
+        </member>
+        <member name="P:Cudafy.GThread.blockIdx">
+            <summary>
+            Gets the parent block id.
+            </summary>
+        </member>
+        <member name="P:Cudafy.GThread.blockDim">
+            <summary>
+            Gets the parent block dimension.
+            </summary>
+        </member>
+        <member name="P:Cudafy.GThread.gridDim">
+            <summary>
+            Gets the parent grid dim.
+            </summary>
+        </member>
+        <member name="P:Cudafy.GThread.threadIdx">
+            <summary>
+            Gets the thread id.
+            </summary>
+        </member>
+        <member name="T:Cudafy.KernelConstantInfo">
+            <summary>
+            Describes a .NET static that was translated to Cuda constant.
+            </summary>
+        </member>
+        <member name="T:Cudafy.KernelMemberInfo">
+            <summary>
+            Base class for kernel constants, methods and types.
+            </summary>
+        </member>
+        <member name="F:Cudafy.KernelMemberInfo.csNAME">
+            <summary>
+            Name
+            </summary>
+        </member>
+        <member name="F:Cudafy.KernelMemberInfo.csTYPE">
+            <summary>
+            Type
+            </summary>
+        </member>
+        <member name="F:Cudafy.KernelMemberInfo.csCHECKSUM">
+            <summary>
+            Checksum
+            </summary>
+        </member>
+        <member name="F:Cudafy.KernelMemberInfo.csASSEMBLY">
+            <summary>
+            Assembly
+            </summary>
+        </member>
+        <member name="F:Cudafy.KernelMemberInfo.csASSEMBLYNAME">
+            <summary>
+            AssemblyName
+            </summary>
+        </member>
+        <member name="F:Cudafy.KernelMemberInfo.csASSEMBLYPATH">
+            <summary>
+            AssemblyPath
+            </summary>
+        </member>
+        <member name="F:Cudafy.KernelMemberInfo.csISDUMMY">
+            <summary>
+            IsDummy
+            </summary>
+        </member>
+        <member name="F:Cudafy.KernelMemberInfo.csDUMMYBEHAVIOUR">
+            <summary>
+            DummyBehaviour
+            </summary>
+        </member>
+        <member name="M:Cudafy.KernelMemberInfo.GetAssemblyChecksum">
+            <summary>
+            Gets the checksum of the assembly on which this member was based.
+            </summary>
+            <returns>Crc32 check sum.</returns>
+        </member>
+        <member name="M:Cudafy.KernelMemberInfo.TryVerifyChecksums">
+            <summary>
+            Checks if the assembly checksum and deserialized checksum are the same.
+            </summary>
+            <returns>True if the same, else false.</returns>
+        </member>
+        <member name="M:Cudafy.KernelMemberInfo.VerifyChecksums">
+            <summary>
+            Checks if the assembly checksum and deserialized checksum are the same.
+            </summary>
+            <exception cref="T:Cudafy.CudafyException">Checksums do not match.</exception>
+        </member>
+        <member name="M:Cudafy.KernelMemberInfo.ToString">
+            <summary>
+            Returns the Name.
+            </summary>
+            <returns>
+            A <see cref="T:System.String"/> that represents this instance.
+            </returns>
+        </member>
+        <member name="P:Cudafy.KernelMemberInfo.DeserializedChecksum">
+            <summary>
+            Gets or sets the deserialized checksum.
+            </summary>
+            <value>
+            The deserialized checksum.
+            </value>
+        </member>
+        <member name="P:Cudafy.KernelMemberInfo.Type">
+            <summary>
+            Gets or sets the type.
+            </summary>
+            <value>
+            The type.
+            </value>
+        </member>
+        <member name="P:Cudafy.KernelMemberInfo.IsDummy">
+            <summary>
+            Gets a value indicating whether this instance is dummy.
+            </summary>
+            <value>
+              <c>true</c> if this instance is dummy; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.KernelMemberInfo.Behaviour">
+            <summary>
+            Gets a value indicating whether to include header file for dummy or not.
+            </summary>
+        </member>
+        <member name="P:Cudafy.KernelMemberInfo.Name">
+            <summary>
+            Gets the name.
+            </summary>
+        </member>
+        <member name="M:Cudafy.KernelConstantInfo.#ctor(System.String,System.Reflection.FieldInfo,System.Boolean)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.KernelConstantInfo"/> class.
+            </summary>
+            <param name="name">The name.</param>
+            <param name="fi">The field information.</param>
+            <param name="isDummy">if set to <c>true</c> is dummy.</param>
+        </member>
+        <member name="M:Cudafy.KernelConstantInfo.GetDeclaration">
+            <summary>
+            Gets the Cuda C declaration string generated by this constant.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.KernelConstantInfo.GetTotalLength">
+            <summary>
+            Gets the total length.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Cudafy.KernelConstantInfo.Handle">
+            <summary>
+            Gets or sets a handle that can be arbitrarily used to prevent garbage collection.
+            </summary>
+            <value>
+            The handle.
+            </value>
+        </member>
+        <member name="P:Cudafy.KernelConstantInfo.CudaPointer">
+            <summary>
+            Gets or sets the cuda pointer.
+            </summary>
+            <value>
+            The cuda pointer.
+            </value>
+        </member>
+        <member name="P:Cudafy.KernelConstantInfo.Name">
+            <summary>
+            Gets the name.
+            </summary>
+        </member>
+        <member name="P:Cudafy.KernelConstantInfo.Information">
+            <summary>
+            Gets the information.
+            </summary>
+        </member>
+        <member name="P:Cudafy.KernelConstantInfo.Type">
+            <summary>
+            Gets the type.
+            </summary>
+        </member>
+        <member name="T:Cudafy.eKernelMethodType">
+            <summary>
+            The method type is either Global or Device.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eKernelMethodType.Global">
+            <summary>
+            Global function can be launched.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eKernelMethodType.Device">
+            <summary>
+            Device function can be called from global functions or other device function.
+            </summary>
+        </member>
+        <member name="T:Cudafy.KernelMethodInfo">
+            <summary>
+            Describes a .NET method that was translated to Cuda function.
+            </summary>
+        </member>
+        <member name="M:Cudafy.KernelMethodInfo.#ctor(System.Type,System.Reflection.MethodInfo,Cudafy.eKernelMethodType,System.Boolean,Cudafy.eCudafyDummyBehaviour,Cudafy.CudafyModule)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.KernelMethodInfo"/> class.
+            </summary>
+            <param name="type">The type.</param>
+            <param name="method">The method.</param>
+            <param name="gpuMethodType">Type of the gpu method.</param>
+            <param name="isDummy">if set to <c>true</c> is dummy.</param>
+            <param name="behaviour"></param>
+            <param name="parentModule">Module of which this is a part.</param>
+        </member>
+        <member name="M:Cudafy.KernelMethodInfo.GetParametersString">
+            <summary>
+            Gets the parameters as a comma seperated string.
+            </summary>
+            <returns>Paramter string.</returns>
+        </member>
+        <member name="P:Cudafy.KernelMethodInfo.Method">
+            <summary>
+            Gets the method.
+            </summary>
+        </member>
+        <member name="P:Cudafy.KernelMethodInfo.MethodType">
+            <summary>
+            Gets the type of the method.
+            </summary>
+            <value>
+            The type of the method.
+            </value>
+        </member>
+        <member name="P:Cudafy.KernelMethodInfo.KernelFunction">
+            <summary>
+            Gets the kernel function.
+            </summary>
+        </member>
+        <member name="P:Cudafy.KernelMethodInfo.Name">
+            <summary>
+            Gets the name.
+            </summary>
+        </member>
+        <member name="T:Cudafy.eGPUCompiler">
+            <summary>
+            Flags for compilers.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eGPUCompiler.None">
+            <summary>
+            None.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eGPUCompiler.CudaNvcc">
+            <summary>
+            Nvcc Cuda compiler.
+            </summary>
+        </member>
+        <member name="F:Cudafy.eGPUCompiler.All">
+            <summary>
+            Compile for all targets.
+            </summary>
+        </member>
+        <member name="P:Cudafy.ProgramModuleBase.Platform">
+            <summary>
+            Gets the platform.
+            </summary>
+        </member>
+        <member name="P:Cudafy.ProgramModuleBase.Architecture">
+            <summary>
+            Gets the architecture.
+            </summary>
+        </member>
+        <member name="T:Cudafy.PTXModule">
+            <summary>
+            Internal use.
+            </summary>
+        </member>
+        <member name="M:Cudafy.PTXModule.ToString">
+            <summary>
+            Returns a <see cref="T:System.String"/> that represents this instance.
+            </summary>
+            <returns>
+            A <see cref="T:System.String"/> that represents this instance.
+            </returns>
+        </member>
+        <member name="P:Cudafy.PTXModule.PTX">
+            <summary>
+            Gets the PTX.
+            </summary>
+        </member>
+        <member name="T:Cudafy.BinaryModule">
+            <summary>
+            Internal use.
+            </summary>
+        </member>
+        <member name="M:Cudafy.BinaryModule.ToString">
+            <summary>
+            Returns a <see cref="T:System.String"/> that represents this instance.
+            </summary>
+            <returns>
+            A <see cref="T:System.String"/> that represents this instance.
+            </returns>
+        </member>
+        <member name="P:Cudafy.BinaryModule.Binary">
+            <summary>
+            Gets the binary (e.g. cubin)
+            </summary>   
+        </member>
+        <member name="T:Cudafy.CudafyModule">
+            <summary>
+            Cudafy module.
+            </summary>
+        </member>
+        <member name="M:Cudafy.CudafyModule.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.CudafyModule"/> class.
+            </summary>
+        </member>
+        <member name="M:Cudafy.CudafyModule.GetMemberNames">
+            <summary>
+            Gets the member names.
+            </summary>
+        </member>
+        <member name="M:Cudafy.CudafyModule.RemovePTXModules">
+            <summary>
+            Removes the PTX modules.
+            </summary>
+        </member>
+        <member name="M:Cudafy.CudafyModule.RemoveBinaryModules">
+            <summary>
+            Removes the binary modules.
+            </summary>
+        </member>
+        <member name="M:Cudafy.CudafyModule.HasPTXForPlatform(Cudafy.ePlatform,Cudafy.eArchitecture)">
+            <summary>
+            Determines whether module has binary for the specified platform and architecture.
+            </summary>
+            <param name="platform">The platform.</param>
+            <param name="arch">The architecture.</param>
+            <returns>
+              <c>true</c> if module has binary for the specified platform and an architecture equal or less than that specified; otherwise, <c>false</c>.
+            </returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.HasPTXForPlatform(Cudafy.ePlatform)">
+            <summary>
+            Determines whether module has PTX for the specified platform.
+            </summary>
+            <param name="platform">The platform.</param>
+            <returns>
+              <c>true</c> if module has PTX for the specified platform; otherwise, <c>false</c>.
+            </returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.HasProgramModuleForPlatform(Cudafy.ePlatform,Cudafy.eArchitecture)">
+            <summary>
+            Determines whether module has PTX or binary for the specified platform.
+            </summary>
+            <param name="platform">The platform.</param>
+            <param name="arch">The architecture.</param>
+            <returns>
+              <c>true</c> if module has module for the specified values; otherwise, <c>false</c>.
+            </returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.HasProgramModuleForPlatform(Cudafy.ePlatform)">
+            <summary>
+            Determines whether module has PTX or binary for the specified platform.
+            </summary>
+            <param name="platform">The platform.</param>
+            <returns>
+              <c>true</c> if module has module for the specified value; otherwise, <c>false</c>.
+            </returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.HasBinaryForPlatform(Cudafy.ePlatform,Cudafy.eArchitecture)">
+            <summary>
+            Determines whether module has binary for the specified platform and architecture.
+            </summary>
+            <param name="platform">The platform.</param>
+            <param name="arch">The architecture.</param>
+            <returns>
+              <c>true</c> if module has binary for the specified platform and architecture; otherwise, <c>false</c>.
+            </returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.HasBinaryForPlatform(Cudafy.ePlatform)">
+            <summary>
+            Determines whether module has binary for the specified platform and architecture.
+            </summary>
+            <param name="platform">The platform.</param>
+            <returns>
+              <c>true</c> if module has binary for the specified platform; otherwise, <c>false</c>.
+            </returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.Reset">
+            <summary>
+            Resets this instance.
+            </summary>
+        </member>
+        <member name="M:Cudafy.CudafyModule.TrySerialize">
+            <summary>
+            Trues to serialize this instance to file based on Name.
+            </summary>
+            <returns>True if successful, else false.</returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.Serialize">
+            <summary>
+            Serializes this instance to file based on Name.
+            </summary>
+        </member>
+        <member name="M:Cudafy.CudafyModule.Serialize(System.String)">
+            <summary>
+            Serializes the module to the specified filename.
+            </summary>
+            <param name="filename">The filename.</param>
+        </member>
+        <member name="M:Cudafy.CudafyModule.Serialize(System.IO.Stream)">
+            <summary>
+            Serializes the module to the specified stream.
+            </summary>
+            <param name="stream">The stream to write to.</param>
+        </member>
+        <member name="M:Cudafy.CudafyModule.Clean(System.String)">
+            <summary>
+            Deletes the specified filename (with or without default .cdfy extension).
+            </summary>
+            <param name="filename">The filename.</param>
+            <returns>True if file was deleted else false.</returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.GetDummyStructIncludes">
+            <summary>
+            Gets the dummy struct includes.
+            </summary>
+            <returns>Strings representing the Cuda include files.</returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.GetDummyIncludes">
+            <summary>
+            Gets the dummy function includes.
+            </summary>
+            <returns>Strings representing the Cuda include files.</returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.GetDummyDefines">
+            <summary>
+            Gets the dummy defines.
+            </summary>
+            <returns>Strings representing the Cuda defines files.</returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.TryDeserialize">
+            <summary>
+            Tries to deserialize from a file with the same name as the calling type.
+            </summary>
+            <returns>Cudafy module or null if failed.</returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.TryDeserialize(System.String)">
+            <summary>
+            Tries to deserialize from the specified file.
+            </summary>
+            <param name="filename">The filename.</param>
+            <returns>Cudafy module or null if failed.</returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.TryDeserialize(System.String,System.String@)">
+            <summary>
+            Tries to deserialize from the specified file.
+            </summary>
+            <param name="filename">The filename.</param>
+            <param name="errorMsg">The error message if fails, else empty string.</param>
+            <returns>Cudafy module or null if failed.</returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.HasCudafyModuleInAssembly">
+            <summary>
+            Determines whether there is a cudafy module in the calling assembly.
+            </summary>
+            <returns>
+              <c>true</c> if calling assembly has cudafy module; otherwise, <c>false</c>.
+            </returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.HasCudafyModule(System.Reflection.Assembly)">
+            <summary>
+            Determines whether there is a cudafy module in the specified assembly.
+            </summary>
+            <param name="assembly">The assembly.</param>
+            <returns>
+              <c>true</c> if assembly has a cudafy module; otherwise, <c>false</c>.
+            </returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.GetFromAssembly">
+            <summary>
+            Gets a cudafy module that was stored as a resource in the calling assembly.
+            </summary>
+            <returns>The stored cudafy module.</returns>
+            <exception cref="T:Cudafy.CudafyException">Resource not found.</exception>
+        </member>
+        <member name="M:Cudafy.CudafyModule.GetFromAssembly(System.Reflection.Assembly)">
+            <summary>
+            Gets a cudafy module that was stored as a resource in the specified assembly.
+            </summary>
+            <param name="assembly">The assembly.</param>
+            <returns>The stored cudafy module.</returns>
+            <exception cref="T:Cudafy.CudafyException">Resource not found.</exception>
+        </member>
+        <member name="M:Cudafy.CudafyModule.TryGetFromAssembly">
+            <summary>
+            Tries to get a cudafy module that was stored as a resource in the calling assembly.
+            </summary>
+            <param name="assembly">The assembly.</param>
+            <returns>The stored cudafy module, or null if not present.</returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.TryGetFromAssembly(System.Reflection.Assembly)">
+            <summary>
+            Tries to get a cudafy module that was stored as a resource in the specified assembly.
+            </summary>
+            <param name="assembly">The assembly.</param>
+            <returns>The stored cudafy module, or null if not present.</returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.Deserialize">
+            <summary>
+            Deserializes from a file with the same name as the calling type.
+            </summary>
+            <returns>Cudafy module.</returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.Deserialize(System.String)">
+            <summary>
+            Deserializes the specified file.
+            </summary>
+            <param name="filename">The filename.</param>
+            <returns>Cudafy module.</returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.VerifyChecksums">
+            <summary>
+            Verifies the checksums of all functions, constants and types.
+            </summary>
+            <exception cref="T:Cudafy.CudafyException">Check sums don't match or total number of members is less than one, .</exception>
+        </member>
+        <member name="M:Cudafy.CudafyModule.TryVerifyChecksums">
+            <summary>
+            Verifies the checksums of all functions, constants and types.
+            </summary>
+            <returns>True if checksums match and total number of members is greater than one, else false.</returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.TryVerifyChecksums(Cudafy.ePlatform,Cudafy.eArchitecture)">
+            <summary>
+            Verifies the checksums of all functions, constants and types.
+            </summary>
+            <param name="platform">Platform.</param>
+            <param name="arch">Architecture.</param>
+            <returns>True if checksums match and total number of members is greater than one, else false.</returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.Clone">
+            <summary>
+            Clones the module. Useful for loading the same module to multiple GPUs.
+            </summary>
+            <returns>Cloned module.</returns>
+        </member>
+        <member name="M:Cudafy.CudafyModule.Compile(Cudafy.eGPUCompiler,System.Boolean,Cudafy.eCudafyCompileMode)">
+            <summary>
+            Compiles the module based on current Cuda source code and options.
+            </summary>
+            <param name="mode">The mode.</param>
+            <param name="deleteGeneratedCode">if set to <c>true</c> delete generated code on success.</param>
+            <param name="binary">Compile to binary if true.</param>
+            <returns>The compile arguments.</returns>
+            <exception cref="T:Cudafy.CudafyCompileException">No source code or compilation error.</exception>
+        </member>
+        <member name="P:Cudafy.CudafyModule.Name">
+            <summary>
+            Gets or sets the name.
+            </summary>
+            <value>
+            The name.
+            </value>
+        </member>
+        <member name="P:Cudafy.CudafyModule.Tag">
+            <summary>
+            Gets or sets optional extra data (CUmodule).
+            </summary>
+            <value>
+            The data.
+            </value>
+        </member>
+        <member name="P:Cudafy.CudafyModule.Functions">
+            <summary>
+            Gets the functions.
+            </summary>
+        </member>
+        <member name="P:Cudafy.CudafyModule.Constants">
+            <summary>
+            Gets the constants.
+            </summary>
+        </member>
+        <member name="P:Cudafy.CudafyModule.Types">
+            <summary>
+            Gets the types.
+            </summary>
+        </member>
+        <member name="P:Cudafy.CudafyModule.CanPrint">
+            <summary>
+            NOT IMPLEMENTED YET. Gets or sets a value indicating whether this instance can print to console.
+            </summary>
+            <value>
+              <c>true</c> if this instance can print; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.CudafyModule.PTXModules">
+            <summary>
+            Gets the PTX modules.
+            </summary>
+        </member>
+        <member name="P:Cudafy.CudafyModule.CurrentPlatform">
+            <summary>
+            Gets the current platform.
+            </summary>
+        </member>
+        <member name="P:Cudafy.CudafyModule.PTX">
+            <summary>
+            Gets the first PTX suitable for the current platform.
+            </summary>
+        </member>
+        <member name="P:Cudafy.CudafyModule.Binary">
+            <summary>
+            Gets the first PTX suitable for the current platform.
+            </summary>
+        </member>
+        <member name="P:Cudafy.CudafyModule.HasSuitablePTX">
+            <summary>
+            Gets a value indicating whether this instance has suitable PTX.
+            </summary>
+            <value>
+              <c>true</c> if this instance has PTX; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.CudafyModule.HasPTX">
+            <summary>
+            Gets a value indicating whether this instance has one or more PTX.
+            </summary>
+            <value>
+              <c>true</c> if this instance has PTX; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.CudafyModule.HasBinary">
+            <summary>
+            Gets a value indicating whether this instance has one or more binary modules.
+            </summary>
+            <value>
+              <c>true</c> if this instance has a binary module; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.CudafyModule.CudaSourceCode">
+            <summary>
+            Gets or sets the CUDA or OpenCL source code.
+            </summary>
+            <value>
+            The cuda source code.
+            </value>
+        </member>
+        <member name="P:Cudafy.CudafyModule.SourceCode">
+            <summary>
+            Gets or sets the CUDA or OpenCL source code.
+            </summary>
+            <value>
+            The source code.
+            </value>
+        </member>
+        <member name="P:Cudafy.CudafyModule.HasCudaSourceCode">
+            <summary>
+            Gets a value indicating whether this instance has cuda source code.
+            </summary>
+            <value>
+            	<c>true</c> if this instance has cuda source code; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.CudafyModule.HasSourceCode">
+            <summary>
+            Gets a value indicating whether this instance has source code.
+            </summary>
+            <value>
+            	<c>true</c> if this instance has source code; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.CudafyModule.CompilerOptionsList">
+            <summary>
+            Gets the compiler options.
+            </summary>
+            <value>
+            The compiler options.
+            </value>
+        </member>
+        <member name="P:Cudafy.CudafyModule.CompilerOutput">
+            <summary>
+            Gets or sets the compiler output.
+            </summary>
+        </member>
+        <member name="P:Cudafy.CudafyModule.CompilerArguments">
+            <summary>
+            Gets the last arguments passed to compiler.
+            </summary>
+        </member>
+        <member name="P:Cudafy.CudafyModule.WorkingDirectory">
+            <summary>
+            Gets or sets the working directory for the compiler.
+            </summary>
+        </member>
+        <member name="P:Cudafy.CudafyModule.GenerateDebug">
+            <summary>
+            Gets or sets a value indicating whether to compile for debug.
+            </summary>
+            <value>
+              <c>true</c> if compile for debug; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:Cudafy.CudafyModule.TimeOut">
+            <summary>
+            Gets or sets the time out for compilation.
+            </summary>
+            <value>
+            The time out in milliseconds.
+            </value>
+        </member>
+        <member name="P:Cudafy.CudafyModule.SuppressWindow">
+            <summary>
+            Gets or sets a value indicating whether to start the compilation in a new window.
+            </summary>
+            <value>
+              <c>true</c> if suppress a new window; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="T:Cudafy.KernelTypeInfo">
+            <summary>
+            Describes a .NET type (structure) that was translated to Cuda function.
+            </summary>
+        </member>
+        <member name="M:Cudafy.KernelTypeInfo.#ctor(System.Type,System.Boolean,Cudafy.eCudafyDummyBehaviour)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.KernelTypeInfo"/> class.
+            </summary>
+            <param name="type">The type.</param>
+            <param name="isDummy">if set to <c>true</c> is dummy.</param>
+            <param name="noDummyInclude"></param>
+        </member>
+        <member name="P:Cudafy.KernelTypeInfo.Name">
+            <summary>
+            Gets the name.
+            </summary>
+        </member>
+        <member name="T:info.jhpc.thread.SimpleBarrier">
+            
+            	 * Allows multiple threads to gather at a point before proceeding.
+            
+            	 *
+            
+            	 * @author Thomas W. Christopher (Tools of Computing LLC)
+            
+            	 * @version 0.2 Beta
+            
+        </member>
+        <member name="F:info.jhpc.thread.SimpleBarrier.count">
+            
+            		 * Number of threads that still must gather.
+            
+        </member>
+        <member name="F:info.jhpc.thread.SimpleBarrier.predicate_sum">
+            
+            		 * Number of threads that still must gather.
+            
+        </member>
+        <member name="F:info.jhpc.thread.SimpleBarrier.initCount">
+            
+            		 * Total number of threads that must gather.
+            
+        </member>
+        <member name="M:info.jhpc.thread.SimpleBarrier.#ctor(System.Int32)">
+            
+            		 * Creates a Barrier at which n threads may repeatedly gather.
+            
+            		 *
+            
+            		 * @param n total number of threads that must gather.
+            
+        </member>
+        <member name="M:info.jhpc.thread.SimpleBarrier.gather(System.Boolean)">
+            
+            		 * Is called by a thread to wait for the rest of the n threads to gather
+            
+            		 * before the set of threads may continue executing.
+            
+            		 *
+            
+            		 * @throws InterruptedException If interrupted while waiting.
+            
+        </member>
+        <member name="M:info.jhpc.thread.SimpleBarrier.SignalAndWait">
+            <summary>
+            Calls gather();
+            </summary>
+        </member>
+        <member name="M:info.jhpc.thread.SimpleBarrier.SignalAndWaitAndCountPredicate(System.Boolean)">
+            <summary>
+            Calls gather(predicate); Returns sum of true predicates within block
+            </summary>
+        </member>
+        <member name="M:info.jhpc.warp.SimpleWarpBarrier.SignalAnyPredicateAndWait(System.Boolean,System.Int32)">
+            <summary>
+            Calls gather();
+            </summary>
+        </member>
+        <member name="M:info.jhpc.warp.SimpleWarpBarrier.SignalAllPredicateAndWait(System.Boolean,System.Int32)">
+            <summary>
+            Calls gather();
+            </summary>
+        </member>
+        <member name="M:info.jhpc.warp.SimpleWarpBarrier.SignalBallotPredicateAndWait(System.Boolean,System.Int32)">
+            <summary>
+            Calls gather();
+            </summary>
+        </member>
+        <member name="T:Cudafy.Types.ComplexF">
+            <summary>
+            Represents a complex single floating point number that is mapped to the native GPU equivalent.
+            </summary>
+        </member>
+        <member name="F:Cudafy.Types.ComplexF.x">
+            <summary>
+            Real part.
+            </summary>
+        </member>
+        <member name="F:Cudafy.Types.ComplexF.y">
+            <summary>
+            Imaginary part.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Types.ComplexF.#ctor(System.Single,System.Single)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Types.ComplexF"/> struct.
+            </summary>
+            <param name="real">The real part.</param>
+            <param name="imaginary">The imaginary part.</param>
+        </member>
+        <member name="M:Cudafy.Types.ComplexF.Conj(Cudafy.Types.ComplexF)">
+            <summary>
+            Conjugates the specified value.
+            </summary>
+            <param name="x">The value.</param>
+            <returns>Conjugated value.</returns>
+        </member>
+        <member name="M:Cudafy.Types.ComplexF.Add(Cudafy.Types.ComplexF,Cudafy.Types.ComplexF)">
+            <summary>
+            Adds value y to value x.
+            </summary>
+            <param name="x">Value one.</param>
+            <param name="y">Value to be added.</param>
+            <returns>New value.</returns>
+        </member>
+        <member name="M:Cudafy.Types.ComplexF.Subtract(Cudafy.Types.ComplexF,Cudafy.Types.ComplexF)">
+            <summary>
+            Subtracts value y from value x.
+            </summary>
+            <param name="x">Value one.</param>
+            <param name="y">Value to be subtracted.</param>
+            <returns>New value.</returns>
+        </member>
+        <member name="M:Cudafy.Types.ComplexF.Multiply(Cudafy.Types.ComplexF,Cudafy.Types.ComplexF)">
+            <summary>
+            Multiplies value x and y.
+            </summary>
+            <param name="x">Value one.</param>
+            <param name="y">Value two.</param>
+            <returns>New value.</returns>
+        </member>
+        <member name="M:Cudafy.Types.ComplexF.Divide(Cudafy.Types.ComplexF,Cudafy.Types.ComplexF)">
+            <summary>
+            Divides value x by y.
+            </summary>
+            <param name="x">Value one.</param>
+            <param name="y">Value two.</param>
+            <returns>New value.</returns>
+        </member>
+        <member name="M:Cudafy.Types.ComplexF.Abs(Cudafy.Types.ComplexF)">
+            <summary>
+            Gets the absolute of the specified value.
+            </summary>
+            <param name="x">The value.</param>
+            <returns>Absolute.</returns>
+        </member>
+        <member name="M:Cudafy.Types.ComplexF.ToString">
+            <summary>
+            Returns a <see cref="T:System.String"/> that represents this instance.
+            </summary>
+            <returns>
+            A <see cref="T:System.String"/> that represents this instance.
+            </returns>
+        </member>
+        <member name="T:Cudafy.Types.ComplexD">
+            <summary>
+            Represents a complex single floating point number that is mapped to the native GPU equivalent.
+            </summary>
+        </member>
+        <member name="F:Cudafy.Types.ComplexD.x">
+            <summary>
+            Real part.
+            </summary>
+        </member>
+        <member name="F:Cudafy.Types.ComplexD.y">
+            <summary>
+            Imaginary part.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Types.ComplexD.#ctor(System.Double,System.Double)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Types.ComplexD"/> struct.
+            </summary>
+            <param name="real">The real part.</param>
+            <param name="imaginary">The imaginary part.</param>
+        </member>
+        <member name="M:Cudafy.Types.ComplexD.Conj(Cudafy.Types.ComplexD)">
+            <summary>
+            Conjugates the specified value.
+            </summary>
+            <param name="x">The value.</param>
+            <returns>Conjugated value.</returns>
+        </member>
+        <member name="M:Cudafy.Types.ComplexD.Add(Cudafy.Types.ComplexD,Cudafy.Types.ComplexD)">
+            <summary>
+            Adds value y to value x.
+            </summary>
+            <param name="x">Value one.</param>
+            <param name="y">Value to be added.</param>
+            <returns>New value.</returns>
+        </member>
+        <member name="M:Cudafy.Types.ComplexD.Subtract(Cudafy.Types.ComplexD,Cudafy.Types.ComplexD)">
+            <summary>
+            Subtracts value y from value x.
+            </summary>
+            <param name="x">Value one.</param>
+            <param name="y">Value to be subtracted.</param>
+            <returns>New value.</returns>
+        </member>
+        <member name="M:Cudafy.Types.ComplexD.Multiply(Cudafy.Types.ComplexD,Cudafy.Types.ComplexD)">
+            <summary>
+            Multiplies value x and y.
+            </summary>
+            <param name="x">Value one.</param>
+            <param name="y">Value two.</param>
+            <returns>New value.</returns>
+        </member>
+        <member name="M:Cudafy.Types.ComplexD.Divide(Cudafy.Types.ComplexD,Cudafy.Types.ComplexD)">
+            <summary>
+            Divides value x by y.
+            </summary>
+            <param name="x">Value one.</param>
+            <param name="y">Value two.</param>
+            <returns>New value.</returns>
+        </member>
+        <member name="M:Cudafy.Types.ComplexD.Abs(Cudafy.Types.ComplexD)">
+            <summary>
+            Gets the absolute of the specified value.
+            </summary>
+            <param name="x">The value.</param>
+            <returns>Absolute.</returns>
+        </member>
+        <member name="M:Cudafy.Types.ComplexD.ToString">
+            <summary>
+            Returns a <see cref="T:System.String"/> that represents this instance.
+            </summary>
+            <returns>
+            A <see cref="T:System.String"/> that represents this instance.
+            </returns>
+        </member>
+        <member name="T:Cudafy.CV">
+            <summary>
+            Internal use.
+            </summary>
+        </member>
+        <member name="F:Cudafy.CV.csVERSION">
+            <summary>
+            Version 1.29.*
+            </summary>
+        </member>
+        <member name="T:Cudafy.Crc32">
+            <summary>
+            Class used for performing checksum.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Crc32.ComputeChecksum(System.String)">
+            <summary>
+            Computes the checksum.
+            </summary>
+            <param name="location">The file.</param>
+            <returns>Checksum.</returns>
+        </member>
+        <member name="M:Cudafy.Crc32.ComputeChecksum(System.Byte[])">
+            <summary>
+            Computes the checksum.
+            </summary>
+            <param name="bytes">The bytes.</param>
+            <returns>Checksum.</returns>
+        </member>
+        <member name="M:Cudafy.Crc32.ComputeChecksumBytes(System.Byte[])">
+            <summary>
+            Computes the checksum.
+            </summary>
+            <param name="bytes">The byte array.</param>
+            <returns>Checksum.</returns>
+        </member>
+        <member name="M:Cudafy.Crc32.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Cudafy.Crc32"/> class.
+            </summary>
+        </member>
+        <member name="T:Cudafy.Utility">
+            <summary>
+            Utility methods.
+            </summary>
+        </member>
+        <member name="M:Cudafy.Utility.DumpToFile(System.String,System.String)">
+            <summary>
+            Dumps supplied text to file.
+            </summary>
+            <param name="text">The text.</param>
+            <param name="filename">The file.</param>
+            <returns>The text.</returns>
+        </member>
+        <member name="M:Cudafy.Utility.ProgramFilesx86">
+            <summary>
+            Gets the x86 program files directory.
+            </summary>
+            <returns>x86 program files directory.</returns>
+        </member>
+        <member name="M:Cudafy.Utility.ProgramFilesx64">
+            <summary>
+            Gets the x64 program files directory.
+            </summary>
+            <returns>x64 program files directory or empty string if does not exist.</returns>
+        </member>
+        <member name="M:Cudafy.Utility.Convert(Cudafy.Types.ComplexF[])">
+            <summary>
+            Converts the specified values to an array of floats.
+            </summary>
+            <param name="cplx">The values.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Cudafy.Utility.Convert(Cudafy.Types.ComplexD[])">
+            <summary>
+            Converts the specified values to an array of doubles.
+            </summary>
+            <param name="cplx">The values.</param>
+            <returns></returns>
+        </member>
+        <member name="P:Cudafy.Utility.IsLinux">
+            <summary>
+            Gets a value indicating whether the OS is Linux.
+            </summary>
+            <value>
+              <c>true</c> if OS is Linux; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="T:Cudafy.XmlExtensions">
+            <summary>
+            Xml extension class.
+            </summary>
+        </member>
+        <member name="M:Cudafy.XmlExtensions.GetXElement(System.Xml.XmlNode)">
+            <summary>
+            Converts an XmlNode to XElement. 
+            </summary>
+            <param name="node">The node.</param>
+            <returns>XElement</returns>
+        </member>
+        <member name="M:Cudafy.XmlExtensions.GetXmlNode(System.Xml.Linq.XElement)">
+            <summary>
+            Converts an XElement to XmlNode. 
+            </summary>
+            <param name="element">The element.</param>
+            <returns>XmlNode</returns>
+        </member>
+        <member name="M:Cudafy.XmlExtensions.TryGetElementValue(System.Xml.Linq.XElement,System.String)">
+            <summary>
+            Tries to get element value.
+            </summary>
+            <param name="element">The element.</param>
+            <param name="elementName">Name of the element.</param>
+            <returns>Value of element or null if element does not exist.</returns>
+        </member>
+        <member name="M:Cudafy.XmlExtensions.GetAttributeValue(System.Xml.Linq.XElement,System.String)">
+            <summary>
+            Gets the attribute value.
+            </summary>
+            <param name="element">The element.</param>
+            <param name="attributeName">Name of the attribute.</param>
+            <returns>String value.</returns>
+            <exception cref="T:System.Xml.XmlException">Attribute not found.</exception>
+        </member>
+        <member name="M:Cudafy.XmlExtensions.TryGetAttributeValue(System.Xml.Linq.XElement,System.String)">
+            <summary>
+            Tries to get attribute value.
+            </summary>
+            <param name="element">The element.</param>
+            <param name="attributeName">Name of the attribute.</param>
+            <returns>String value, or null if not found.</returns>
+        </member>
+        <member name="M:Cudafy.XmlExtensions.GetAttributeInt32Value(System.Xml.Linq.XElement,System.String)">
+            <summary>
+            Gets the attribute as Int32 value.
+            </summary>
+            <param name="element">The element.</param>
+            <param name="attributeName">Name of the attribute.</param>
+            <returns>Int32 value.</returns>
+            <exception cref="T:System.Xml.XmlException">Attribute not found.</exception>
+        </member>
+        <member name="M:Cudafy.XmlExtensions.TryGetAttributeInt32Value(System.Xml.Linq.XElement,System.String)">
+            <summary>
+            Tries to get attribute as Int32 value.
+            </summary>
+            <param name="element">The element.</param>
+            <param name="attributeName">Name of the attribute.</param>
+            <returns>Int32 value, or null if not found.</returns>
+        </member>
+        <member name="M:Cudafy.XmlExtensions.TryGetAttributeBoolValue(System.Xml.Linq.XElement,System.String)">
+            <summary>
+            Tries the get attribute as bool value.
+            </summary>
+            <param name="element">The element.</param>
+            <param name="attributeName">Name of the attribute.</param>
+            <returns>Boolean value, or null if not found.</returns>
+        </member>
+        <member name="M:Cudafy.XmlExtensions.LoadStream(System.IO.Stream)">
+            <summary>
+            Loads an XDocument from the specified stream.
+            </summary>
+            <param name="inStream">The input stream.</param>
+            <returns>XDocument</returns>
+        </member>
+        <member name="M:Cudafy.XmlExtensions.SaveStream(System.Xml.Linq.XDocument,System.IO.Stream)">
+            <summary>
+            Saves the stream to XDocument supplied.
+            </summary>
+            <param name="xmlDoc">The XML doc.</param>
+            <param name="outStream">The out stream.</param>
+        </member>
+    </members>
+</doc>

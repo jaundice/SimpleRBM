@@ -197,59 +197,11 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\CudafyV1.28CustomBuild\cudafycl.AnyCPU.exe">
-      <Link>cudafycl.AnyCPU.exe</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\CudafyV1.28CustomBuild\cudafycl.AnyCPU.pdb">
-      <Link>cudafycl.AnyCPU.pdb</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\CudafyV1.28CustomBuild\cudafycl.x86.exe">
-      <Link>cudafycl.x86.exe</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\CudafyV1.28CustomBuild\cudafycl.x86.pdb">
-      <Link>cudafycl.x86.pdb</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\CudafyV1.28CustomBuild\CudafyViewer.AnyCPU.exe">
-      <Link>CudafyViewer.AnyCPU.exe</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\CudafyV1.28CustomBuild\CudafyViewer.AnyCPU.pdb">
-      <Link>CudafyViewer.AnyCPU.pdb</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\CudafyV1.28CustomBuild\CudafyViewer.x86.exe">
-      <Link>CudafyViewer.x86.exe</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\CudafyV1.28CustomBuild\CudafyViewer.x86.pdb">
-      <Link>CudafyViewer.x86.pdb</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="optdigits-tra.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\CudafyV1.28CustomBuild\cudafycl.AnyCPU.exe.config">
-      <Link>cudafycl.AnyCPU.exe.config</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\CudafyV1.28CustomBuild\cudafycl.x86.exe.config">
-      <Link>cudafycl.x86.exe.config</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\CudafyV1.28CustomBuild\CudafyViewer.AnyCPU.exe.config">
-      <Link>CudafyViewer.AnyCPU.exe.config</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\CudafyV1.28CustomBuild\CudafyViewer.x86.exe.config">
-      <Link>CudafyViewer.x86.exe.config</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="App.config" />
   </ItemGroup>
   <Choose>
