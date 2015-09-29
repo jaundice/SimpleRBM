@@ -389,8 +389,6 @@ namespace CudaNN
                 {
                     //posprodsminusnegprods.MultiplyInPlace((TElement)1 / (TElement)numcases);
                     posprodsminusnegprods.MultiplyInPlace((TElement)1 / (TElement)batchCases);
-                    //posprodsminusnegprods.MultiplyInPlace((TElement)1 / ((TElement)batchCases * numcases));
-
                     posprodsminusnegprods.SubtractInPlace(weightcostWeight);
                     posprodsminusnegprods.MultiplyInPlace(weightLearningRate);
 
@@ -408,8 +406,6 @@ namespace CudaNN
 
                     //posvisactminusnegvisact.MultiplyInPlace(visBiasLearningRate / numcases);
                     posvisactminusnegvisact.MultiplyInPlace(visBiasLearningRate / batchCases);
-                    //posvisactminusnegvisact.MultiplyInPlace(visBiasLearningRate / (batchCases * numcases));
-
                     VisibleBiasInc.Dispose();
                     _visbiasinc = momentumvisbiasinc.Add(posvisactminusnegvisact);
                     AsCuda.VisibleBiases.AddInPlace(VisibleBiasInc);
@@ -424,7 +420,6 @@ namespace CudaNN
 #if !NoHidBias
                     //poshidactminusneghidact.MultiplyInPlace(hidBiasLearningRate / numcases);
                     poshidactminusneghidact.MultiplyInPlace(hidBiasLearningRate / batchCases);
-                    //poshidactminusneghidact.MultiplyInPlace(hidBiasLearningRate / (batchCases * numcases));
 
                     HiddenBiasInc.Dispose();
                     _hidbiasinc = momentumhidbiasinc.Add(poshidactminusneghidact);

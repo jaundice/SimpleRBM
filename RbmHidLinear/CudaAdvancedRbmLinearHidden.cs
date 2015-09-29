@@ -268,8 +268,6 @@ namespace CudaNN
                 using (Matrix2D<TElement> momentumvishidinc = WeightInc.Multiply(momentum))
                 //using (Matrix2D<TElement> posprodsminusnegprods = posprobs.Subtract(negprods).MultiplyInPlace((TElement)1 / (TElement)numcases))
                 using (Matrix2D<TElement> posprodsminusnegprods = posprobs.Subtract(negprods).MultiplyInPlace((TElement)1 / (TElement)batchCases))
-                //using (Matrix2D<TElement> posprodsminusnegprods = posprobs.Subtract(negprods).MultiplyInPlace((TElement)1 / ((TElement)numcases*batchCases)))
-
                 using (Matrix2D<TElement> vishidweightcost = AsCuda.Weights.Multiply(WeightCost))
                 {
                     posprodsminusnegprods.SubtractInPlace(vishidweightcost);
@@ -283,8 +281,6 @@ namespace CudaNN
                 using (Matrix2D<TElement> momentumvisbiasinc = VisibleBiasInc.Multiply(momentum))
                 //using (Matrix2D<TElement> posvisactminusnegvisact = posvisact.Subtract(negvisact).MultiplyInPlace(visBiasLearningRate / (TElement)numcases))
                 using (Matrix2D<TElement> posvisactminusnegvisact = posvisact.Subtract(negvisact).MultiplyInPlace(visBiasLearningRate / (TElement)batchCases))
-                //using (Matrix2D<TElement> posvisactminusnegvisact = posvisact.Subtract(negvisact).MultiplyInPlace(visBiasLearningRate / ((TElement)numcases*batchCases)))
-
                 {
                     VisibleBiasInc.Dispose();
                     _visbiasinc = momentumvisbiasinc.Add(posvisactminusnegvisact);
@@ -293,8 +289,6 @@ namespace CudaNN
                 using (Matrix2D<TElement> momentumhidbiasinc = HiddenBiasInc.Multiply(momentum))
                 //using (Matrix2D<TElement> poshidactminusneghidact = poshidact.Subtract(neghidact).MultiplyInPlace(hidBiasLearningRate / (TElement)numcases))
                 using (Matrix2D<TElement> poshidactminusneghidact = poshidact.Subtract(neghidact).MultiplyInPlace(hidBiasLearningRate / (TElement)batchCases))
-                //using (Matrix2D<TElement> poshidactminusneghidact = poshidact.Subtract(neghidact).MultiplyInPlace(hidBiasLearningRate / ((TElement)numcases*batchCases)))
-
                 {
                     HiddenBiasInc.Dispose();
                     _hidbiasinc = momentumhidbiasinc.Add(poshidactminusneghidact);
