@@ -450,7 +450,7 @@ namespace CudaNN
                 try
                 {
 
-                    var momentum = Math.Min((InitialMomentum + epoch * MomentumStep), FinalMomentum);
+                    var momentum = Math.Min((InitialMomentum + (epoch * MomentumStep)), FinalMomentum);
                     error = 0;
                     foreach (var batch in datasets)
                     {
@@ -800,7 +800,7 @@ namespace CudaNN
                         using (var p = AsCuda.GPU.Upload(block.Item3))
                             return BatchedTrainEpoch(d, t, p, epoch, numcases,
                                 weightLearningRate, hidBiasLearningRate,
-                                visBiasLearningRate, Math.Min((InitialMomentum + epoch * MomentumStep), FinalMomentum));
+                                visBiasLearningRate, Math.Min((InitialMomentum + (epoch * MomentumStep)), FinalMomentum));
                     });
                 }
                 catch (AggregateException agg)
