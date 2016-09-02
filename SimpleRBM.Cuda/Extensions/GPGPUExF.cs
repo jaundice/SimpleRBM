@@ -7,7 +7,7 @@ namespace SimpleRBM.Cuda
     public static class GPGPUExF
     {
         public static Matrix2D<TElement> GuassianDistribution(this GPGPU gpu, GPGPURAND rand, int x, int y, TElement mean = 0,
-            TElement stDev = 0.5f, TElement scale = 1.0f)
+            TElement stDev = 1f, TElement scale = 1.0f)
         {
 
             var ret = gpu.AllocateNoSet<TElement>(x, y);

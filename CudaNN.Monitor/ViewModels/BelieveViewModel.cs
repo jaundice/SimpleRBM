@@ -15,6 +15,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Cudafy;
 using Cudafy.Host;
+using Cudafy.Maths.BLAS;
 using Cudafy.Maths.RAND;
 using Cudafy.Translator;
 using CudaNN.DeepBelief.DataIO;
@@ -23,6 +24,7 @@ using Mono.CSharp;
 using SimpleRBM.Common;
 using SimpleRBM.Common.ExitCondition;
 using SimpleRBM.Cuda;
+using SimpleRBM.Cuda.CudaMatrix;
 using SimpleRBM.Demo;
 using Brush = System.Windows.Media.Brush;
 using Image = System.Windows.Controls.Image;
@@ -121,9 +123,9 @@ namespace CudaNN.DeepBelief.ViewModels
             typeof(ObservableCollection<BitmapSource>), typeof(BelieveViewModel),
             new PropertyMetadata(default(ObservableCollection<BitmapSource>)));
 
-        public static readonly DependencyProperty TrainingSetProperty = DependencyProperty.Register("TrainingSet",
-            typeof(ObservableCollection<ImageSet>), typeof(BelieveViewModel),
-            new PropertyMetadata(default(ObservableCollection<ImageSet>)));
+        //public static readonly DependencyProperty TrainingSetProperty = DependencyProperty.Register("TrainingSet",
+        //    typeof(ObservableCollection<ImageSet>), typeof(BelieveViewModel),
+        //    new PropertyMetadata(default(ObservableCollection<ImageSet>)));
 
         public static readonly DependencyProperty ElapsedProperty = DependencyProperty.Register("Elapsed",
             typeof(TimeSpan), typeof(BelieveViewModel), new PropertyMetadata(default(TimeSpan)));
@@ -231,7 +233,7 @@ namespace CudaNN.DeepBelief.ViewModels
 
             SelectedGraphicsCard = GraphicsCards[0];
 
-            InitCuda(SelectedGraphicsCard.Item1, out dev, out rand);
+            //InitCuda(SelectedGraphicsCard.Item1, out dev, out rand);
 
             Application.Current.Exit += (sender, args) =>
             {
@@ -393,16 +395,16 @@ namespace CudaNN.DeepBelief.ViewModels
             set { Dispatcher.InvokeIfRequired(() => SetValue(DayDreamsProperty, value)).Wait(); }
         }
 
-        public ObservableCollection<ImageSet> TrainingSet
-        {
-            get
-            {
-                return
-                    Dispatcher.InvokeIfRequired(() => (ObservableCollection<ImageSet>)GetValue(TrainingSetProperty))
-                        .Result;
-            }
-            set { Dispatcher.InvokeIfRequired(() => SetValue(TrainingSetProperty, value)).Wait(); }
-        }
+        //public ObservableCollection<ImageSet> TrainingSet
+        //{
+        //    get
+        //    {
+        //        return
+        //            Dispatcher.InvokeIfRequired(() => (ObservableCollection<ImageSet>)GetValue(TrainingSetProperty))
+        //                .Result;
+        //    }
+        //    set { Dispatcher.InvokeIfRequired(() => SetValue(TrainingSetProperty, value)).Wait(); }
+        //}
 
         public TimeSpan Elapsed
         {
@@ -568,31 +570,36 @@ namespace CudaNN.DeepBelief.ViewModels
 
             _cancelSource = new CancellationTokenSource();
 
+
+            ConfigureData data;
+            if (!TryConfigureData(out data)) return;
+
+            LayerBuilderViewModel builder;
+            if (
+                !TryConfigureNetwork(out builder, ((DataConfigViewModelBase)data.DataContext).DataWidth,
+                    ((DataConfigViewModelBase)data.DataContext).LabelWidth))
+                return;
+
+            ConfigureLearningRates(builder);
+
+            var configRun = new ConfigureRun
+            {
+                Owner = Window.GetWindow(this),
+                DataContext = this,
+                WindowStyle = WindowStyle.None,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+            configRun.ShowDialog();
+
+            var dataDc = (DataConfigViewModelBase)data.DataContext;
+            int batchSize = BatchSize;
+            bool useSysMemory = KeepDataInSystemMemory;
+            SuspendState susState = DefaultSuspendState;
+
+            File.WriteAllText($"{pathBase}\\config.txt",
+                $"train file:\t{dataDc.TrainingDataPath}\r\ntest file:\t{dataDc.TestDataPath}");
             try
             {
-                ConfigureData data;
-                if (!TryConfigureData(out data)) return;
-
-                LayerBuilderViewModel builder;
-                if (
-                    !TryConfigureNetwork(out builder, ((DataConfigViewModelBase)data.DataContext).DataWidth,
-                        ((DataConfigViewModelBase)data.DataContext).LabelWidth)) return;
-
-                ConfigureLearningRates(builder);
-
-                var configRun = new ConfigureRun
-                {
-                    Owner = Window.GetWindow(this),
-                    DataContext = this,
-                    WindowStyle = WindowStyle.None,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner
-                };
-                configRun.ShowDialog();
-
-                var dataDc = (DataConfigViewModelBase)data.DataContext;
-                int batchSize = BatchSize;
-                bool useSysMemory = KeepDataInSystemMemory;
-                SuspendState susState = DefaultSuspendState;
                 if (!useSysMemory)
                 {
                     _runTask =
@@ -811,31 +818,33 @@ namespace CudaNN.DeepBelief.ViewModels
                 TElement[,] trainingData = trainingReader.ReadWithLabels(trainingRecords, out trainingLabelsCoded,
                     out trainingLabels);
 
+                //RandomlyOrderTrainingData(ref trainingData, ref trainingLabels, ref trainingLabelsCoded);
 
-                if (usageType == DataConfigViewModelBase.NetworkUsageTypes.SupervisedLabellingNetwork)
-                {
-                    await Dispatcher.InvokeIfRequired(
-                        async () =>
-                            TrainingSet =
-                                new ObservableCollection<ImageSet>((await imageFactory(trainingData)).Zip(
-                                    await GenerateImageSources(trainingLabelsCoded), (a, b) => new ImageSet
-                                    {
-                                        DataImage = a,
-                                        CodeImage = b
-                                    }).Zip(trainingLabels, (a, b) =>
-                                    {
-                                        a.Label = b;
-                                        return a;
-                                    })));
-                }
-                else
-                {
-                    await Dispatcher.InvokeIfRequired(
-                        async () =>
-                            TrainingSet =
-                                new ObservableCollection<ImageSet>(
-                                    (await imageFactory(trainingData)).Select(a => new ImageSet { DataImage = a })));
-                }
+
+                //if (usageType == DataConfigViewModelBase.NetworkUsageTypes.SupervisedLabellingNetwork)
+                //{
+                //    await Dispatcher.InvokeIfRequired(
+                //        async () =>
+                //            TrainingSet =
+                //                new ObservableCollection<ImageSet>((await imageFactory(trainingData)).Zip(
+                //                    await GenerateImageSources(trainingLabelsCoded), (a, b) => new ImageSet
+                //                    {
+                //                        DataImage = a,
+                //                        CodeImage = b
+                //                    }).Zip(trainingLabels, (a, b) =>
+                //                    {
+                //                        a.Label = b;
+                //                        return a;
+                //                    })));
+                //}
+                //else
+                //{
+                //    await Dispatcher.InvokeIfRequired(
+                //        async () =>
+                //            TrainingSet =
+                //                new ObservableCollection<ImageSet>(
+                //                    (await imageFactory(trainingData)).Select(a => new ImageSet { DataImage = a })));
+                //}
 
 
                 if (usageType == DataConfigViewModelBase.NetworkUsageTypes.SupervisedLabellingNetwork)
@@ -907,16 +916,22 @@ namespace CudaNN.DeepBelief.ViewModels
 
                     if (usageType == DataConfigViewModelBase.NetworkUsageTypes.UnsupervisedCodingNetwork)
                     {
-                        net.GreedyBatchedTrain(trainingData,
-                            batchSize,
-                            ExitEvaluatorFactory,
-                            WeightLearningRateFactory,
-                            HidBiasLearningRateFactory,
-                            VisBiasLearningRateFactory,
-                            _cancelSource.Token,
-                            startTrainingLayer
-                            );
-
+                        try
+                        {
+                            net.GreedyBatchedTrain(trainingData,
+                                batchSize,
+                                ExitEvaluatorFactory,
+                                WeightLearningRateFactory,
+                                HidBiasLearningRateFactory,
+                                VisBiasLearningRateFactory,
+                                _cancelSource.Token,
+                                startTrainingLayer
+                                );
+                        }
+                        catch (OperationCanceledException ex)
+                        {
+                            return;
+                        }
                         IEnumerable<double[,]> codeBatches =
                             testReader.Read(testRecords, batchSize).Select(a => net.Encode(a));
                         IEnumerable<string[]> codeStringBatches = codeBatches.Select(GenerateCodeStrings);
@@ -933,14 +948,20 @@ namespace CudaNN.DeepBelief.ViewModels
                     }
                     else
                     {
-                        net.GreedyBatchedSupervisedTrain(trainingData, trainingLabelsCoded, batchSize,
-                            ExitEvaluatorFactory,
-                            WeightLearningRateFactory,
-                            HidBiasLearningRateFactory,
-                            VisBiasLearningRateFactory,
-                            _cancelSource.Token,
-                            startTrainingLayer);
-
+                        try
+                        {
+                            net.GreedyBatchedSupervisedTrain(trainingData, trainingLabelsCoded, batchSize,
+                                ExitEvaluatorFactory,
+                                WeightLearningRateFactory,
+                                HidBiasLearningRateFactory,
+                                VisBiasLearningRateFactory,
+                                _cancelSource.Token,
+                                startTrainingLayer);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            return;
+                        }
                         IEnumerable<double[,]> labelCodeBatches =
                             testReader.Read(testRecords, batchSize).Select(a => net.LabelData(a));
 
@@ -961,6 +982,11 @@ namespace CudaNN.DeepBelief.ViewModels
                 }
             }
         }
+
+        //private void RandomlyOrderTrainingData(ref TElement[,] trainingData, ref string[] trainingLabels, ref TElement[,] trainingLabelsCoded)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
         private string[] GenerateCodeStrings(TElement[,] codes)
         {
@@ -1024,6 +1050,7 @@ namespace CudaNN.DeepBelief.ViewModels
                     out trainingLabelsCoded,
                     out trainingLabels);
 
+
                 var bmps = new List<BitmapSource>();
                 int maxTrain = 1000;
 
@@ -1039,41 +1066,41 @@ namespace CudaNN.DeepBelief.ViewModels
                 });
 
 
-                if (usageType == DataConfigViewModelBase.NetworkUsageTypes.SupervisedLabellingNetwork)
-                {
-                    Task<List<BitmapSource>> tGetCodedLabels = Task.Run(async () =>
-                    {
-                        foreach (var batch in trainingLabelsCoded)
-                        {
-                            bmps.AddRange(await GenerateImageSources(batch));
-                            if (bmps.Count >= maxTrain)
-                                break;
-                        }
-                        return bmps;
-                    });
+                //if (usageType == DataConfigViewModelBase.NetworkUsageTypes.SupervisedLabellingNetwork)
+                //{
+                //    Task<List<BitmapSource>> tGetCodedLabels = Task.Run(async () =>
+                //    {
+                //        foreach (var batch in trainingLabelsCoded)
+                //        {
+                //            bmps.AddRange(await GenerateImageSources(batch));
+                //            if (bmps.Count >= maxTrain)
+                //                break;
+                //        }
+                //        return bmps;
+                //    });
 
-                    await Dispatcher.InvokeIfRequired(
-                        async () =>
-                            TrainingSet =
-                                new ObservableCollection<ImageSet>((await tGetImages).Zip(
-                                    await tGetCodedLabels, (a, b) => new ImageSet
-                                    {
-                                        DataImage = a,
-                                        CodeImage = b
-                                    }).Zip(trainingLabels.SelectMany(c => c), (a, b) =>
-                                    {
-                                        a.Label = b;
-                                        return a;
-                                    })));
-                }
-                else
-                {
-                    await Dispatcher.InvokeIfRequired(
-                        async () =>
-                            TrainingSet =
-                                new ObservableCollection<ImageSet>(
-                                    (await tGetImages).Select(a => new ImageSet { DataImage = a })));
-                }
+                //    await Dispatcher.InvokeIfRequired(
+                //        async () =>
+                //            TrainingSet =
+                //                new ObservableCollection<ImageSet>((await tGetImages).Zip(
+                //                    await tGetCodedLabels, (a, b) => new ImageSet
+                //                    {
+                //                        DataImage = a,
+                //                        CodeImage = b
+                //                    }).Zip(trainingLabels.SelectMany(c => c), (a, b) =>
+                //                    {
+                //                        a.Label = b;
+                //                        return a;
+                //                    })));
+                //}
+                //else
+                //{
+                //    await Dispatcher.InvokeIfRequired(
+                //        async () =>
+                //            TrainingSet =
+                //                new ObservableCollection<ImageSet>(
+                //                    (await tGetImages).Select(a => new ImageSet { DataImage = a })));
+                //}
 
                 if (usageType == DataConfigViewModelBase.NetworkUsageTypes.SupervisedLabellingNetwork)
                 {
@@ -1528,15 +1555,11 @@ namespace CudaNN.DeepBelief.ViewModels
         }
 
 
+        private static Dictionary<System.Tuple<ePlatform, eArchitecture>, CudafyModule> CudafyModules = new Dictionary<System.Tuple<ePlatform, eArchitecture>, CudafyModule>();
+
         private static void InitCuda(int graphicsCardIndex, out GPGPU dev, out GPGPURAND rand)
         {
-            if (_dev != null)
-            {
-                dev = _dev;
-                dev.SetCurrentContext();
-                rand = _rand;
-                return;
-            }
+            CleanupCuda(_dev);
 
             dev = CudafyHost.GetDevice(eGPUType.Cuda, graphicsCardIndex);
 
@@ -1550,26 +1573,39 @@ namespace CudaNN.DeepBelief.ViewModels
 
             ePlatform plat = Environment.Is64BitProcess ? ePlatform.x64 : ePlatform.x86;
 
-            string kernelPath = Path.Combine(Environment.CurrentDirectory,
-                string.Format("CudaKernels_{0}.kernel", plat));
-
             CudafyModule mod;
-            if (File.Exists(kernelPath))
+            if (!CudafyModules.TryGetValue(System.Tuple.Create(plat, arch), out mod))
             {
-                Console.WriteLine("Loading kernels  from {0}", kernelPath);
-                mod = CudafyModule.Deserialize(kernelPath);
-            }
-            else
-            {
-                Console.WriteLine("Compiling cuda kernels");
-                mod = CudafyTranslator.Cudafy(
-                    plat,
-                    arch,
-                    typeof(ActivationFunctionsCuda),
-                    typeof(Matrix2DCuda)
-                    );
-                Console.WriteLine("Saving kernels to {0}", kernelPath);
-                mod.Serialize(kernelPath);
+
+                string kernelPath = Path.Combine(Environment.CurrentDirectory,
+                    string.Format("CudaKernels_{0}_{1}.kernel", plat, arch));
+
+
+                if (File.Exists(kernelPath))
+                {
+                    Console.WriteLine("Loading kernels  from {0}", kernelPath);
+                    using (var rs = File.OpenRead(kernelPath))
+                        mod = CudafyModule.Deserialize(rs);
+                }
+                else
+                {
+                    Console.WriteLine("Compiling cuda kernels");
+                    mod = CudafyTranslator.Cudafy(
+                        plat,
+                        arch,
+                        typeof(ActivationFunctionsCuda),
+                        typeof(Matrix2DCuda)
+                        );
+                    Console.WriteLine("Saving kernels to {0}", kernelPath);
+                    using (var ws = File.Create(kernelPath))
+                    {
+                        mod.Serialize(ws);
+                        ws.Flush();
+                        ws.Close();
+                    }
+                }
+                CudafyModules.Add(Tuple.Create(plat, arch), mod);
+
             }
 
 
@@ -1587,10 +1623,29 @@ namespace CudaNN.DeepBelief.ViewModels
             rand.GenerateSeeds();
 
             Console.WriteLine("Loading Module");
-            dev.LoadModule(mod);
+            dev.LoadModule(mod.Clone(), true);//todo: investigate why this breaks the second time a module is loaded.
 
             _rand = rand;
             _dev = dev;
+        }
+
+        private static void CleanupCuda(GPGPU dev)
+        {
+            if (dev != null)
+            {
+                dev.FreeAll();
+                if (_rand != null)
+                    _rand.Dispose();
+
+                GPGPUBLAS blas;
+                if (CudaToolsRegistry.RemoveBlas(dev, out blas))
+                    blas.Dispose();
+
+                dev.UnloadModules();
+
+                CudafyHost.RemoveDevice(dev);
+                dev.Dispose();
+            }
         }
 
 
@@ -1627,6 +1682,10 @@ namespace CudaNN.DeepBelief.ViewModels
             if (disposing)
             {
                 _cancelSource.Cancel();
+                if (_runTask != null)
+                    _runTask.Wait();
+
+                CleanupCuda(_dev);
             }
         }
     }

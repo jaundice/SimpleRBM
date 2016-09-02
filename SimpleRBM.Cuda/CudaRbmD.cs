@@ -40,8 +40,8 @@ namespace SimpleRBM.Cuda
 
             Matrix2D<TElement> weights = gpu.GuassianDistribution(rand, numVisible + 1, numHidden + 1,
                 (TElement)0,
-                (TElement)0.5,
-                (TElement)0.1);
+                1.0 / 3,
+              (TElement)0.1);
 
             weights.UpdateValuesAlongAxis(0, 0f, Axis.Row);
             weights.UpdateValuesAlongAxis(0, 0f, Axis.Column);
@@ -422,7 +422,7 @@ namespace SimpleRBM.Cuda
 
                 var sw = new Stopwatch();
 
-                for (i = 0;; i++)
+                for (i = 0; ; i++)
                 {
                     cancelToken.ThrowIfCancellationRequested();
                     sw.Restart();

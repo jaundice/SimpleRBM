@@ -136,13 +136,13 @@ namespace CudaNN
 
         public CudaAdvancedRbmBinary(GPGPU gpu, GPGPURAND rand, int layerIndex, int numVisibleNeurons,
             int numHiddenNeurons, bool convertActivationsToStates,
-            TElement weightcost = (TElement) 0.0002,
-            TElement initialMomentum = (TElement) 0.5, TElement finalMomentum = (TElement) 0.9,
-            TElement encodingNoiseLevel = (TElement) 1, TElement decodingNoiseLevel = (TElement) 1, TElement weightInitializationStDev = (TElement)0.01, TElement momentumIncrementStep = 0.01)
+            TElement weightcost = (TElement)0.0002,
+            TElement initialMomentum = (TElement)0.5, TElement finalMomentum = (TElement)0.9,
+            TElement encodingNoiseLevel = (TElement)1, TElement decodingNoiseLevel = (TElement)1, TElement weightInitializationStDev = (TElement)0.5 / 3, TElement momentumIncrementStep = 0.01)
             : base(
                 gpu, rand, layerIndex, numVisibleNeurons, numHiddenNeurons, /*epsilonw, epsilonvb, epsilonhb,*/
                 weightcost,
-                initialMomentum, finalMomentum, weightInitializationStDev, momentumIncrementStep)
+                initialMomentum, finalMomentum, weightMean: (TElement)0.5, weightInitializationStDev: weightInitializationStDev, momentumStep: momentumIncrementStep, weightScale:0.1)
         {
             ConvertActivationsToStates = convertActivationsToStates;
             _decodingNoiseLevel = decodingNoiseLevel;
@@ -394,7 +394,7 @@ namespace CudaNN
 
                     WeightInc.Dispose();
                     _vishidinc = momentumvishidinc.Add(posprodsminusnegprods);
-                    AsCuda.Weights.AddInPlace(WeightInc);
+                    //AsCuda.Weights.AddInPlace(WeightInc);
                 }
 
                 using (negvisact)
@@ -408,7 +408,7 @@ namespace CudaNN
                     posvisactminusnegvisact.MultiplyInPlace(visBiasLearningRate / batchCases);
                     VisibleBiasInc.Dispose();
                     _visbiasinc = momentumvisbiasinc.Add(posvisactminusnegvisact);
-                    AsCuda.VisibleBiases.AddInPlace(VisibleBiasInc);
+                    //AsCuda.VisibleBiases.AddInPlace(VisibleBiasInc);
 #endif
                 }
 
@@ -423,7 +423,7 @@ namespace CudaNN
 
                     HiddenBiasInc.Dispose();
                     _hidbiasinc = momentumhidbiasinc.Add(poshidactminusneghidact);
-                    AsCuda.HiddenBiases.AddInPlace(HiddenBiasInc);
+                    //AsCuda.HiddenBiases.AddInPlace(HiddenBiasInc);
 #endif
                 }
 
@@ -431,6 +431,8 @@ namespace CudaNN
             }
             return error;
         }
+
+
 
 
 

@@ -301,7 +301,7 @@ namespace CudaNN
             using (
                 Matrix2D<TElement> rand = guassian
                     ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, noiseScale)
+                        Machines[0].NumVisibleNeurons, scale: noiseScale)
                     : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, numDreams,
                         Machines[0].NumVisibleNeurons, noiseScale))
             {
@@ -315,7 +315,7 @@ namespace CudaNN
             using (
                 Matrix2D<TElement> rand = guassian
                     ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, numDreams,
-                        Machines[0].NumVisibleNeurons, noiseScale)
+                        Machines[0].NumVisibleNeurons, scale: noiseScale)
                     : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, numDreams,
                         Machines[0].NumVisibleNeurons, noiseScale))
             {

@@ -10,7 +10,7 @@ namespace CudaNN.DeepBelief.LayerBuilders
     {
         public static readonly DependencyProperty TrainRandStDevProperty =
             DependencyProperty.Register("TrainRandStDev", typeof (TElement),
-                typeof (ConstructLinearHiddenLayer), new PropertyMetadata((TElement)0.5));
+                typeof (ConstructLinearHiddenLayer), new PropertyMetadata((TElement)1.0/3));
 
 
         public TElement TrainRandStDev

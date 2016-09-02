@@ -136,11 +136,11 @@ namespace CudaNN
 
         public CudaAdvancedRbmLinearHidden(GPGPU gpu, GPGPURAND rand, int layerIndex, int numVisibleNeurons,
             int numHiddenNeurons,
-            TElement weightcost = (TElement) 0.0002,
-            TElement initialMomentum = (TElement) 0.5, TElement finalMomentum = (TElement) 0.9, TElement weightInitializationStDev = (TElement)0.01, TElement trainRandStDev = (TElement)0.5, TElement momentumIncrementStep = 0.01)
+            TElement weightcost = (TElement)0.0002,
+            TElement initialMomentum = (TElement)0.5, TElement finalMomentum = (TElement)0.9, TElement weightInitializationStDev = (TElement)1.0 / 3, TElement trainRandStDev = (TElement)1.0/3, TElement momentumIncrementStep = 0.01)
             : base(
                 gpu, rand, layerIndex, numVisibleNeurons, numHiddenNeurons, /*epsilonw, epsilonvb, epsilonhb,*/
-                weightcost, initialMomentum, finalMomentum, weightInitializationStDev, momentumIncrementStep)
+                weightcost, initialMomentum, finalMomentum, weightMean: 0, weightInitializationStDev: weightInitializationStDev, momentumStep: momentumIncrementStep, weightScale:0.1)
         {
             _trainingRandStDev = trainRandStDev;
         }
@@ -294,9 +294,9 @@ namespace CudaNN
                     _hidbiasinc = momentumhidbiasinc.Add(poshidactminusneghidact);
                 }
 
-                AsCuda.Weights.AddInPlace(WeightInc);
-                AsCuda.VisibleBiases.AddInPlace(VisibleBiasInc);
-                AsCuda.HiddenBiases.AddInPlace(HiddenBiasInc);
+                //AsCuda.Weights.AddInPlace(WeightInc);
+                //AsCuda.VisibleBiases.AddInPlace(VisibleBiasInc);
+                //AsCuda.HiddenBiases.AddInPlace(HiddenBiasInc);
             }
 
             return error;

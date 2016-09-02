@@ -366,7 +366,7 @@ namespace SimpleRBM.Cuda
             using (
                 var rand = guassian
                     ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, numberOfDreams,
-                        Machines[0].NumVisibleNeurons, (TElement)0.5, (TElement)0.2)
+                        Machines[0].NumVisibleNeurons, (TElement)0.5, (TElement)0.333)
                     : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, numberOfDreams,
                         Machines[0].NumVisibleNeurons, (TElement)1))
             {
@@ -412,7 +412,7 @@ namespace SimpleRBM.Cuda
             using (
                 var rand = guassian
                     ? Machines[0].GPU.GuassianDistribution(Machines[0].GPURAND, modelLabels.GetLength(0),
-                        Machines[highest].NumVisibleNeurons, (TElement)0.5, (TElement)0.2)
+                        Machines[highest].NumVisibleNeurons, (TElement)0.5, (TElement)0.5/3)
                     : Machines[0].GPU.UniformDistribution(Machines[0].GPURAND, modelLabels.GetLength(0),
                         Machines[highest].NumVisibleNeurons, (TElement)1))
             {

@@ -60,8 +60,8 @@ namespace CudaNN
         }
 
         protected CudaAdvancedRbmBase(GPGPU gpu, GPGPURAND rand, int layerIndex, int numVisibleNeurons,
-            int numHiddenNeurons, TElement weightcost = (TElement) 0.0002,
-            TElement initialMomentum = (TElement) 0.5, TElement finalMomentum = (TElement) 0.9, TElement weightInitializationStDev = (TElement)0.01, TElement momentumStep = (TElement)0.01)
+            int numHiddenNeurons, TElement weightcost = (TElement)0.0002,
+            TElement initialMomentum = (TElement)0.5, TElement finalMomentum = (TElement)0.9, TElement weightMean = (TElement)0.5, TElement weightInitializationStDev = (TElement)0.5/3, TElement momentumStep = (TElement)0.01, TElement weightScale = (TElement)1)
         {
             _weightcost = weightcost;
             _initialmomentum = initialMomentum;
@@ -74,7 +74,8 @@ namespace CudaNN
             _rand = rand;
 
             _weights = _gpu.GuassianDistribution(_rand, _numVisibleNeurons, _numHiddenNeurons,
-                stDev: weightInitializationStDev);
+                mean:0,
+                stDev: weightInitializationStDev, scale: weightScale);
 
             //https://www.cs.toronto.edu/~hinton/absps/guideTR.pdf
 
@@ -239,6 +240,8 @@ namespace CudaNN
                 int epoch;
                 TElement error;
                 EpochEventArgs<TElement> args;
+                TElement lastWeightLR = 0;
+                var momentumEpochModifier = 0;
                 for (epoch = 0; ; epoch++)
                 {
                     cancelToken.ThrowIfCancellationRequested();
@@ -247,8 +250,18 @@ namespace CudaNN
                     TElement visBiasLearningRate = visBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
                     TElement hidBiasLearningRate = hidBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
 
+                    if (epoch > 0)
+                    {
+
+                        if (lastWeightLR != weightLearningRate)
+                            momentumEpochModifier = epoch;
+
+                        lastWeightLR = weightLearningRate;
+                    }
+
+
                     error = BatchedTrainEpoch(data, dataTransposed, posvisact, epoch, numcases,
-                        weightLearningRate, hidBiasLearningRate, visBiasLearningRate, Math.Min((InitialMomentum + epoch * MomentumStep), FinalMomentum));
+                        weightLearningRate, hidBiasLearningRate, visBiasLearningRate, Math.Min((InitialMomentum + (epoch - momentumEpochModifier) * MomentumStep), FinalMomentum));
 
                     TElement delta;
                     var shouldExit = exitConditionEvaluator.Exit(epoch, error, sw.Elapsed, out delta);
@@ -261,12 +274,13 @@ namespace CudaNN
                         Elapsed = sw.Elapsed,
                         Delta = delta
                     };
+                    UpdateWeightsAndBiases();
                     OnEpochComplete(args);
                     if (shouldExit)
                         break;
-                    HiddenBiasInc.Zeros();
-                    VisibleBiasInc.Zeros();
-                    WeightInc.Zeros();
+                    //HiddenBiasInc.Zeros();
+                    //VisibleBiasInc.Zeros();
+                    //WeightInc.Zeros();
                 }
 
                 OnTrainComplete(args);
@@ -341,6 +355,9 @@ namespace CudaNN
                 int epoch;
                 TElement error;
                 EpochEventArgs<TElement> args;
+                var rnd = new Random(DateTime.Now.Millisecond);
+                TElement lastWeightLR = 0;
+                var momentumEpochModifier = 0;
                 for (epoch = 0; ; epoch++)
                 {
 
@@ -350,11 +367,21 @@ namespace CudaNN
                     TElement visBiasLearningRate = visBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
                     TElement hidBiasLearningRate = hidBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
 
+
+
+                    if (epoch > 0)
+                    {
+
+                        if (lastWeightLR != weightLearningRate)
+                            momentumEpochModifier = epoch;
+
+                        lastWeightLR = weightLearningRate;
+                    }
                     try
                     {
-                        var momentum = Math.Min((InitialMomentum + epoch * MomentumStep), FinalMomentum);
+                        var momentum = Math.Min((InitialMomentum + (epoch - momentumEpochModifier) * MomentumStep), FinalMomentum);
                         error = 0;
-                        foreach (var batch in datasets)
+                        foreach (var batch in datasets.OrderBy(a => rnd.Next()))
                         {
 
                             error += BatchedTrainEpoch(batch.Item1, batch.Item2, batch.Item3, epoch, numcases,
@@ -381,13 +408,13 @@ namespace CudaNN
                         Elapsed = sw.Elapsed,
                         Delta = delta
                     };
+
+                    UpdateWeightsAndBiases();
+
                     OnEpochComplete(args);
                     if (shouldExit)
                         break;
 
-                    HiddenBiasInc.Zeros();
-                    VisibleBiasInc.Zeros();
-                    WeightInc.Zeros();
                 }
 
                 OnTrainComplete(args);
@@ -440,6 +467,11 @@ namespace CudaNN
             int epoch;
             TElement error;
             EpochEventArgs<TElement> args;
+            var rnd = new Random(DateTime.Now.Millisecond);
+
+            var momentumEpochModifier = 0;
+            TElement lastWeightLR = 0;
+
             for (epoch = 0; ; epoch++)
             {
                 cancelToken.ThrowIfCancellationRequested();
@@ -447,12 +479,21 @@ namespace CudaNN
                 TElement weightLearningRate = weightLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
                 TElement visBiasLearningRate = visBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
                 TElement hidBiasLearningRate = hidBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
+
+                if (epoch > 0)
+                {
+                    if (lastWeightLR != weightLearningRate)
+                        momentumEpochModifier = epoch;
+
+                    lastWeightLR = weightLearningRate;
+                }
+
                 try
                 {
 
-                    var momentum = Math.Min((InitialMomentum + epoch * MomentumStep), FinalMomentum);
+                    var momentum = Math.Min((InitialMomentum + (epoch - momentumEpochModifier) * MomentumStep), FinalMomentum);
                     error = 0;
-                    foreach (var batch in datasets)
+                    foreach (var batch in datasets.OrderBy(a => rnd.Next()))
                     {
                         using (var d = AsCuda.GPU.Upload(batch.Item1))
                         using (var t = AsCuda.GPU.Upload(batch.Item2))
@@ -463,9 +504,7 @@ namespace CudaNN
 
                     }
 
-                    HiddenBiasInc.Zeros();
-                    VisibleBiasInc.Zeros();
-                    WeightInc.Zeros();
+                    UpdateWeightsAndBiases();
                 }
                 catch (AggregateException agg)
                 {
@@ -498,6 +537,20 @@ namespace CudaNN
             SetState(state);
         }
 
+
+        void UpdateWeightsAndBiases()
+        {
+            AsCuda.Weights.AddInPlace(WeightInc);
+
+            AsCuda.VisibleBiases.AddInPlace(VisibleBiasInc);
+
+            AsCuda.HiddenBiases.AddInPlace(HiddenBiasInc);
+
+            HiddenBiasInc.Zeros();
+            VisibleBiasInc.Zeros();
+            WeightInc.Zeros();
+
+        }
 
         public SuspendState State { get; protected set; }
 
@@ -784,6 +837,9 @@ namespace CudaNN
             int epoch;
             TElement error;
             EpochEventArgs<TElement> args;
+            var rnd = new Random(DateTime.Now.Millisecond);
+            TElement lastWeightLR = 0;
+            var momentumEpochModifier = 0;
             for (epoch = 0; ; epoch++)
             {
                 cancelToken.ThrowIfCancellationRequested();
@@ -791,17 +847,28 @@ namespace CudaNN
                 TElement weightLearningRate = weightLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
                 TElement visBiasLearningRate = visBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
                 TElement hidBiasLearningRate = hidBiasLearningRateCalculator.CalculateLearningRate(LayerIndex, epoch);
+                if (epoch > 0)
+                {
+
+                    if (lastWeightLR != weightLearningRate)
+                        momentumEpochModifier = epoch;
+
+                    lastWeightLR = weightLearningRate;
+                }
+
                 try
                 {
-                    error = datasets.Sum(block =>
-                    {
-                        using (var d = AsCuda.GPU.Upload(block.Item1))
-                        using (var t = AsCuda.GPU.Upload(block.Item2))
-                        using (var p = AsCuda.GPU.Upload(block.Item3))
-                            return BatchedTrainEpoch(d, t, p, epoch, numcases,
-                                weightLearningRate, hidBiasLearningRate,
-                                visBiasLearningRate, Math.Min((InitialMomentum + epoch * MomentumStep), FinalMomentum));
-                    });
+                    error = datasets.OrderBy(a => rnd.Next()).Sum(block =>
+                     {
+                         using (var d = AsCuda.GPU.Upload(block.Item1))
+                         using (var t = AsCuda.GPU.Upload(block.Item2))
+                         using (var p = AsCuda.GPU.Upload(block.Item3))
+                        {
+
+                             return BatchedTrainEpoch(d, t, p, epoch, numcases,
+                                 weightLearningRate, hidBiasLearningRate,
+                                 visBiasLearningRate, Math.Min((InitialMomentum + (epoch - momentumEpochModifier) * MomentumStep), FinalMomentum));}
+                     });
                 }
                 catch (AggregateException agg)
                 {
@@ -824,13 +891,14 @@ namespace CudaNN
                     Elapsed = sw.Elapsed,
                     Delta = delta
                 };
+                UpdateWeightsAndBiases();
+
                 OnEpochComplete(args);
+
+
                 if (shouldExit)
                     break;
 
-                HiddenBiasInc.Zeros();
-                VisibleBiasInc.Zeros();
-                WeightInc.Zeros();
             }
 
             OnTrainComplete(args);

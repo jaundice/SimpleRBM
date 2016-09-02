@@ -264,7 +264,7 @@
                     </ItemsControl>
                 </ScrollViewer>
                 <ScrollViewer Margin="4" HorizontalAlignment="Left"  Grid.Row="1" Grid.Column="1">
-                    <ItemsControl  HorizontalAlignment="Left" ItemsSource="{Binding Path=TrainingSet, Mode=OneWay}" >
+                    <!--<ItemsControl  HorizontalAlignment="Left" ItemsSource="{Binding Path=TrainingSet, Mode=OneWay}" >
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <VirtualizingStackPanel VerticalAlignment="Top"></VirtualizingStackPanel>
@@ -292,7 +292,7 @@
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                    </ItemsControl>-->
                 </ScrollViewer>
             </Grid>
             <Grid Grid.Column="2">

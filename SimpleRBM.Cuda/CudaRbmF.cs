@@ -40,7 +40,7 @@ namespace SimpleRBM.Cuda
 
             Matrix2D<TElement> weights = gpu.GuassianDistribution(rand, numVisible + 1, numHidden + 1,
                 (TElement)0,
-                (TElement)0.5,
+                (TElement)1.0/3,
                 (TElement)0.1);
 
             weights.UpdateValuesAlongAxis(0, 0f, Axis.Row);

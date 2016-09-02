@@ -17,5 +17,10 @@ namespace SimpleRBM.Cuda.CudaMatrix
         {
             return _storage.GetOrAdd((CudaGPU)gpu, GPGPUBLAS.Create);
         }
+
+        public static bool RemoveBlas(GPGPU gpu, out GPGPUBLAS blas)
+        {
+            return _storage.TryRemove((CudaGPU)gpu, out blas);
+        }
     }
 }

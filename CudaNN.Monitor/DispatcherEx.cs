@@ -11,16 +11,16 @@ namespace CudaNN.DeepBelief
             if (self.CheckAccess())
                 action();
             else
-                await self.InvokeAsync(action);
+                await self.InvokeAsync(action, DispatcherPriority.Render);
         }
 
         public static async Task<T> InvokeIfRequired<T>(this Dispatcher self, Func<T> action)
         {
             if (self.CheckAccess())
                 return action();
-            return await self.InvokeAsync(action);
+            return await self.InvokeAsync(action, DispatcherPriority.Render);
         }
 
-       
+
     }
 }
